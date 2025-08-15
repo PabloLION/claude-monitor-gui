@@ -10,7 +10,7 @@ version = "3.1.0"
 description = "A real-time terminal monitoring tool for Claude Code token usage with advanced analytics and Rich UI"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "Maciek", email = "maciek@roboblog.eu" }]
 maintainers = [{ name = "Maciek", email = "maciek@roboblog.eu" }]
 keywords = [
@@ -99,7 +99,7 @@ claude_monitor = ["py.typed"]
 
 [tool.black]
 line-length = 88
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py310", "py311", "py312", "py313"]
 skip-string-normalization = false
 include = '\.pyi?$'
 extend-exclude = '''
@@ -129,7 +129,7 @@ skip_glob = ["*/migrations/*", "*/venv/*", "*/build/*", "*/dist/*"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I"]  # pycodestyle + Pyflakes + isort
@@ -140,7 +140,7 @@ quote-style = "double"
 
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true      # Catch unintended Any returns
 warn_no_return = true       # Ensure functions return as expected
 strict_optional = true      # Disallow None where not annotated
@@ -206,3 +206,8 @@ directory = "htmlcov"
 
 [tool.coverage.xml]
 output = "coverage.xml"
+
+[dependency-groups]
+dev = [
+    "pyupgrade>=3.20.0",
+]
