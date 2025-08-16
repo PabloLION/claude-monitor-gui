@@ -5,7 +5,7 @@ Consolidates display indicators, error/loading screens, and advanced custom disp
 
 from rich.console import Console, RenderableType
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.core.models import JSONSerializable, SessionDataDict, SessionCollectionDict, SessionPercentilesDict
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
 from claude_monitor.ui.layouts import HeaderManager
@@ -189,30 +189,41 @@ class AdvancedCustomLimitDisplay:
 
     def _collect_session_data(
         self, blocks: list[dict[str, JSONSerializable]] | None = None
-    ) -> dict[str, JSONSerializable]:
+    ) -> SessionCollectionDict:
         """Collect session data and identify limit sessions."""
         if not blocks:
+            default_session: SessionDataDict = {"tokens": 0, "cost": 0.0, "messages": 0}
             return {
                 "all_sessions": [],
                 "limit_sessions": [],
-                "current_session": {"tokens": 0, "cost": 0.0, "messages": 0},
+                "current_session": default_session,
                 "total_sessions": 0,
                 "active_sessions": 0,
             }
 
-        all_sessions = []
-        limit_sessions = []
-        current_session = {"tokens": 0, "cost": 0.0, "messages": 0}
+        all_sessions: list[SessionDataDict] = []
+        limit_sessions: list[SessionDataDict] = []
+        current_session: SessionDataDict = {"tokens": 0, "cost": 0.0, "messages": 0}
         active_sessions = 0
 
         for block in blocks:
             if block.get("isGap", False):
                 continue
 
-            session = {
-                "tokens": block.get("totalTokens", 0),
-                "cost": block.get("costUSD", 0.0),
-                "messages": block.get("sentMessagesCount", 0),
+            # Extract values with proper type casting
+            tokens_raw = block.get("totalTokens", 0)
+            cost_raw = block.get("costUSD", 0.0)
+            messages_raw = block.get("sentMessagesCount", 0)
+            
+            # Ensure proper types
+            tokens = int(tokens_raw) if isinstance(tokens_raw, (int, float)) else 0
+            cost = float(cost_raw) if isinstance(cost_raw, (int, float)) else 0.0
+            messages = int(messages_raw) if isinstance(messages_raw, (int, float)) else 0
+
+            session: SessionDataDict = {
+                "tokens": tokens,
+                "cost": cost,
+                "messages": messages,
             }
 
             if block.get("isActive", False):
@@ -232,7 +243,7 @@ class AdvancedCustomLimitDisplay:
             "active_sessions": active_sessions,
         }
 
-    def _is_limit_session(self, session: dict[str, JSONSerializable]) -> bool:
+    def _is_limit_session(self, session: SessionDataDict) -> bool:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
@@ -248,8 +259,8 @@ class AdvancedCustomLimitDisplay:
         return False
 
     def _calculate_session_percentiles(
-        self, sessions: list[dict[str, JSONSerializable]]
-    ) -> dict[str, JSONSerializable]:
+        self, sessions: list[SessionDataDict]
+    ) -> SessionPercentilesDict:
         """Calculate percentiles from session data."""
         if not sessions:
             return {

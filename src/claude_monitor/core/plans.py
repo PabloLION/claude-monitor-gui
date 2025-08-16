@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypedDict
 
-from claude_monitor.core.models import BlockData
+from claude_monitor.core.models import BlockData, BlockDict
 
 
 class PlanType(Enum):
@@ -190,7 +190,7 @@ DEFAULT_COST_LIMIT: float = Plans.DEFAULT_COST_LIMIT
 
 
 def get_token_limit(
-    plan: str, blocks: list[BlockData] | None = None
+    plan: str, blocks: list[BlockData] | list[BlockDict] | None = None
 ) -> int:
     """Get token limit for a plan, using P90 for custom plans.
 

@@ -515,3 +515,78 @@ class LastUsedParamsDict(TypedDict, total=False):
     debug: bool
     data_path: str
     timestamp: str  # Added for compatibility with existing code
+
+
+class SessionDataDict(TypedDict):
+    """Type-safe structure for session data in UI components."""
+    
+    tokens: int
+    cost: float
+    messages: int
+
+
+class SessionCollectionDict(TypedDict):
+    """Type-safe structure for session collection results."""
+    
+    all_sessions: list[SessionDataDict]
+    limit_sessions: list[SessionDataDict]
+    current_session: SessionDataDict | None
+    total_sessions: int
+    active_sessions: int
+
+
+class PercentileDict(TypedDict):
+    """Type-safe structure for percentile calculations."""
+    
+    p50: int | float
+    p75: int | float  
+    p90: int | float
+    p95: int | float
+
+
+class SessionPercentilesDict(TypedDict):
+    """Type-safe structure for session percentiles results."""
+    
+    tokens: PercentileDict
+    costs: PercentileDict
+    messages: PercentileDict
+    averages: dict[str, int | float]
+    count: int
+
+
+class ExtractedSessionData(TypedDict):
+    """Type-safe structure for extracted session data in display controller."""
+    
+    tokens_used: int
+    session_cost: float
+    raw_per_model_stats: dict[str, JSONSerializable]
+    sent_messages: int
+    entries: list[JSONSerializable]
+    start_time_str: str | None
+    end_time_str: str | None
+
+
+class ProcessedDisplayData(TypedDict):
+    """Type-safe structure for processed display data."""
+    
+    plan: str
+    timezone: str
+    tokens_used: int
+    token_limit: int
+    usage_percentage: float
+    tokens_left: int
+    elapsed_session_minutes: float
+    total_session_minutes: float
+    burn_rate: float
+    session_cost: float
+    per_model_stats: dict[str, JSONSerializable]
+    model_distribution: dict[str, float]
+    sent_messages: int
+    entries: list[JSONSerializable]
+    predicted_end_str: str
+    reset_time_str: str
+    current_time_str: str
+    show_switch_notification: bool
+    show_exceed_notification: bool
+    show_tokens_will_run_out: bool
+    original_limit: int

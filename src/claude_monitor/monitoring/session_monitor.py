@@ -3,6 +3,8 @@
 import logging
 from collections.abc import Callable
 
+from claude_monitor.core.models import AnalysisResult
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,7 @@ class SessionMonitor:
         ] = []
         self._session_history: list[dict[str, str | int | float]] = []
 
-    def update(self, data: dict[str, list[dict[str, str | int | float | bool]] | int | str]) -> tuple[bool, list[str]]:
+    def update(self, data: dict[str, list[dict[str, str | int | float | bool]] | int | str] | AnalysisResult) -> tuple[bool, list[str]]:
         """Update session tracking with new data and validate.
 
         Args:

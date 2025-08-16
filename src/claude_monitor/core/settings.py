@@ -9,7 +9,7 @@ from typing import Literal
 
 import pytz
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
 from claude_monitor import __version__
 from claude_monitor.core.models import LastUsedParamsDict
@@ -245,11 +245,11 @@ class Settings(BaseSettings):
     def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
-        init_settings: BaseSettings,
-        env_settings: BaseSettings,
-        dotenv_settings: BaseSettings,
-        file_secret_settings: BaseSettings,
-    ) -> tuple[BaseSettings, ...]:
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Custom sources - only init and last used."""
         _ = (
             settings_cls,
@@ -273,12 +273,12 @@ class Settings(BaseSettings):
         if clear_config:
             last_used = LastUsedParams()
             last_used.clear()
-            settings = cls(_cli_parse_args=argv)
+            settings = cls()
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()
 
-            settings = cls(_cli_parse_args=argv)
+            settings = cls()
 
             cli_provided_fields = set()
             if argv:

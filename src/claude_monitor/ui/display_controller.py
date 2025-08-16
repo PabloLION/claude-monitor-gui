@@ -11,7 +11,7 @@ import argparse
 import pytz
 from rich.console import Console, Group, RenderableType
 
-from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions
+from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData
 from rich.live import Live
 from rich.text import Text
 
@@ -51,16 +51,21 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(self, active_block: dict[str, str | int | float | list | dict]) -> dict[str, str | int | float | list | dict]:
+    def _extract_session_data(self, active_block: dict[str, JSONSerializable]) -> ExtractedSessionData:
         """Extract basic session data from active block."""
+        # Extract and cast values to ensure proper types
+        tokens_used_raw = active_block.get("totalTokens", 0)
+        session_cost_raw = active_block.get("costUSD", 0.0)
+        sent_messages_raw = active_block.get("sentMessagesCount", 0)
+        
         return {
-            "tokens_used": active_block.get("totalTokens", 0),
-            "session_cost": active_block.get("costUSD", 0.0),
-            "raw_per_model_stats": active_block.get("perModelStats", {}),
-            "sent_messages": active_block.get("sentMessagesCount", 0),
-            "entries": active_block.get("entries", []),
-            "start_time_str": active_block.get("startTime"),
-            "end_time_str": active_block.get("endTime"),
+            "tokens_used": int(tokens_used_raw) if isinstance(tokens_used_raw, (int, float)) else 0,
+            "session_cost": float(session_cost_raw) if isinstance(session_cost_raw, (int, float)) else 0.0,
+            "raw_per_model_stats": active_block.get("perModelStats", {}) if isinstance(active_block.get("perModelStats"), dict) else {},
+            "sent_messages": int(sent_messages_raw) if isinstance(sent_messages_raw, (int, float)) else 0,
+            "entries": active_block.get("entries", []) if isinstance(active_block.get("entries"), list) else [],
+            "start_time_str": active_block.get("startTime") if isinstance(active_block.get("startTime"), str) else None,
+            "end_time_str": active_block.get("endTime") if isinstance(active_block.get("endTime"), str) else None,
         }
 
     def _calculate_token_limits(self, args: argparse.Namespace, token_limit: int) -> tuple[int, int]:
