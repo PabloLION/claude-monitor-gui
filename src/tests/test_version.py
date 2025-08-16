@@ -1,6 +1,5 @@
 """Tests for version management."""
 
-from typing import Dict
 from unittest.mock import mock_open, patch
 
 import pytest
@@ -34,7 +33,7 @@ version = "3.0.0"
         ):
             try:
                 with patch("tomllib.load") as mock_load:
-                    mock_load.return_value: Dict[str, Dict[str, str]] = {
+                    mock_load.return_value: dict[str, dict[str, str]] = {
                         "project": {"version": "3.0.0"}
                     }
                     version = _get_version_from_pyproject()
@@ -42,7 +41,7 @@ version = "3.0.0"
             except ImportError:
                 # Python < 3.11, use tomli
                 with patch("tomli.load") as mock_load:
-                    mock_load.return_value: Dict[str, Dict[str, str]] = {
+                    mock_load.return_value: dict[str, dict[str, str]] = {
                         "project": {"version": "3.0.0"}
                     }
                     version = _get_version_from_pyproject()

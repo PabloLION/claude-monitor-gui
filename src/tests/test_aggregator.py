@@ -1,7 +1,6 @@
 """Tests for data aggregator module."""
 
 from datetime import datetime, timezone
-from typing import List
 
 import pytest
 
@@ -288,7 +287,7 @@ class TestUsageAggregator:
         return UsageAggregator(data_path=str(tmp_path))
 
     @pytest.fixture
-    def sample_entries(self) -> List[UsageEntry]:
+    def sample_entries(self) -> list[UsageEntry]:
         """Create sample usage entries spanning multiple days and months."""
         entries = []
 
@@ -326,7 +325,7 @@ class TestUsageAggregator:
         return entries
 
     def test_aggregate_daily_basic(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test basic daily aggregation."""
         result = aggregator.aggregate_daily(sample_entries)
@@ -344,7 +343,7 @@ class TestUsageAggregator:
         assert set(jan1["models_used"]) == {"claude-3-haiku", "claude-3-sonnet"}
 
     def test_aggregate_daily_with_date_filter(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test daily aggregation with date filters."""
         start_date = datetime(2024, 1, 15, tzinfo=timezone.utc)
@@ -360,7 +359,7 @@ class TestUsageAggregator:
         assert result[1]["date"] == "2024-01-31"
 
     def test_aggregate_monthly_basic(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test basic monthly aggregation."""
         result = aggregator.aggregate_monthly(sample_entries)
@@ -389,7 +388,7 @@ class TestUsageAggregator:
         assert feb["models_used"] == ["claude-3-opus"]
 
     def test_aggregate_monthly_with_date_filter(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test monthly aggregation with date filters."""
         start_date = datetime(2024, 2, 1, tzinfo=timezone.utc)
@@ -401,7 +400,7 @@ class TestUsageAggregator:
         assert result[0]["month"] == "2024-02"
 
     def test_aggregate_from_blocks_daily(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test aggregating from session blocks for daily view."""
         # Create mock session blocks
@@ -439,7 +438,7 @@ class TestUsageAggregator:
         assert result[0]["date"] == "2024-01-01"
 
     def test_aggregate_from_blocks_monthly(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test aggregating from session blocks for monthly view."""
         from claude_monitor.core.models import SessionBlock

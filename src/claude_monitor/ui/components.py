@@ -3,7 +3,7 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.console import Console, RenderableType
 
@@ -85,7 +85,7 @@ class ErrorDisplayComponent:
 
     def format_error_screen(
         self, plan: str = "pro", timezone: str = "Europe/Warsaw"
-    ) -> List[str]:
+    ) -> list[str]:
         """Format error screen for failed data fetch.
 
         Args:
@@ -121,8 +121,8 @@ class LoadingScreenComponent:
         self,
         plan: str = "pro",
         timezone: str = "Europe/Warsaw",
-        custom_message: Optional[str] = None,
-    ) -> List[str]:
+        custom_message: str | None = None,
+    ) -> list[str]:
         """Create loading screen content.
 
         Args:
@@ -162,7 +162,7 @@ class LoadingScreenComponent:
         self,
         plan: str = "pro",
         timezone: str = "Europe/Warsaw",
-        custom_message: Optional[str] = None,
+        custom_message: str | None = None,
     ) -> RenderableType:
         """Create Rich renderable for loading screen.
 
@@ -188,8 +188,8 @@ class AdvancedCustomLimitDisplay:
         self.console = console
 
     def _collect_session_data(
-        self, blocks: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
+        self, blocks: list[dict[str, Any]] | None = None
+    ) -> dict[str, Any]:
         """Collect session data and identify limit sessions."""
         if not blocks:
             return {
@@ -232,7 +232,7 @@ class AdvancedCustomLimitDisplay:
             "active_sessions": active_sessions,
         }
 
-    def _is_limit_session(self, session: Dict[str, Any]) -> bool:
+    def _is_limit_session(self, session: dict[str, Any]) -> bool:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
@@ -248,8 +248,8 @@ class AdvancedCustomLimitDisplay:
         return False
 
     def _calculate_session_percentiles(
-        self, sessions: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, sessions: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Calculate percentiles from session data."""
         if not sessions:
             return {
@@ -296,7 +296,7 @@ class AdvancedCustomLimitDisplay:
 
 def format_error_screen(
     plan: str = "pro", timezone: str = "Europe/Warsaw"
-) -> List[str]:
+) -> list[str]:
     """Legacy function - format error screen.
 
     Maintained for backward compatibility.

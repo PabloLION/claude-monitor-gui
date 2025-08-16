@@ -6,7 +6,7 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class PlanType(Enum):
@@ -44,7 +44,7 @@ class PlanConfig:
         return str(self.token_limit)
 
 
-PLAN_LIMITS: Dict[PlanType, Dict[str, Any]] = {
+PLAN_LIMITS: dict[PlanType, dict[str, Any]] = {
     PlanType.PRO: {
         "token_limit": 19_000,
         "cost_limit": 18.0,
@@ -71,7 +71,7 @@ PLAN_LIMITS: Dict[PlanType, Dict[str, Any]] = {
     },
 }
 
-_DEFAULTS: Dict[str, Any] = {
+_DEFAULTS: dict[str, Any] = {
     "token_limit": PLAN_LIMITS[PlanType.PRO]["token_limit"],
     "cost_limit": PLAN_LIMITS[PlanType.CUSTOM]["cost_limit"],
     "message_limit": PLAN_LIMITS[PlanType.PRO]["message_limit"],
@@ -84,7 +84,7 @@ class Plans:
     DEFAULT_TOKEN_LIMIT: int = _DEFAULTS["token_limit"]
     DEFAULT_COST_LIMIT: float = _DEFAULTS["cost_limit"]
     DEFAULT_MESSAGE_LIMIT: int = _DEFAULTS["message_limit"]
-    COMMON_TOKEN_LIMITS: List[int] = [19_000, 88_000, 220_000, 880_000]
+    COMMON_TOKEN_LIMITS: list[int] = [19_000, 88_000, 220_000, 880_000]
     LIMIT_DETECTION_THRESHOLD: float = 0.95
 
     @classmethod
@@ -100,7 +100,7 @@ class Plans:
         )
 
     @classmethod
-    def all_plans(cls) -> Dict[PlanType, PlanConfig]:
+    def all_plans(cls) -> dict[PlanType, PlanConfig]:
         """Return a copy of all available plan configurations."""
         return {pt: cls._build_config(pt) for pt in PLAN_LIMITS}
 
@@ -110,7 +110,7 @@ class Plans:
         return cls._build_config(plan_type)
 
     @classmethod
-    def get_plan_by_name(cls, name: str) -> Optional[PlanConfig]:
+    def get_plan_by_name(cls, name: str) -> PlanConfig | None:
         """Get PlanConfig by its string name (case-insensitive)."""
         try:
             pt = PlanType.from_string(name)
@@ -120,7 +120,7 @@ class Plans:
 
     @classmethod
     def get_token_limit(
-        cls, plan: str, blocks: Optional[List[Dict[str, Any]]] = None
+        cls, plan: str, blocks: list[dict[str, Any]] | None = None
     ) -> int:
         """
         Get the token limit for a plan.
@@ -159,17 +159,17 @@ class Plans:
         return cls.get_plan_by_name(plan) is not None
 
 
-TOKEN_LIMITS: Dict[str, int] = {
+TOKEN_LIMITS: dict[str, int] = {
     plan.value: config.token_limit
     for plan, config in Plans.all_plans().items()
     if plan != PlanType.CUSTOM
 }
 
 DEFAULT_TOKEN_LIMIT: int = Plans.DEFAULT_TOKEN_LIMIT
-COMMON_TOKEN_LIMITS: List[int] = Plans.COMMON_TOKEN_LIMITS
+COMMON_TOKEN_LIMITS: list[int] = Plans.COMMON_TOKEN_LIMITS
 LIMIT_DETECTION_THRESHOLD: float = Plans.LIMIT_DETECTION_THRESHOLD
 
-COST_LIMITS: Dict[str, float] = {
+COST_LIMITS: dict[str, float] = {
     plan.value: config.cost_limit
     for plan, config in Plans.all_plans().items()
     if plan != PlanType.CUSTOM
@@ -178,7 +178,7 @@ COST_LIMITS: Dict[str, float] = {
 DEFAULT_COST_LIMIT: float = Plans.DEFAULT_COST_LIMIT
 
 
-def get_token_limit(plan: str, blocks: Optional[List[Dict[str, Any]]] = None) -> int:
+def get_token_limit(plan: str, blocks: list[dict[str, Any]] | None = None) -> int:
     """Get token limit for a plan, using P90 for custom plans.
 
     Args:

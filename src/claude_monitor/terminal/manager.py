@@ -4,7 +4,7 @@ Raw mode setup, input handling, and terminal control.
 
 import logging
 import sys
-from typing import Any, List, Optional, Union
+from typing import Any
 
 from claude_monitor.error_handling import report_error
 from claude_monitor.terminal.themes import print_themed
@@ -19,7 +19,7 @@ except ImportError:
     HAS_TERMIOS: bool = False
 
 
-def setup_terminal() -> Optional[List[Any]]:
+def setup_terminal() -> list[Any] | None:
     """Setup terminal for raw mode to prevent input interference.
 
     Returns:
@@ -30,8 +30,8 @@ def setup_terminal() -> Optional[List[Any]]:
         return None
 
     try:
-        old_settings: List[Any] = termios.tcgetattr(sys.stdin)
-        new_settings: List[Any] = termios.tcgetattr(sys.stdin)
+        old_settings: list[Any] = termios.tcgetattr(sys.stdin)
+        new_settings: list[Any] = termios.tcgetattr(sys.stdin)
         new_settings[3] = new_settings[3] & ~(termios.ECHO | termios.ICANON)
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_settings)
         return old_settings
@@ -39,7 +39,7 @@ def setup_terminal() -> Optional[List[Any]]:
         return None
 
 
-def restore_terminal(old_settings: Optional[List[Any]]) -> None:
+def restore_terminal(old_settings: list[Any] | None) -> None:
     """Restore terminal to original settings.
 
     Args:
@@ -68,7 +68,7 @@ def enter_alternate_screen() -> None:
 
 
 def handle_cleanup_and_exit(
-    old_terminal_settings: Optional[List[Any]], message: str = "Monitoring stopped."
+    old_terminal_settings: list[Any] | None, message: str = "Monitoring stopped."
 ) -> None:
     """Handle cleanup and exit gracefully.
 
@@ -82,7 +82,7 @@ def handle_cleanup_and_exit(
 
 
 def handle_error_and_exit(
-    old_terminal_settings: Optional[List[Any]], error: Union[Exception, str]
+    old_terminal_settings: list[Any] | None, error: Exception | str
 ) -> None:
     """Handle error cleanup and exit.
 

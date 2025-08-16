@@ -3,7 +3,6 @@
 import locale
 import platform
 from datetime import datetime
-from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -466,7 +465,7 @@ class TestTimezoneHandler:
         """Test parsing with alternative formats."""
         handler = TimezoneHandler("UTC")
 
-        test_cases: List[str] = [
+        test_cases: list[str] = [
             "2024-01-01 12:00:00",
             "2024/01/01 12:00:00",
             "01/01/2024 12:00:00",

@@ -1,6 +1,5 @@
 """Comprehensive tests for PricingCalculator class."""
 
-from typing import Dict, List, Union
 
 import pytest
 
@@ -17,7 +16,7 @@ class TestPricingCalculator:
         return PricingCalculator()
 
     @pytest.fixture
-    def custom_pricing(self) -> Dict[str, Dict[str, float]]:
+    def custom_pricing(self) -> dict[str, dict[str, float]]:
         """Custom pricing configuration for testing."""
         return {
             "test-model": {
@@ -30,13 +29,13 @@ class TestPricingCalculator:
 
     @pytest.fixture
     def custom_calculator(
-        self, custom_pricing: Dict[str, Dict[str, float]]
+        self, custom_pricing: dict[str, dict[str, float]]
     ) -> PricingCalculator:
         """Create a PricingCalculator with custom pricing."""
         return PricingCalculator(custom_pricing)
 
     @pytest.fixture
-    def sample_entry_data(self) -> Dict[str, Union[str, int, None]]:
+    def sample_entry_data(self) -> dict[str, str | int | None]:
         """Sample entry data for testing."""
         return {
             "model": "claude-3-haiku",
@@ -69,7 +68,7 @@ class TestPricingCalculator:
     def test_init_custom_pricing(
         self,
         custom_calculator: PricingCalculator,
-        custom_pricing: Dict[str, Dict[str, float]],
+        custom_pricing: dict[str, dict[str, float]],
     ) -> None:
         """Test initialization with custom pricing."""
         assert custom_calculator.pricing == custom_pricing
@@ -210,7 +209,7 @@ class TestPricingCalculator:
     def test_calculate_cost_for_entry_auto_mode(
         self,
         calculator: PricingCalculator,
-        sample_entry_data: Dict[str, Union[str, int, None]],
+        sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with AUTO mode."""
         cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.AUTO)
@@ -227,7 +226,7 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with CACHED mode and existing cost."""
-        entry_data: Dict[str, Union[str, int, float]] = {
+        entry_data: dict[str, str | int | float] = {
             "model": "claude-3-haiku",
             "input_tokens": 1000,
             "output_tokens": 500,
@@ -240,7 +239,7 @@ class TestPricingCalculator:
     def test_calculate_cost_for_entry_cached_mode_without_existing_cost(
         self,
         calculator: PricingCalculator,
-        sample_entry_data: Dict[str, Union[str, int, None]],
+        sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with CACHED mode but no existing cost."""
         cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.CACHED)
@@ -253,7 +252,7 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with CALCULATED mode."""
-        entry_data: Dict[str, Union[str, int, float]] = {
+        entry_data: dict[str, str | int | float] = {
             "model": "claude-3-opus",
             "input_tokens": 500,
             "output_tokens": 250,
@@ -270,7 +269,7 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with missing model."""
-        entry_data: Dict[str, int] = {
+        entry_data: dict[str, int] = {
             "input_tokens": 1000,
             "output_tokens": 500,
             # Missing "model" key
@@ -283,7 +282,7 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with minimal data (should use defaults)."""
-        entry_data: Dict[str, str] = {
+        entry_data: dict[str, str] = {
             "model": "claude-3-haiku"
             # Missing token counts - should default to 0
         }
@@ -327,7 +326,7 @@ class TestPricingCalculator:
 
     def test_all_supported_models(self, calculator: PricingCalculator) -> None:
         """Test that all supported models can calculate costs."""
-        supported_models: List[str] = [
+        supported_models: list[str] = [
             "claude-3-opus",
             "claude-3-sonnet",
             "claude-3-haiku",
@@ -375,7 +374,7 @@ class TestPricingCalculator:
     ) -> None:
         """Test integration with model name normalization."""
         # Test with various model name formats that should normalize
-        test_cases: List[tuple[str, str]] = [
+        test_cases: list[tuple[str, str]] = [
             ("claude-3-haiku-20240307", "claude-3-haiku"),
             ("claude-3-opus-20240229", "claude-3-opus"),
             ("claude-3-5-sonnet-20241022", "claude-3-5-sonnet"),

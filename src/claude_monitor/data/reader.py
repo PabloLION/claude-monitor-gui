@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from datetime import timezone as tz
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from claude_monitor.core.data_processors import (
     DataConverter,
@@ -30,11 +30,11 @@ logger = logging.getLogger(__name__)
 
 
 def load_usage_entries(
-    data_path: Optional[str] = None,
-    hours_back: Optional[int] = None,
+    data_path: str | None = None,
+    hours_back: int | None = None,
     mode: CostMode = CostMode.AUTO,
     include_raw: bool = False,
-) -> Tuple[List[UsageEntry], Optional[List[Dict[str, Any]]]]:
+) -> tuple[list[UsageEntry], list[dict[str, Any]] | None]:
     """Load and convert JSONL files to UsageEntry objects.
 
     Args:
@@ -59,9 +59,9 @@ def load_usage_entries(
         logger.warning("No JSONL files found in %s", data_path)
         return [], None
 
-    all_entries: List[UsageEntry] = []
-    raw_entries: Optional[List[Dict[str, Any]]] = [] if include_raw else None
-    processed_hashes: Set[str] = set()
+    all_entries = list[UsageEntry]()
+    raw_entries: list[dict[str, Any]] | None = list[dict[str, Any]]() if include_raw else None
+    processed_hashes = set[str]()
 
     for file_path in jsonl_files:
         entries, raw_data = _process_single_file(
@@ -84,7 +84,7 @@ def load_usage_entries(
     return all_entries, raw_entries
 
 
-def load_all_raw_entries(data_path: Optional[str] = None) -> List[Dict[str, Any]]:
+def load_all_raw_entries(data_path: str | None = None) -> list[dict[str, Any]]:
     """Load all raw JSONL entries without processing.
 
     Args:
@@ -96,7 +96,7 @@ def load_all_raw_entries(data_path: Optional[str] = None) -> List[Dict[str, Any]
     data_path = Path(data_path if data_path else "~/.claude/projects").expanduser()
     jsonl_files = _find_jsonl_files(data_path)
 
-    all_raw_entries: List[Dict[str, Any]] = []
+    all_raw_entries = list[dict[str, Any]]()
     for file_path in jsonl_files:
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -114,7 +114,7 @@ def load_all_raw_entries(data_path: Optional[str] = None) -> List[Dict[str, Any]
     return all_raw_entries
 
 
-def _find_jsonl_files(data_path: Path) -> List[Path]:
+def _find_jsonl_files(data_path: Path) -> list[Path]:
     """Find all .jsonl files in the data directory."""
     if not data_path.exists():
         logger.warning("Data path does not exist: %s", data_path)
@@ -125,15 +125,15 @@ def _find_jsonl_files(data_path: Path) -> List[Path]:
 def _process_single_file(
     file_path: Path,
     mode: CostMode,
-    cutoff_time: Optional[datetime],
-    processed_hashes: Set[str],
+    cutoff_time: datetime | None,
+    processed_hashes: set[str],
     include_raw: bool,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
-) -> Tuple[List[UsageEntry], Optional[List[Dict[str, Any]]]]:
+) -> tuple[list[UsageEntry], list[dict[str, Any]] | None]:
     """Process a single JSONL file."""
-    entries: List[UsageEntry] = []
-    raw_data: Optional[List[Dict[str, Any]]] = [] if include_raw else None
+    entries = list[UsageEntry]()
+    raw_data: list[dict[str, Any]] | None = list[dict[str, Any]]() if include_raw else None
 
     try:
         entries_read = 0
@@ -190,9 +190,9 @@ def _process_single_file(
 
 
 def _should_process_entry(
-    data: Dict[str, Any],
-    cutoff_time: Optional[datetime],
-    processed_hashes: Set[str],
+    data: dict[str, Any],
+    cutoff_time: datetime | None,
+    processed_hashes: set[str],
     timezone_handler: TimezoneHandler,
 ) -> bool:
     """Check if entry should be processed based on time and uniqueness."""
@@ -208,7 +208,7 @@ def _should_process_entry(
     return not (unique_hash and unique_hash in processed_hashes)
 
 
-def _create_unique_hash(data: Dict[str, Any]) -> Optional[str]:
+def _create_unique_hash(data: dict[str, Any]) -> str | None:
     """Create unique hash for deduplication."""
     message_id = data.get("message_id") or (
         data.get("message", {}).get("id")
@@ -220,7 +220,7 @@ def _create_unique_hash(data: Dict[str, Any]) -> Optional[str]:
     return f"{message_id}:{request_id}" if message_id and request_id else None
 
 
-def _update_processed_hashes(data: Dict[str, Any], processed_hashes: Set[str]) -> None:
+def _update_processed_hashes(data: dict[str, Any], processed_hashes: set[str]) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
     if unique_hash:
@@ -228,11 +228,11 @@ def _update_processed_hashes(data: Dict[str, Any], processed_hashes: Set[str]) -
 
 
 def _map_to_usage_entry(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     mode: CostMode,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
-) -> Optional[UsageEntry]:
+) -> UsageEntry | None:
     """Map raw data to UsageEntry with proper cost calculation."""
     try:
         timestamp_processor = TimestampProcessor(timezone_handler)
@@ -246,7 +246,7 @@ def _map_to_usage_entry(
 
         model = DataConverter.extract_model_name(data, default="unknown")
 
-        entry_data: Dict[str, Any] = {
+        entry_data: dict[str, Any] = {
             FIELD_MODEL: model,
             TOKEN_INPUT: token_data["input_tokens"],
             TOKEN_OUTPUT: token_data["output_tokens"],
@@ -292,28 +292,28 @@ class UsageEntryMapper:
         self.pricing_calculator = pricing_calculator
         self.timezone_handler = timezone_handler
 
-    def map(self, data: Dict[str, Any], mode: CostMode) -> Optional[UsageEntry]:
+    def map(self, data: dict[str, Any], mode: CostMode) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
         return _map_to_usage_entry(
             data, mode, self.timezone_handler, self.pricing_calculator
         )
 
-    def _has_valid_tokens(self, tokens: Dict[str, int]) -> bool:
+    def _has_valid_tokens(self, tokens: dict[str, int]) -> bool:
         """Check if tokens are valid (for test compatibility)."""
         return any(v > 0 for v in tokens.values())
 
-    def _extract_timestamp(self, data: Dict[str, Any]) -> Optional[datetime]:
+    def _extract_timestamp(self, data: dict[str, Any]) -> datetime | None:
         """Extract timestamp (for test compatibility)."""
         if "timestamp" not in data:
             return None
         processor = TimestampProcessor(self.timezone_handler)
         return processor.parse_timestamp(data["timestamp"])
 
-    def _extract_model(self, data: Dict[str, Any]) -> str:
+    def _extract_model(self, data: dict[str, Any]) -> str:
         """Extract model name (for test compatibility)."""
         return DataConverter.extract_model_name(data, default="unknown")
 
-    def _extract_metadata(self, data: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_metadata(self, data: dict[str, Any]) -> dict[str, str]:
         """Extract metadata (for test compatibility)."""
         message = data.get("message", {})
         return {

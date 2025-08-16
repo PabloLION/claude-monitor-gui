@@ -1,7 +1,7 @@
 """Tests for calculations module."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -159,7 +159,7 @@ class TestHourlyBurnRateCalculation:
         return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     @pytest.fixture
-    def mock_blocks(self) -> List[Dict[str, Any]]:
+    def mock_blocks(self) -> list[dict[str, Any]]:
         """Create mock blocks for testing."""
         block1 = {
             "start_time": "2024-01-01T11:30:00Z",

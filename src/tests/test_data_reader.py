@@ -9,7 +9,7 @@ import json
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -267,13 +267,13 @@ class TestProcessSingleFile:
     """Test the _process_single_file function."""
 
     @pytest.fixture
-    def mock_components(self) -> Tuple[Mock, Mock]:
+    def mock_components(self) -> tuple[Mock, Mock]:
         timezone_handler = Mock(spec=TimezoneHandler)
         pricing_calculator = Mock(spec=PricingCalculator)
         return timezone_handler, pricing_calculator
 
     def test_process_single_file_valid_data(
-        self, mock_components: Tuple[Mock, Mock]
+        self, mock_components: tuple[Mock, Mock]
     ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
@@ -324,7 +324,7 @@ class TestProcessSingleFile:
         assert raw_data[0] == sample_data[0]
 
     def test_process_single_file_without_raw(
-        self, mock_components: Tuple[Mock, Mock]
+        self, mock_components: tuple[Mock, Mock]
     ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
@@ -637,13 +637,13 @@ class TestMapToUsageEntry:
     """Test the _map_to_usage_entry function."""
 
     @pytest.fixture
-    def mock_components(self) -> Tuple[Mock, Mock]:
+    def mock_components(self) -> tuple[Mock, Mock]:
         timezone_handler = Mock(spec=TimezoneHandler)
         pricing_calculator = Mock(spec=PricingCalculator)
         return timezone_handler, pricing_calculator
 
     def test_map_to_usage_entry_valid_data(
-        self, mock_components: Tuple[Mock, Mock]
+        self, mock_components: tuple[Mock, Mock]
     ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
@@ -708,7 +708,7 @@ class TestMapToUsageEntry:
         assert result.request_id == "req_456"
 
     def test_map_to_usage_entry_no_timestamp(
-        self, mock_components: Tuple[Mock, Mock]
+        self, mock_components: tuple[Mock, Mock]
     ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
@@ -1102,7 +1102,7 @@ class TestUsageEntryMapper:
     """Test the UsageEntryMapper compatibility wrapper."""
 
     @pytest.fixture
-    def mapper_components(self) -> Tuple[Any, Mock, Mock]:
+    def mapper_components(self) -> tuple[Any, Mock, Mock]:
         """Setup mapper components."""
         timezone_handler = Mock(spec=TimezoneHandler)
         pricing_calculator = Mock(spec=PricingCalculator)
@@ -1115,7 +1115,7 @@ class TestUsageEntryMapper:
         return mapper, timezone_handler, pricing_calculator
 
     def test_usage_entry_mapper_init(
-        self, mapper_components: Tuple[Any, Mock, Mock]
+        self, mapper_components: tuple[Any, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper initialization."""
         mapper, timezone_handler, pricing_calculator = mapper_components
@@ -1124,7 +1124,7 @@ class TestUsageEntryMapper:
         assert mapper.timezone_handler == timezone_handler
 
     def test_usage_entry_mapper_map_success(
-        self, mapper_components: Tuple[Any, Mock, Mock]
+        self, mapper_components: tuple[Any, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper.map with valid data."""
         mapper, timezone_handler, pricing_calculator = mapper_components

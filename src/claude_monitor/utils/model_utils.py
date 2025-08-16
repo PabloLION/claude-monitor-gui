@@ -6,7 +6,7 @@ for backward compatibility.
 
 import logging
 import re
-from typing import Dict, Match, Optional
+from re import Match
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def get_model_display_name(model: str) -> str:
     """
     normalized: str = normalize_model_name(model)
 
-    display_names: Dict[str, str] = {
+    display_names: dict[str, str] = {
         "claude-3-opus": "Claude 3 Opus",
         "claude-3-sonnet": "Claude 3 Sonnet",
         "claude-3-haiku": "Claude 3 Haiku",
@@ -89,7 +89,7 @@ def get_model_generation(model: str) -> str:
         return "2"
     if re.search(r"claude-1(?:\D|$)", model_lower) or "claude-instant-1" in model_lower:
         return "1"
-    match: Optional[Match[str]] = re.search(r"claude-(\d)(?:\D|$)", model_lower)
+    match: Match[str] | None = re.search(r"claude-(\d)(?:\D|$)", model_lower)
     if match:
         version: str = match.group(1)
         if version in ["1", "2", "3"]:

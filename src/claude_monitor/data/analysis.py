@@ -5,7 +5,7 @@ Contains the main analyze_usage function and related analysis components.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from claude_monitor.core.calculations import BurnRateCalculator
 from claude_monitor.core.models import CostMode, SessionBlock, UsageEntry
@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 def analyze_usage(
-    hours_back: Optional[int] = 96,
+    hours_back: int | None = 96,
     use_cache: bool = True,
     quick_start: bool = False,
-    data_path: Optional[str] = None,
-) -> Dict[str, Any]:
+    data_path: str | None = None,
+) -> dict[str, Any]:
     """
     Main entry point to generate response_final.json.
 
@@ -83,7 +83,7 @@ def analyze_usage(
             if block_limits:
                 block.limit_messages = block_limits
 
-    metadata: Dict[str, Any] = {
+    metadata: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "hours_analyzed": hours_back or "all",
         "entries_processed": len(entries),
@@ -101,7 +101,7 @@ def analyze_usage(
 
 
 def _process_burn_rates(
-    blocks: List[SessionBlock], calculator: BurnRateCalculator
+    blocks: list[SessionBlock], calculator: BurnRateCalculator
 ) -> None:
     """Process burn rate data for active blocks."""
     for block in blocks:
@@ -119,8 +119,8 @@ def _process_burn_rates(
 
 
 def _create_result(
-    blocks: List[SessionBlock], entries: List[UsageEntry], metadata: Dict[str, Any]
-) -> Dict[str, Any]:
+    blocks: list[SessionBlock], entries: list[UsageEntry], metadata: dict[str, Any]
+) -> dict[str, Any]:
     """Create the final result dictionary."""
     blocks_data = _convert_blocks_to_dict_format(blocks)
 
@@ -137,7 +137,7 @@ def _create_result(
 
 
 def _is_limit_in_block_timerange(
-    limit_info: Dict[str, Any], block: SessionBlock
+    limit_info: dict[str, Any], block: SessionBlock
 ) -> bool:
     """Check if limit timestamp falls within block's time range."""
     limit_timestamp = limit_info["timestamp"]
@@ -148,7 +148,7 @@ def _is_limit_in_block_timerange(
     return block.start_time <= limit_timestamp <= block.end_time
 
 
-def _format_limit_info(limit_info: Dict[str, Any]) -> Dict[str, Any]:
+def _format_limit_info(limit_info: dict[str, Any]) -> dict[str, Any]:
     """Format limit info for block assignment."""
     return {
         "type": limit_info["type"],
@@ -162,9 +162,9 @@ def _format_limit_info(limit_info: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _convert_blocks_to_dict_format(blocks: List[SessionBlock]) -> List[Dict[str, Any]]:
+def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[dict[str, Any]]:
     """Convert blocks to dictionary format for JSON output."""
-    blocks_data: List[Dict[str, Any]] = []
+    blocks_data: list[dict[str, Any]] = []
 
     for block in blocks:
         block_dict = _create_base_block_dict(block)
@@ -174,7 +174,7 @@ def _convert_blocks_to_dict_format(blocks: List[SessionBlock]) -> List[Dict[str,
     return blocks_data
 
 
-def _create_base_block_dict(block: SessionBlock) -> Dict[str, Any]:
+def _create_base_block_dict(block: SessionBlock) -> dict[str, Any]:
     """Create base block dictionary with required fields."""
     return {
         "id": block.id,
@@ -203,7 +203,7 @@ def _create_base_block_dict(block: SessionBlock) -> Dict[str, Any]:
     }
 
 
-def _format_block_entries(entries: List[UsageEntry]) -> List[Dict[str, Any]]:
+def _format_block_entries(entries: list[UsageEntry]) -> list[dict[str, Any]]:
     """Format block entries for JSON output."""
     return [
         {
@@ -221,7 +221,7 @@ def _format_block_entries(entries: List[UsageEntry]) -> List[Dict[str, Any]]:
     ]
 
 
-def _add_optional_block_data(block: SessionBlock, block_dict: Dict[str, Any]) -> None:
+def _add_optional_block_data(block: SessionBlock, block_dict: dict[str, Any]) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
         block_dict["burnRate"] = {

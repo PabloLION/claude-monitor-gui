@@ -1,7 +1,8 @@
 """Unified session monitoring - combines tracking and validation."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -11,13 +12,13 @@ class SessionMonitor:
 
     def __init__(self) -> None:
         """Initialize session monitor."""
-        self._current_session_id: Optional[str] = None
-        self._session_callbacks: List[
-            Callable[[str, str, Optional[Dict[str, Any]]], None]
+        self._current_session_id: str | None = None
+        self._session_callbacks: list[
+            Callable[[str, str, dict[str, Any] | None], None]
         ] = []
-        self._session_history: List[Dict[str, Any]] = []
+        self._session_history: list[dict[str, Any]] = []
 
-    def update(self, data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def update(self, data: dict[str, Any]) -> tuple[bool, list[str]]:
         """Update session tracking with new data and validate.
 
         Args:
@@ -27,22 +28,22 @@ class SessionMonitor:
             Tuple of (is_valid, error_messages)
         """
         is_valid: bool
-        errors: List[str]
+        errors: list[str]
         is_valid, errors = self.validate_data(data)
         if not is_valid:
             logger.warning(f"Data validation failed: {errors}")
             return is_valid, errors
 
-        blocks: List[Dict[str, Any]] = data.get("blocks", [])
+        blocks: list[dict[str, Any]] = data.get("blocks", [])
 
-        active_session: Optional[Dict[str, Any]] = None
+        active_session: dict[str, Any] | None = None
         for block in blocks:
             if block.get("isActive", False):
                 active_session = block
                 break
 
         if active_session:
-            session_id: Optional[str] = active_session.get("id")
+            session_id: str | None = active_session.get("id")
             if session_id is not None and session_id != self._current_session_id:
                 self._on_session_change(
                     self._current_session_id, session_id, active_session
@@ -54,7 +55,7 @@ class SessionMonitor:
 
         return is_valid, errors
 
-    def validate_data(self, data: Any) -> Tuple[bool, List[str]]:
+    def validate_data(self, data: Any) -> tuple[bool, list[str]]:
         """Validate monitoring data structure and content.
 
         Args:
@@ -63,7 +64,7 @@ class SessionMonitor:
         Returns:
             Tuple of (is_valid, error_messages)
         """
-        errors: List[str] = []
+        errors: list[str] = list[str]()
 
         if not isinstance(data, dict):
             errors.append("Data must be a dictionary")
@@ -78,12 +79,12 @@ class SessionMonitor:
                 errors.append("blocks must be a list")
             else:
                 for i, block in enumerate(blocks):
-                    block_errors: List[str] = self._validate_block(block, i)
+                    block_errors: list[str] = self._validate_block(block, i)
                     errors.extend(block_errors)
 
         return len(errors) == 0, errors
 
-    def _validate_block(self, block: Any, index: int) -> List[str]:
+    def _validate_block(self, block: Any, index: int) -> list[str]:
         """Validate individual block.
 
         Args:
@@ -93,13 +94,13 @@ class SessionMonitor:
         Returns:
             List of error messages
         """
-        errors: List[str] = []
+        errors: list[str] = list[str]()
 
         if not isinstance(block, dict):
             errors.append(f"Block {index} must be a dictionary")
             return errors
 
-        required_fields: List[str] = ["id", "isActive", "totalTokens", "costUSD"]
+        required_fields: list[str] = ["id", "isActive", "totalTokens", "costUSD"]
         for field in required_fields:
             if field not in block:
                 errors.append(f"Block {index} missing required field: {field}")
@@ -118,7 +119,7 @@ class SessionMonitor:
         return errors
 
     def _on_session_change(
-        self, old_id: Optional[str], new_id: str, session_data: Dict[str, Any]
+        self, old_id: str | None, new_id: str, session_data: dict[str, Any]
     ) -> None:
         """Handle session change.
 
@@ -162,7 +163,7 @@ class SessionMonitor:
                 logger.exception(f"Session callback error: {e}")
 
     def register_callback(
-        self, callback: Callable[[str, str, Optional[Dict[str, Any]]], None]
+        self, callback: Callable[[str, str, dict[str, Any] | None], None]
     ) -> None:
         """Register session change callback.
 
@@ -173,7 +174,7 @@ class SessionMonitor:
             self._session_callbacks.append(callback)
 
     def unregister_callback(
-        self, callback: Callable[[str, str, Optional[Dict[str, Any]]], None]
+        self, callback: Callable[[str, str, dict[str, Any] | None], None]
     ) -> None:
         """Unregister session change callback.
 
@@ -184,7 +185,7 @@ class SessionMonitor:
             self._session_callbacks.remove(callback)
 
     @property
-    def current_session_id(self) -> Optional[str]:
+    def current_session_id(self) -> str | None:
         """Get current active session ID."""
         return self._current_session_id
 
@@ -194,6 +195,6 @@ class SessionMonitor:
         return len(self._session_history)
 
     @property
-    def session_history(self) -> List[Dict[str, Any]]:
+    def session_history(self) -> list[dict[str, Any]]:
         """Get session history."""
         return self._session_history.copy()

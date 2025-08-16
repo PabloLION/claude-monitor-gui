@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
 from claude_monitor.core.models import (
     BurnRate,
@@ -31,7 +31,7 @@ class BlockLike(Protocol):
 class BurnRateCalculator:
     """Calculates burn rates and usage projections for session blocks."""
 
-    def calculate_burn_rate(self, block: BlockLike) -> Optional[BurnRate]:
+    def calculate_burn_rate(self, block: BlockLike) -> BurnRate | None:
         """Calculate current consumption rate for active blocks."""
         if not block.is_active or block.duration_minutes < 1:
             return None
@@ -56,7 +56,7 @@ class BurnRateCalculator:
             tokens_per_minute=tokens_per_minute, cost_per_hour=cost_per_hour
         )
 
-    def project_block_usage(self, block: BlockLike) -> Optional[UsageProjection]:
+    def project_block_usage(self, block: BlockLike) -> UsageProjection | None:
         """Project total usage if current rate continues."""
         burn_rate = self.calculate_burn_rate(block)
         if not burn_rate:
@@ -92,7 +92,7 @@ class BurnRateCalculator:
 
 
 def calculate_hourly_burn_rate(
-    blocks: List[Dict[str, Any]], current_time: datetime
+    blocks: list[dict[str, Any]], current_time: datetime
 ) -> float:
     """Calculate burn rate based on all sessions in the last hour."""
     if not blocks:
@@ -105,7 +105,7 @@ def calculate_hourly_burn_rate(
 
 
 def _calculate_total_tokens_in_hour(
-    blocks: List[Dict[str, Any]], one_hour_ago: datetime, current_time: datetime
+    blocks: list[dict[str, Any]], one_hour_ago: datetime, current_time: datetime
 ) -> float:
     """Calculate total tokens for all blocks in the last hour."""
     total_tokens = 0.0
@@ -115,7 +115,7 @@ def _calculate_total_tokens_in_hour(
 
 
 def _process_block_for_burn_rate(
-    block: Dict[str, Any], one_hour_ago: datetime, current_time: datetime
+    block: dict[str, Any], one_hour_ago: datetime, current_time: datetime
 ) -> float:
     """Process a single block for burn rate calculation."""
     start_time = _parse_block_start_time(block)
@@ -131,7 +131,7 @@ def _process_block_for_burn_rate(
     )
 
 
-def _parse_block_start_time(block: Dict[str, Any]) -> Optional[datetime]:
+def _parse_block_start_time(block: dict[str, Any]) -> datetime | None:
     """Parse start time from block with error handling."""
     start_time_str = block.get("startTime")
     if not start_time_str:
@@ -147,7 +147,7 @@ def _parse_block_start_time(block: Dict[str, Any]) -> Optional[datetime]:
 
 
 def _determine_session_end_time(
-    block: Dict[str, Any], current_time: datetime
+    block: dict[str, Any], current_time: datetime
 ) -> datetime:
     """Determine session end time based on block status."""
     if block.get("isActive", False):
@@ -165,7 +165,7 @@ def _determine_session_end_time(
 
 
 def _calculate_tokens_in_hour(
-    block: Dict[str, Any],
+    block: dict[str, Any],
     start_time: datetime,
     session_actual_end: datetime,
     one_hour_ago: datetime,
@@ -190,7 +190,7 @@ def _calculate_tokens_in_hour(
 def _log_timestamp_error(
     exception: Exception,
     timestamp_str: str,
-    block_id: Optional[str],
+    block_id: str | None,
     timestamp_type: str,
 ) -> None:
     """Log timestamp parsing errors with context."""

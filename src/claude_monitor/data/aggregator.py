@@ -8,7 +8,8 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+from collections.abc import Callable
 
 from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
 from claude_monitor.utils.time_utils import TimezoneHandler
@@ -36,7 +37,7 @@ class AggregatedStats:
         self.cost += entry.cost_usd
         self.count += 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         return {
             "input_tokens": self.input_tokens,
@@ -55,7 +56,7 @@ class AggregatedPeriod:
     period_key: str
     stats: AggregatedStats = field(default_factory=AggregatedStats)
     models_used: set = field(default_factory=set)
-    model_breakdowns: Dict[str, AggregatedStats] = field(
+    model_breakdowns: dict[str, AggregatedStats] = field(
         default_factory=lambda: defaultdict(AggregatedStats)
     )
 
@@ -71,7 +72,7 @@ class AggregatedPeriod:
         # Add to model-specific stats
         self.model_breakdowns[model].add_entry(entry)
 
-    def to_dict(self, period_type: str) -> Dict[str, Any]:
+    def to_dict(self, period_type: str) -> dict[str, Any]:
         """Convert to dictionary format for display."""
         result = {
             period_type: self.period_key,
@@ -109,12 +110,12 @@ class UsageAggregator:
 
     def _aggregate_by_period(
         self,
-        entries: List[UsageEntry],
+        entries: list[UsageEntry],
         period_key_func: Callable[[datetime], str],
         period_type: str,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """Generic aggregation by time period.
 
         Args:
@@ -127,7 +128,7 @@ class UsageAggregator:
         Returns:
             List of aggregated data dictionaries
         """
-        period_data: Dict[str, AggregatedPeriod] = {}
+        period_data: dict[str, AggregatedPeriod] = {}
 
         for entry in entries:
             # Apply date filters
@@ -156,10 +157,10 @@ class UsageAggregator:
 
     def aggregate_daily(
         self,
-        entries: List[UsageEntry],
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        entries: list[UsageEntry],
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """Aggregate usage data by day.
 
         Args:
@@ -180,10 +181,10 @@ class UsageAggregator:
 
     def aggregate_monthly(
         self,
-        entries: List[UsageEntry],
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        entries: list[UsageEntry],
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """Aggregate usage data by month.
 
         Args:
@@ -203,8 +204,8 @@ class UsageAggregator:
         )
 
     def aggregate_from_blocks(
-        self, blocks: List[SessionBlock], view_type: str = "daily"
-    ) -> List[Dict[str, Any]]:
+        self, blocks: list[SessionBlock], view_type: str = "daily"
+    ) -> list[dict[str, Any]]:
         """Aggregate data from session blocks.
 
         Args:
@@ -232,7 +233,7 @@ class UsageAggregator:
         else:
             return self.aggregate_monthly(all_entries)
 
-    def calculate_totals(self, aggregated_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def calculate_totals(self, aggregated_data: list[dict[str, Any]]) -> dict[str, Any]:
         """Calculate totals from aggregated data.
 
         Args:
@@ -266,7 +267,7 @@ class UsageAggregator:
             "entries_count": total_stats.count,
         }
 
-    def aggregate(self) -> List[Dict[str, Any]]:
+    def aggregate(self) -> list[dict[str, Any]]:
         """Main aggregation method that reads data and returns aggregated results.
 
         Returns:

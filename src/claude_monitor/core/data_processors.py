@@ -5,7 +5,7 @@ code duplication across different components.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -13,13 +13,13 @@ from claude_monitor.utils.time_utils import TimezoneHandler
 class TimestampProcessor:
     """Unified timestamp parsing and processing utilities."""
 
-    def __init__(self, timezone_handler: Optional[TimezoneHandler] = None) -> None:
+    def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
         self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
 
     def parse_timestamp(
-        self, timestamp_value: Union[str, int, float, datetime, None]
-    ) -> Optional[datetime]:
+        self, timestamp_value: str | int | float | datetime | None
+    ) -> datetime | None:
         """Parse timestamp from various formats to UTC datetime.
 
         Args:
@@ -66,7 +66,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: Dict[str, Any]) -> Dict[str, int]:
+    def extract_tokens(data: dict[str, Any]) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -79,7 +79,7 @@ class TokenExtractor:
 
         logger = logging.getLogger(__name__)
 
-        tokens: Dict[str, int] = {
+        tokens: dict[str, int] = {
             "input_tokens": 0,
             "output_tokens": 0,
             "cache_creation_tokens": 0,
@@ -87,7 +87,7 @@ class TokenExtractor:
             "total_tokens": 0,
         }
 
-        token_sources: List[Dict[str, Any]] = []
+        token_sources: list[dict[str, Any]] = []
 
         is_assistant: bool = data.get("type") == "assistant"
 
@@ -173,7 +173,7 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(data: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+    def flatten_nested_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
         """Flatten nested dictionary structure.
 
         Args:
@@ -183,7 +183,7 @@ class DataConverter:
         Returns:
             Flattened dictionary
         """
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
 
         for key, value in data.items():
             new_key = f"{prefix}.{key}" if prefix else key
@@ -197,7 +197,7 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: Dict[str, Any], default: str = "claude-3-5-sonnet"
+        data: dict[str, Any], default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 
@@ -208,7 +208,7 @@ class DataConverter:
         Returns:
             Extracted model name
         """
-        model_candidates: List[Optional[Any]] = [
+        model_candidates: list[Any | None] = [
             data.get("message", {}).get("model"),
             data.get("model"),
             data.get("Model"),

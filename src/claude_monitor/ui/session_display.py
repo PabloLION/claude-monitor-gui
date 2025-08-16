@@ -5,7 +5,7 @@ Handles formatting of active session screens and session data display.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import pytz
 
@@ -380,8 +380,8 @@ class SessionDisplayComponent:
         plan: str,
         timezone: str,
         token_limit: int,
-        current_time: Optional[datetime] = None,
-        args: Optional[Any] = None,
+        current_time: datetime | None = None,
+        args: Any | None = None,
     ) -> list[str]:
         """Format screen for no active session state.
 

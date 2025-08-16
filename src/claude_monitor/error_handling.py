@@ -8,7 +8,7 @@ import os
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 
 class ErrorLevel(str, Enum):
@@ -21,9 +21,9 @@ class ErrorLevel(str, Enum):
 def report_error(
     exception: Exception,
     component: str,
-    context_name: Optional[str] = None,
-    context_data: Optional[Dict[str, Any]] = None,
-    tags: Optional[Dict[str, str]] = None,
+    context_name: str | None = None,
+    context_data: dict[str, Any] | None = None,
+    tags: dict[str, str] | None = None,
     level: ErrorLevel = ErrorLevel.ERROR,
 ) -> None:
     """Report an exception with standardized logging and context.
@@ -55,9 +55,9 @@ def report_error(
 
 def report_file_error(
     exception: Exception,
-    file_path: Union[str, Path],
+    file_path: str | Path,
     operation: str = "read",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: dict[str, Any] | None = None,
 ) -> None:
     """Report file-related errors with standardized context.
 
@@ -84,7 +84,7 @@ def report_file_error(
     )
 
 
-def get_error_context() -> Dict[str, Any]:
+def get_error_context() -> dict[str, Any]:
     """Get standard error context information.
 
     Returns:
@@ -102,7 +102,7 @@ def get_error_context() -> Dict[str, Any]:
 def report_application_startup_error(
     exception: Exception,
     component: str = "application_startup",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: dict[str, Any] | None = None,
 ) -> None:
     """Report application startup-related errors with system context.
 
@@ -127,9 +127,9 @@ def report_application_startup_error(
 
 def report_configuration_error(
     exception: Exception,
-    config_file: Optional[Union[str, Path]] = None,
-    config_section: Optional[str] = None,
-    additional_context: Optional[Dict[str, Any]] = None,
+    config_file: str | Path | None = None,
+    config_section: str | None = None,
+    additional_context: dict[str, Any] | None = None,
 ) -> None:
     """Report configuration-related errors.
 

@@ -8,7 +8,8 @@ import sys
 import time
 import traceback
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Union
+from typing import Any, NoReturn, Optional
+from collections.abc import Callable
 
 from rich.console import Console
 
@@ -37,16 +38,16 @@ from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
 
 # Type aliases for CLI callbacks
-DataUpdateCallback = Callable[[Dict[str, Any]], None]
-SessionChangeCallback = Callable[[str, str, Optional[Dict[str, Any]]], None]
+DataUpdateCallback = Callable[[dict[str, Any]], None]
+SessionChangeCallback = Callable[[str, str, Optional[dict[str, Any]]], None]
 
 
-def get_standard_claude_paths() -> List[str]:
+def get_standard_claude_paths() -> list[str]:
     """Get list of standard Claude data directory paths to check."""
     return ["~/.claude/projects", "~/.config/claude/projects"]
 
 
-def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List[Path]:
+def discover_claude_data_paths(custom_paths: list[str] | None = None) -> list[Path]:
     """Discover all available Claude data directories.
 
     Args:
@@ -55,11 +56,11 @@ def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List
     Returns:
         List of Path objects for existing Claude data directories
     """
-    paths_to_check: List[str] = (
+    paths_to_check: list[str] = (
         [str(p) for p in custom_paths] if custom_paths else get_standard_claude_paths()
     )
 
-    discovered_paths: List[Path] = []
+    discovered_paths: list[Path] = list[Path]()
 
     for path_str in paths_to_check:
         path = Path(path_str).expanduser().resolve()
@@ -69,7 +70,7 @@ def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List
     return discovered_paths
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Main entry point with direct pydantic-settings integration."""
     if argv is None:
         argv = sys.argv[1:]
@@ -120,7 +121,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
     live_display_active: bool = False
 
     try:
-        data_paths: List[Path] = discover_claude_data_paths()
+        data_paths: list[Path] = discover_claude_data_paths()
         if not data_paths:
             print_themed("No Claude data directory found", style="error")
             return
@@ -172,15 +173,15 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             orchestrator.set_args(args)
 
             # Setup monitoring callback
-            def on_data_update(monitoring_data: Dict[str, Any]) -> None:
+            def on_data_update(monitoring_data: dict[str, Any]) -> None:
                 """Handle data updates from orchestrator."""
                 try:
-                    data: Dict[str, Any] = monitoring_data.get("data", {})
-                    blocks: List[Dict[str, Any]] = data.get("blocks", [])
+                    data: dict[str, Any] = monitoring_data.get("data", {})
+                    blocks: list[dict[str, Any]] = data.get("blocks", [])
 
                     logger.debug(f"Display data has {len(blocks)} blocks")
                     if blocks:
-                        active_blocks: List[Dict[str, Any]] = [
+                        active_blocks: list[dict[str, Any]] = [
                             b for b in blocks if b.get("isActive")
                         ]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
@@ -208,7 +209,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
             # Optional: Register session change callback
             def on_session_change(
-                event_type: str, session_id: str, session_data: Optional[Dict[str, Any]]
+                event_type: str, session_id: str, session_data: dict[str, Any] | None
             ) -> None:
                 """Handle session changes."""
                 if event_type == "session_start":
@@ -261,7 +262,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
 
 def _get_initial_token_limit(
-    args: argparse.Namespace, data_path: Union[str, Path]
+    args: argparse.Namespace, data_path: str | Path
 ) -> int:
     """Get initial token limit for the plan."""
     logger = logging.getLogger(__name__)
@@ -283,7 +284,7 @@ def _get_initial_token_limit(
 
         try:
             # Use quick start mode for faster initial load
-            usage_data: Optional[Dict[str, Any]] = analyze_usage(
+            usage_data: dict[str, Any] | None = analyze_usage(
                 hours_back=96 * 2,
                 quick_start=False,
                 use_cache=False,
@@ -291,7 +292,7 @@ def _get_initial_token_limit(
             )
 
             if usage_data and "blocks" in usage_data:
-                blocks: List[Dict[str, Any]] = usage_data["blocks"]
+                blocks: list[dict[str, Any]] = usage_data["blocks"]
                 token_limit: int = get_token_limit(plan, blocks)
 
                 print_themed(
@@ -348,7 +349,7 @@ def handle_application_error(
     sys.exit(exit_code)
 
 
-def validate_cli_environment() -> Optional[str]:
+def validate_cli_environment() -> str | None:
     """Validate the CLI environment and return error message if invalid.
 
     Returns:
@@ -361,7 +362,7 @@ def validate_cli_environment() -> Optional[str]:
 
         # Check for required dependencies
         required_modules = ["rich", "pydantic", "watchdog"]
-        missing_modules: List[str] = []
+        missing_modules: list[str] = list[str]()
 
         for module in required_modules:
             try:

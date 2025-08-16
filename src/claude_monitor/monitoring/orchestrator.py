@@ -3,7 +3,8 @@
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+from collections.abc import Callable
 
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT, get_token_limit
 from claude_monitor.error_handling import report_error
@@ -17,7 +18,7 @@ class MonitoringOrchestrator:
     """Orchestrates monitoring components following SRP."""
 
     def __init__(
-        self, update_interval: int = 10, data_path: Optional[str] = None
+        self, update_interval: int = 10, data_path: str | None = None
     ) -> None:
         """Initialize orchestrator with components.
 
@@ -31,11 +32,11 @@ class MonitoringOrchestrator:
         self.session_monitor: SessionMonitor = SessionMonitor()
 
         self._monitoring: bool = False
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
         self._stop_event: threading.Event = threading.Event()
-        self._update_callbacks: List[Callable[[Dict[str, Any]], None]] = []
-        self._last_valid_data: Optional[Dict[str, Any]] = None
-        self._args: Optional[Any] = None
+        self._update_callbacks: list[Callable[[dict[str, Any]], None]] = []
+        self._last_valid_data: dict[str, Any] | None = None
+        self._args: Any | None = None
         self._first_data_event: threading.Event = threading.Event()
 
     def start(self) -> None:
@@ -78,7 +79,7 @@ class MonitoringOrchestrator:
         self._args = args
 
     def register_update_callback(
-        self, callback: Callable[[Dict[str, Any]], None]
+        self, callback: Callable[[dict[str, Any]], None]
     ) -> None:
         """Register callback for data updates.
 
@@ -90,7 +91,7 @@ class MonitoringOrchestrator:
             logger.debug("Registered update callback")
 
     def register_session_callback(
-        self, callback: Callable[[str, str, Optional[Dict[str, Any]]], None]
+        self, callback: Callable[[str, str, dict[str, Any] | None], None]
     ) -> None:
         """Register callback for session changes.
 
@@ -99,7 +100,7 @@ class MonitoringOrchestrator:
         """
         self.session_monitor.register_callback(callback)
 
-    def force_refresh(self) -> Optional[Dict[str, Any]]:
+    def force_refresh(self) -> dict[str, Any] | None:
         """Force immediate data refresh.
 
         Returns:
@@ -138,7 +139,7 @@ class MonitoringOrchestrator:
 
     def _fetch_and_process_data(
         self, force_refresh: bool = False
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Fetch data and notify callbacks.
 
         Args:
@@ -150,7 +151,7 @@ class MonitoringOrchestrator:
         try:
             # Fetch data
             start_time: float = time.time()
-            data: Optional[Dict[str, Any]] = self.data_manager.get_data(
+            data: dict[str, Any] | None = self.data_manager.get_data(
                 force_refresh=force_refresh
             )
 
@@ -160,7 +161,7 @@ class MonitoringOrchestrator:
 
             # Validate and update session tracking
             is_valid: bool
-            errors: List[str]
+            errors: list[str]
             is_valid, errors = self.session_monitor.update(data)
             if not is_valid:
                 logger.error(f"Data validation failed: {errors}")
@@ -170,7 +171,7 @@ class MonitoringOrchestrator:
             token_limit: int = self._calculate_token_limit(data)
 
             # Prepare monitoring data
-            monitoring_data: Dict[str, Any] = {
+            monitoring_data: dict[str, Any] = {
                 "data": data,
                 "token_limit": token_limit,
                 "args": self._args,
@@ -209,7 +210,7 @@ class MonitoringOrchestrator:
             )
             return None
 
-    def _calculate_token_limit(self, data: Dict[str, Any]) -> int:
+    def _calculate_token_limit(self, data: dict[str, Any]) -> int:
         """Calculate token limit based on plan and data.
 
         Args:
@@ -225,7 +226,7 @@ class MonitoringOrchestrator:
 
         try:
             if plan == "custom":
-                blocks: List[Any] = data.get("blocks", [])
+                blocks: list[Any] = data.get("blocks", [])
                 return get_token_limit(plan, blocks)
             return get_token_limit(plan)
         except Exception as e:

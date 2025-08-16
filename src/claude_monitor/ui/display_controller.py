@@ -6,7 +6,7 @@ Orchestrates UI components and coordinates display updates.
 import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pytz
 from rich.console import Console, Group, RenderableType
@@ -49,7 +49,7 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(self, active_block: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_session_data(self, active_block: dict[str, Any]) -> dict[str, Any]:
         """Extract basic session data from active block."""
         return {
             "tokens_used": active_block.get("totalTokens", 0),
@@ -61,7 +61,7 @@ class DisplayController:
             "end_time_str": active_block.get("endTime"),
         }
 
-    def _calculate_token_limits(self, args: Any, token_limit: int) -> Tuple[int, int]:
+    def _calculate_token_limits(self, args: Any, token_limit: int) -> tuple[int, int]:
         """Calculate token limits based on plan and arguments."""
         if (
             args.plan == "custom"
@@ -72,18 +72,18 @@ class DisplayController:
         return token_limit, token_limit
 
     def _calculate_time_data(
-        self, session_data: Dict[str, Any], current_time: datetime
-    ) -> Dict[str, Any]:
+        self, session_data: dict[str, Any], current_time: datetime
+    ) -> dict[str, Any]:
         """Calculate time-related data for the session."""
         return self.session_calculator.calculate_time_data(session_data, current_time)
 
     def _calculate_cost_predictions(
         self,
-        session_data: Dict[str, Any],
-        time_data: Dict[str, Any],
+        session_data: dict[str, Any],
+        time_data: dict[str, Any],
         args: Any,
-        cost_limit_p90: Optional[float],
-    ) -> Dict[str, Any]:
+        cost_limit_p90: float | None,
+    ) -> dict[str, Any]:
         """Calculate cost-related predictions."""
         # Determine cost limit based on plan
         if Plans.is_valid_plan(args.plan) and cost_limit_p90 is not None:
@@ -103,7 +103,7 @@ class DisplayController:
         cost_limit: float,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """Check and update notification states."""
         notifications = {}
 
@@ -154,7 +154,7 @@ class DisplayController:
         current_time: datetime,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Format times for display."""
         tz_handler = TimezoneHandler(default_tz="Europe/Warsaw")
         timezone_to_use = (
@@ -196,7 +196,7 @@ class DisplayController:
         }
 
     def create_data_display(
-        self, data: Dict[str, Any], args: Any, token_limit: int
+        self, data: dict[str, Any], args: Any, token_limit: int
     ) -> RenderableType:
         """Create display renderable from data.
 
@@ -303,13 +303,13 @@ class DisplayController:
 
     def _process_active_session_data(
         self,
-        active_block: Dict[str, Any],
-        data: Dict[str, Any],
+        active_block: dict[str, Any],
+        data: dict[str, Any],
         args: Any,
         token_limit: int,
         current_time: datetime,
-        cost_limit_p90: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        cost_limit_p90: float | None = None,
+    ) -> dict[str, Any]:
         """Process active session data for display.
 
         Args:
@@ -393,8 +393,8 @@ class DisplayController:
         }
 
     def _calculate_model_distribution(
-        self, raw_per_model_stats: Dict[str, Any]
-    ) -> Dict[str, float]:
+        self, raw_per_model_stats: dict[str, Any]
+    ) -> dict[str, float]:
         """Calculate model distribution percentages from current active session only.
 
         Args:
@@ -439,7 +439,7 @@ class DisplayController:
         self,
         plan: str = "pro",
         timezone: str = "Europe/Warsaw",
-        custom_message: Optional[str] = None,
+        custom_message: str | None = None,
     ) -> RenderableType:
         """Create loading screen display.
 
@@ -490,20 +490,20 @@ class DisplayController:
 class LiveDisplayManager:
     """Manager for Rich Live display operations."""
 
-    def __init__(self, console: Optional[Console] = None) -> None:
+    def __init__(self, console: Console | None = None) -> None:
         """Initialize live display manager.
 
         Args:
             console: Optional Rich console instance
         """
         self._console = console
-        self._live_context: Optional[Live] = None
-        self._current_renderable: Optional[RenderableType] = None
+        self._live_context: Live | None = None
+        self._current_renderable: RenderableType | None = None
 
     def create_live_display(
         self,
         auto_refresh: bool = True,
-        console: Optional[Console] = None,
+        console: Console | None = None,
         refresh_per_second: float = 0.75,
     ) -> Live:
         """Create Rich Live display context.
@@ -533,9 +533,9 @@ class ScreenBufferManager:
 
     def __init__(self) -> None:
         """Initialize screen buffer manager."""
-        self.console: Optional[Console] = None
+        self.console: Console | None = None
 
-    def create_screen_renderable(self, screen_buffer: List[str]) -> Group:
+    def create_screen_renderable(self, screen_buffer: list[str]) -> Group:
         """Create Rich renderable from screen buffer.
 
         Args:
@@ -562,7 +562,7 @@ class ScreenBufferManager:
 
 
 # Legacy functions for backward compatibility
-def create_screen_renderable(screen_buffer: List[str]) -> Group:
+def create_screen_renderable(screen_buffer: list[str]) -> Group:
     """Legacy function - create screen renderable.
 
     Maintained for backward compatibility.
@@ -580,8 +580,8 @@ class SessionCalculator:
         self.tz_handler = TimezoneHandler()
 
     def calculate_time_data(
-        self, session_data: Dict[str, Any], current_time: datetime
-    ) -> Dict[str, Any]:
+        self, session_data: dict[str, Any], current_time: datetime
+    ) -> dict[str, Any]:
         """Calculate time-related data for the session.
 
         Args:
@@ -630,10 +630,10 @@ class SessionCalculator:
 
     def calculate_cost_predictions(
         self,
-        session_data: Dict[str, Any],
-        time_data: Dict[str, Any],
-        cost_limit: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        session_data: dict[str, Any],
+        time_data: dict[str, Any],
+        cost_limit: float | None = None,
+    ) -> dict[str, Any]:
         """Calculate cost-related predictions.
 
         Args:

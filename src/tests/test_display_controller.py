@@ -1,7 +1,7 @@
 """Tests for DisplayController class."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -23,7 +23,7 @@ class TestDisplayController:
             return DisplayController()
 
     @pytest.fixture
-    def sample_active_block(self) -> Dict[str, Any]:
+    def sample_active_block(self) -> dict[str, Any]:
         """Sample active block data."""
         return {
             "isActive": True,
@@ -62,7 +62,7 @@ class TestDisplayController:
         assert controller.notification_manager is not None
 
     def test_extract_session_data(
-        self, controller: Any, sample_active_block: Dict[str, Any]
+        self, controller: Any, sample_active_block: dict[str, Any]
     ) -> None:
         """Test session data extraction."""
         result = controller._extract_session_data(sample_active_block)

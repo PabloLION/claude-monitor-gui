@@ -4,7 +4,6 @@ import argparse
 import json
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Union
 from unittest.mock import Mock, patch
 
 import pytest
@@ -153,7 +152,7 @@ class TestLastUsedParams:
     def test_load_success(self) -> None:
         """Test successful loading of parameters."""
         # Create test data
-        test_data: Dict[str, Union[str, int]] = {
+        test_data: dict[str, str | int] = {
             "theme": "dark",
             "timezone": "Europe/Warsaw",
             "time_format": "24h",
@@ -199,7 +198,7 @@ class TestLastUsedParams:
     def test_clear_success(self) -> None:
         """Test successful clearing of parameters."""
         # Create file first
-        test_data: Dict[str, str] = {"theme": "dark"}
+        test_data: dict[str, str] = {"theme": "dark"}
         with open(self.last_used.params_file, "w") as f:
             json.dump(test_data, f)
 
@@ -261,7 +260,7 @@ class TestSettings:
 
     def test_plan_validator_valid_values(self) -> None:
         """Test plan validator with valid values."""
-        valid_plans: List[str] = ["pro", "max5", "max20", "custom"]
+        valid_plans: list[str] = ["pro", "max5", "max20", "custom"]
 
         for plan in valid_plans:
             settings = Settings(plan=plan, _cli_parse_args=[])
@@ -282,7 +281,7 @@ class TestSettings:
 
     def test_theme_validator_valid_values(self) -> None:
         """Test theme validator with valid values."""
-        valid_themes: List[str] = ["light", "dark", "classic", "auto"]
+        valid_themes: list[str] = ["light", "dark", "classic", "auto"]
 
         for theme in valid_themes:
             settings = Settings(theme=theme, _cli_parse_args=[])
@@ -324,7 +323,7 @@ class TestSettings:
 
     def test_time_format_validator_valid_values(self) -> None:
         """Test time format validator with valid values."""
-        valid_formats: List[str] = ["12h", "24h", "auto"]
+        valid_formats: list[str] = ["12h", "24h", "auto"]
 
         for fmt in valid_formats:
             settings = Settings(time_format=fmt, _cli_parse_args=[])
@@ -337,7 +336,7 @@ class TestSettings:
 
     def test_log_level_validator_valid_values(self) -> None:
         """Test log level validator with valid values."""
-        valid_levels: List[str] = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        valid_levels: list[str] = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
         for level in valid_levels:
             settings = Settings(log_level=level, _cli_parse_args=[])
@@ -408,7 +407,7 @@ class TestSettings:
             params_file = config_dir / "last_used.json"
             params_file.parent.mkdir(parents=True, exist_ok=True)
 
-            test_data: Dict[str, str] = {"theme": "dark", "timezone": "Europe/Warsaw"}
+            test_data: dict[str, str] = {"theme": "dark", "timezone": "Europe/Warsaw"}
             with open(params_file, "w") as f:
                 json.dump(test_data, f)
 
@@ -431,7 +430,7 @@ class TestSettings:
         mock_time_format.return_value = "24h"
 
         # Mock last used params
-        test_params: Dict[str, Union[str, int]] = {
+        test_params: dict[str, str | int] = {
             "theme": "dark",
             "timezone": "Europe/Warsaw",
             "refresh_rate": 15,
@@ -465,7 +464,7 @@ class TestSettings:
         mock_time_format.return_value = "24h"
 
         # Mock last used params
-        test_params: Dict[str, Union[str, int]] = {
+        test_params: dict[str, str | int] = {
             "theme": "dark",
             "timezone": "Europe/Warsaw",
             "refresh_rate": 15,
@@ -560,7 +559,7 @@ class TestSettings:
         mock_timezone.return_value = "UTC"
         mock_time_format.return_value = "24h"
 
-        test_params: Dict[str, int] = {"custom_limit_tokens": 5000}
+        test_params: dict[str, int] = {"custom_limit_tokens": 5000}
 
         with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
             mock_instance = Mock()

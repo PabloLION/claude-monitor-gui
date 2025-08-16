@@ -3,7 +3,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
+from collections.abc import Callable
 
 
 @dataclass(frozen=True)
@@ -19,8 +20,8 @@ def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) 
 
 
 def _extract_sessions(
-    blocks: Sequence[Dict[str, Any]], filter_fn: Callable[[Dict[str, Any]], bool]
-) -> List[int]:
+    blocks: Sequence[dict[str, Any]], filter_fn: Callable[[dict[str, Any]], bool]
+) -> list[int]:
     return [
         block["totalTokens"]
         for block in blocks
@@ -28,7 +29,7 @@ def _extract_sessions(
     ]
 
 
-def _calculate_p90_from_blocks(blocks: Sequence[Dict[str, Any]], cfg: P90Config) -> int:
+def _calculate_p90_from_blocks(blocks: Sequence[dict[str, Any]], cfg: P90Config) -> int:
     hits = _extract_sessions(
         blocks,
         lambda b: (
@@ -50,7 +51,7 @@ def _calculate_p90_from_blocks(blocks: Sequence[Dict[str, Any]], cfg: P90Config)
 
 
 class P90Calculator:
-    def __init__(self, config: Optional[P90Config] = None) -> None:
+    def __init__(self, config: P90Config | None = None) -> None:
         if config is None:
             from claude_monitor.core.plans import (
                 COMMON_TOKEN_LIMITS,
@@ -68,25 +69,25 @@ class P90Calculator:
 
     @lru_cache(maxsize=1)
     def _cached_calc(
-        self, key: int, blocks_tuple: Tuple[Tuple[bool, bool, int], ...]
+        self, key: int, blocks_tuple: tuple[tuple[bool, bool, int], ...]
     ) -> int:
-        blocks: List[Dict[str, Any]] = [
+        blocks: list[dict[str, Any]] = [
             {"isGap": g, "isActive": a, "totalTokens": t} for g, a, t in blocks_tuple
         ]
         return _calculate_p90_from_blocks(blocks, self._cfg)
 
     def calculate_p90_limit(
         self,
-        blocks: Optional[List[Dict[str, Any]]] = None,
+        blocks: list[dict[str, Any]] | None = None,
         use_cache: bool = True,
-    ) -> Optional[int]:
+    ) -> int | None:
         if not blocks:
             return None
         if not use_cache:
             return _calculate_p90_from_blocks(blocks, self._cfg)
         ttl: int = self._cfg.cache_ttl_seconds
         expire_key: int = int(time.time() // ttl)
-        blocks_tuple: Tuple[Tuple[bool, bool, int], ...] = tuple(
+        blocks_tuple: tuple[tuple[bool, bool, int], ...] = tuple(
             (
                 b.get("isGap", False),
                 b.get("isActive", False),

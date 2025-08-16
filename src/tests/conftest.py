@@ -1,7 +1,7 @@
 """Shared pytest fixtures for Claude Monitor tests."""
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Set
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -45,7 +45,7 @@ def sample_usage_entry() -> UsageEntry:
 
 
 @pytest.fixture
-def sample_valid_data() -> Dict[str, Any]:
+def sample_valid_data() -> dict[str, Any]:
     """Sample valid data structure for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -65,7 +65,7 @@ def sample_valid_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_assistant_data() -> Dict[str, Any]:
+def sample_assistant_data() -> dict[str, Any]:
     """Sample assistant-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -85,7 +85,7 @@ def sample_assistant_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_user_data() -> Dict[str, Any]:
+def sample_user_data() -> dict[str, Any]:
     """Sample user-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -103,7 +103,7 @@ def sample_user_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_malformed_data() -> Dict[str, Any]:
+def sample_malformed_data() -> dict[str, Any]:
     """Sample malformed data for testing error handling."""
     return {
         "timestamp": "invalid_timestamp",
@@ -113,7 +113,7 @@ def sample_malformed_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_minimal_data() -> Dict[str, Any]:
+def sample_minimal_data() -> dict[str, Any]:
     """Sample minimal valid data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -123,7 +123,7 @@ def sample_minimal_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_empty_tokens_data() -> Dict[str, Any]:
+def sample_empty_tokens_data() -> dict[str, Any]:
     """Sample data with empty/zero tokens for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -138,7 +138,7 @@ def sample_empty_tokens_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_duplicate_data() -> List[Dict[str, Any]]:
+def sample_duplicate_data() -> list[dict[str, Any]]:
     """Sample data for testing duplicate detection."""
     return [
         {
@@ -163,7 +163,7 @@ def sample_duplicate_data() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def all_cost_modes() -> List[CostMode]:
+def all_cost_modes() -> list[CostMode]:
     """All available cost modes for testing."""
     return [CostMode.AUTO]
 
@@ -175,7 +175,7 @@ def sample_cutoff_time() -> datetime:
 
 
 @pytest.fixture
-def sample_processed_hashes() -> Set[str]:
+def sample_processed_hashes() -> set[str]:
     """Sample processed hashes set for testing."""
     return {"msg_existing:req_existing", "msg_old:req_old"}
 
@@ -300,7 +300,7 @@ def mock_session_monitor() -> Mock:
 
 
 @pytest.fixture
-def sample_monitoring_data() -> Dict[str, Any]:
+def sample_monitoring_data() -> dict[str, Any]:
     """Sample monitoring data structure for testing."""
     return {
         "blocks": [
@@ -323,7 +323,7 @@ def sample_monitoring_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_session_data() -> Dict[str, Any]:
+def sample_session_data() -> dict[str, Any]:
     """Sample session data for testing."""
     return {
         "id": "session_1",
@@ -335,7 +335,7 @@ def sample_session_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_invalid_monitoring_data() -> Dict[str, Any]:
+def sample_invalid_monitoring_data() -> dict[str, Any]:
     """Sample invalid monitoring data for testing."""
     return {
         "blocks": [

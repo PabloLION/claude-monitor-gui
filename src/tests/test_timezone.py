@@ -1,7 +1,6 @@
 """Comprehensive tests for TimezoneHandler class."""
 
 from datetime import datetime, timezone
-from typing import List, Union
 from unittest.mock import Mock, patch
 
 import pytest
@@ -45,7 +44,7 @@ class TestTimezoneHandler:
 
     def test_validate_timezone_valid_timezones(self, handler: TimezoneHandler) -> None:
         """Test timezone validation with valid timezones."""
-        valid_timezones: List[str] = [
+        valid_timezones: list[str] = [
             "UTC",
             "America/New_York",
             "Europe/London",
@@ -60,7 +59,7 @@ class TestTimezoneHandler:
         self, handler: TimezoneHandler
     ) -> None:
         """Test timezone validation with invalid timezones."""
-        invalid_timezones: List[Union[str, None, int]] = [
+        invalid_timezones: list[str | None | int] = [
             "",
             "Invalid/Timezone",
             "Not_A_Timezone",
@@ -292,7 +291,7 @@ class TestTimezoneHandler:
 
     def test_comprehensive_timestamp_parsing(self, handler: TimezoneHandler) -> None:
         """Test comprehensive timestamp parsing with various formats."""
-        test_cases: List[str] = [
+        test_cases: list[str] = [
             "2024-01-15T10:30:45Z",
             "2024-01-15T10:30:45.123Z",
             "2024-01-15T10:30:45+00:00",

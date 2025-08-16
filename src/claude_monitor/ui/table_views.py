@@ -5,7 +5,7 @@ in table format using Rich library.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from rich.align import Align
 from rich.console import Console
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class TableViewsController:
     """Controller for table-based views (daily, monthly)."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         """Initialize the table views controller.
 
         Args:
@@ -85,7 +85,7 @@ class TableViewsController:
         return table
 
     def _add_data_rows(
-        self, table: Table, data_list: List[Dict[str, Any]], period_key: str
+        self, table: Table, data_list: list[dict[str, Any]], period_key: str
     ) -> None:
         """Add data rows to the table.
 
@@ -114,7 +114,7 @@ class TableViewsController:
                 format_currency(data["total_cost"]),
             )
 
-    def _add_totals_row(self, table: Table, totals: Dict[str, Any]) -> None:
+    def _add_totals_row(self, table: Table, totals: dict[str, Any]) -> None:
         """Add totals row to the table.
 
         Args:
@@ -140,8 +140,8 @@ class TableViewsController:
 
     def create_daily_table(
         self,
-        daily_data: List[Dict[str, Any]],
-        totals: Dict[str, Any],
+        daily_data: list[dict[str, Any]],
+        totals: dict[str, Any],
         timezone: str = "UTC",
     ) -> Table:
         """Create a daily statistics table.
@@ -171,8 +171,8 @@ class TableViewsController:
 
     def create_monthly_table(
         self,
-        monthly_data: List[Dict[str, Any]],
-        totals: Dict[str, Any],
+        monthly_data: list[dict[str, Any]],
+        totals: dict[str, Any],
         timezone: str = "UTC",
     ) -> Table:
         """Create a monthly statistics table.
@@ -201,7 +201,7 @@ class TableViewsController:
         return table
 
     def create_summary_panel(
-        self, view_type: str, totals: Dict[str, Any], period: str
+        self, view_type: str, totals: dict[str, Any], period: str
     ) -> Panel:
         """Create a summary panel for the table view.
 
@@ -236,7 +236,7 @@ class TableViewsController:
 
         return panel
 
-    def _format_models(self, models: List[str]) -> str:
+    def _format_models(self, models: list[str]) -> str:
         """Format model names for display.
 
         Args:
@@ -289,8 +289,8 @@ class TableViewsController:
 
     def create_aggregate_table(
         self,
-        aggregate_data: Union[List[Dict[str, Any]], List[Dict[str, Any]]],
-        totals: Dict[str, Any],
+        aggregate_data: list[dict[str, Any]] | list[dict[str, Any]],
+        totals: dict[str, Any],
         view_type: str,
         timezone: str = "UTC",
     ) -> Table:
@@ -317,12 +317,12 @@ class TableViewsController:
 
     def display_aggregated_view(
         self,
-        data: List[Dict[str, Any]],
+        data: list[dict[str, Any]],
         view_mode: str,
         timezone: str,
         plan: str,
         token_limit: int,
-        console: Optional[Console] = None,
+        console: Console | None = None,
     ) -> None:
         """Display aggregated view with table and summary.
 

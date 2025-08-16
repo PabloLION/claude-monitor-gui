@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
@@ -17,7 +17,7 @@ class DataManager:
         self,
         cache_ttl: int = 30,
         hours_back: int = 192,
-        data_path: Optional[str] = None,
+        data_path: str | None = None,
     ) -> None:
         """Initialize data manager with cache and fetch settings.
 
@@ -27,15 +27,15 @@ class DataManager:
             data_path: Path to data directory
         """
         self.cache_ttl: int = cache_ttl
-        self._cache: Optional[Dict[str, Any]] = None
-        self._cache_timestamp: Optional[float] = None
+        self._cache: dict[str, Any] | None = None
+        self._cache_timestamp: float | None = None
 
         self.hours_back: int = hours_back
-        self.data_path: Optional[str] = data_path
-        self._last_error: Optional[str] = None
-        self._last_successful_fetch: Optional[float] = None
+        self.data_path: str | None = data_path
+        self._last_error: str | None = None
+        self._last_successful_fetch: float | None = None
 
-    def get_data(self, force_refresh: bool = False) -> Optional[Dict[str, Any]]:
+    def get_data(self, force_refresh: bool = False) -> dict[str, Any] | None:
         """Get monitoring data with caching and error handling.
 
         Args:
@@ -55,7 +55,7 @@ class DataManager:
                 logger.debug(
                     f"Fetching fresh usage data (attempt {attempt + 1}/{max_retries})"
                 )
-                data: Optional[Dict[str, Any]] = analyze_usage(
+                data: dict[str, Any] | None = analyze_usage(
                     hours_back=self.hours_back,
                     quick_start=False,
                     use_cache=False,
@@ -123,7 +123,7 @@ class DataManager:
         cache_age = time.time() - self._cache_timestamp
         return cache_age <= self.cache_ttl
 
-    def _set_cache(self, data: Dict[str, Any]) -> None:
+    def _set_cache(self, data: dict[str, Any]) -> None:
         """Set cache with current timestamp."""
         self._cache = data
         self._cache_timestamp = time.time()
@@ -136,11 +136,11 @@ class DataManager:
         return time.time() - self._cache_timestamp
 
     @property
-    def last_error(self) -> Optional[str]:
+    def last_error(self) -> str | None:
         """Get last error message."""
         return self._last_error
 
     @property
-    def last_successful_fetch_time(self) -> Optional[float]:
+    def last_successful_fetch_time(self) -> float | None:
         """Get timestamp of last successful fetch."""
         return self._last_successful_fetch

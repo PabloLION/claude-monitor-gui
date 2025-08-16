@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Literal
 
 import pytz
 from pydantic import Field, field_validator
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class LastUsedParams:
     """Manages last used parameters persistence (moved from last_used.py)."""
 
-    def __init__(self, config_dir: Optional[Path] = None) -> None:
+    def __init__(self, config_dir: Path | None = None) -> None:
         """Initialize with config directory."""
         self.config_dir = config_dir or Path.home() / ".claude-monitor"
         self.params_file = self.config_dir / "last_used.json"
@@ -52,7 +52,7 @@ class LastUsedParams:
         except Exception as e:
             logger.warning(f"Failed to save last used params: {e}")
 
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> dict[str, Any]:
         """Load last used parameters."""
         if not self.params_file.exists():
             return {}
@@ -138,7 +138,7 @@ class Settings(BaseSettings):
         description="Display theme (light, dark, classic, auto)",
     )
 
-    custom_limit_tokens: Optional[int] = Field(
+    custom_limit_tokens: int | None = Field(
         default=None, gt=0, description="Token limit for custom plan"
     )
 
@@ -153,13 +153,13 @@ class Settings(BaseSettings):
         description="Display refresh rate per second (0.1-20 Hz). Higher values use more CPU",
     )
 
-    reset_hour: Optional[int] = Field(
+    reset_hour: int | None = Field(
         default=None, ge=0, le=23, description="Reset hour for daily limits (0-23)"
     )
 
     log_level: str = Field(default="INFO", description="Logging level")
 
-    log_file: Optional[Path] = Field(default=None, description="Log file path")
+    log_file: Path | None = Field(default=None, description="Log file path")
 
     debug: bool = Field(
         default=False,
@@ -248,7 +248,7 @@ class Settings(BaseSettings):
         env_settings: Any,
         dotenv_settings: Any,
         file_secret_settings: Any,
-    ) -> Tuple[Any, ...]:
+    ) -> tuple[Any, ...]:
         """Custom sources - only init and last used."""
         _ = (
             settings_cls,
@@ -259,7 +259,7 @@ class Settings(BaseSettings):
         return (init_settings,)
 
     @classmethod
-    def load_with_last_used(cls, argv: Optional[List[str]] = None) -> "Settings":
+    def load_with_last_used(cls, argv: list[str] | None = None) -> "Settings":
         """Load settings with last used params support (default behavior)."""
         if argv and "--version" in argv:
             print(f"claude-monitor {__version__}")

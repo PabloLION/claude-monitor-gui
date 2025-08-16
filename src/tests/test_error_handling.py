@@ -1,6 +1,5 @@
 """Tests for error handling module."""
 
-from typing import Dict
 from unittest.mock import Mock, patch
 
 import pytest
@@ -34,7 +33,7 @@ class TestReportError:
             return e
 
     @pytest.fixture
-    def sample_context_data(self) -> Dict[str, str]:
+    def sample_context_data(self) -> dict[str, str]:
         """Sample context data for testing."""
         return {
             "user_id": "12345",
@@ -43,7 +42,7 @@ class TestReportError:
         }
 
     @pytest.fixture
-    def sample_tags(self) -> Dict[str, str]:
+    def sample_tags(self) -> dict[str, str]:
         """Sample tags for testing."""
         return {"environment": "test", "version": "1.0.0"}
 
@@ -66,8 +65,8 @@ class TestReportError:
         self,
         mock_get_logger: Mock,
         sample_exception: ValueError,
-        sample_context_data: Dict[str, str],
-        sample_tags: Dict[str, str],
+        sample_context_data: dict[str, str],
+        sample_tags: dict[str, str],
     ) -> None:
         """Test error reporting with full context."""
         mock_logger = Mock()
@@ -131,7 +130,7 @@ class TestReportError:
         self,
         mock_get_logger: Mock,
         sample_exception: ValueError,
-        sample_context_data: Dict[str, str],
+        sample_context_data: dict[str, str],
     ) -> None:
         """Test error reporting with context data."""
         mock_logger = Mock()

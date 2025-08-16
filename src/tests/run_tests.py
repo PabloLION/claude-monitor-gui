@@ -4,7 +4,6 @@
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 
 def run_tests() -> int:
@@ -15,7 +14,7 @@ def run_tests() -> int:
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(src_dir)
-    cmd: List[str] = [
+    cmd: list[str] = [
         sys.executable,
         "-m",
         "pytest",

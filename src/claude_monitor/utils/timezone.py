@@ -6,7 +6,7 @@ for backward compatibility.
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from claude_monitor.utils.time_utils import TimezoneHandler, get_time_format_preference
 
@@ -28,7 +28,7 @@ def _detect_timezone_time_preference(args: Any = None) -> bool:
     return get_time_format_preference(args)
 
 
-def parse_timestamp(timestamp_str: str, default_tz: str = "UTC") -> Optional[datetime]:
+def parse_timestamp(timestamp_str: str, default_tz: str = "UTC") -> datetime | None:
     """Parse timestamp string with timezone handling.
 
     Args:

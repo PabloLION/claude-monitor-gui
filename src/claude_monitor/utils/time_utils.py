@@ -8,7 +8,7 @@ import platform
 import re
 import subprocess
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any
 
 import pytz
 from pytz import BaseTzInfo
@@ -22,10 +22,10 @@ except ImportError:
 
     def get_timezone_location(
         timezone_name: str, locale_name: str = "en_US"
-    ) -> Optional[str]:
+    ) -> str | None:
         """Fallback implementation for get_timezone_location when Babel is not available."""
         # Mapping of timezone names to their locations/countries
-        timezone_to_location: Dict[str, str] = {
+        timezone_to_location: dict[str, str] = {
             # United States
             "America/New_York": "United States",
             "America/Chicago": "United States",
@@ -86,10 +86,10 @@ except ImportError:
             "Europe/Malta": "Malta",
         }
 
-        location: Optional[str] = timezone_to_location.get(timezone_name)
+        location: str | None = timezone_to_location.get(timezone_name)
         if location:
             # Add country codes for 12h countries to match expected test behavior
-            country_codes: Dict[str, str] = {
+            country_codes: dict[str, str] = {
                 "United States": "US",
                 "Canada": "CA",
                 "Australia": "AU",
@@ -115,7 +115,7 @@ except ImportError:
                 "Malta": "MT",
             }
 
-            country_code: Optional[str] = country_codes.get(location)
+            country_code: str | None = country_codes.get(location)
             if country_code:
                 return f"{location} {country_code}"
             return location
@@ -129,7 +129,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 class TimeFormatDetector:
     """Unified time format detection using multiple strategies."""
 
-    TWELVE_HOUR_COUNTRIES: Set[str] = {
+    TWELVE_HOUR_COUNTRIES: set[str] = {
         "US",
         "CA",
         "AU",
@@ -156,7 +156,7 @@ class TimeFormatDetector:
     }
 
     @classmethod
-    def detect_from_cli(cls, args: Any) -> Optional[bool]:
+    def detect_from_cli(cls, args: Any) -> bool | None:
         """Detect from CLI arguments.
 
         Returns:
@@ -170,7 +170,7 @@ class TimeFormatDetector:
         return None
 
     @classmethod
-    def detect_from_timezone(cls, timezone_name: str) -> Optional[bool]:
+    def detect_from_timezone(cls, timezone_name: str) -> bool | None:
         """Detect using Babel/timezone data.
 
         Returns:
@@ -180,7 +180,7 @@ class TimeFormatDetector:
             return None
 
         try:
-            location: Optional[str] = get_timezone_location(
+            location: str | None = get_timezone_location(
                 timezone_name, locale_name="en_US"
             )
             if location:
@@ -266,15 +266,15 @@ class TimeFormatDetector:
 
     @classmethod
     def get_preference(
-        cls, args: Any = None, timezone_name: Optional[str] = None
+        cls, args: Any = None, timezone_name: str | None = None
     ) -> bool:
         """Main entry point - returns True for 12h, False for 24h."""
-        cli_pref: Optional[bool] = cls.detect_from_cli(args)
+        cli_pref: bool | None = cls.detect_from_cli(args)
         if cli_pref is not None:
             return cli_pref
 
         if timezone_name:
-            tz_pref: Optional[bool] = cls.detect_from_timezone(timezone_name)
+            tz_pref: bool | None = cls.detect_from_timezone(timezone_name)
             if tz_pref is not None:
                 return tz_pref
 
@@ -287,7 +287,7 @@ class SystemTimeDetector:
     @staticmethod
     def get_timezone() -> str:
         """Detect system timezone."""
-        tz: Optional[str] = os.environ.get("TZ")
+        tz: str | None = os.environ.get("TZ")
         if tz:
             return tz
 
@@ -360,7 +360,7 @@ class TimezoneHandler:
             logger.warning(f"Unknown timezone '{tz_name}', using UTC")
             return pytz.UTC
 
-    def parse_timestamp(self, timestamp_str: str) -> Optional[datetime]:
+    def parse_timestamp(self, timestamp_str: str) -> datetime | None:
         """Parse various timestamp formats."""
         if not timestamp_str:
             return None
@@ -368,7 +368,7 @@ class TimezoneHandler:
         iso_tz_pattern: str = (
             r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})?"
         )
-        match: Optional[re.Match[str]] = re.match(iso_tz_pattern, timestamp_str)
+        match: re.Match[str] | None = re.match(iso_tz_pattern, timestamp_str)
         if match:
             try:
                 base_str: str = match.group(1)
@@ -385,7 +385,7 @@ class TimezoneHandler:
             except Exception as e:
                 logger.debug(f"Failed to parse ISO timestamp: {e}")
 
-        formats: List[str] = [
+        formats: list[str] = [
             "%Y-%m-%d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%d/%m/%Y %H:%M:%S",
@@ -438,13 +438,13 @@ class TimezoneHandler:
         """Convert to UTC (assumes naive datetime is in default tz)."""
         return self.ensure_utc(dt)
 
-    def to_timezone(self, dt: datetime, tz_name: Optional[str] = None) -> datetime:
+    def to_timezone(self, dt: datetime, tz_name: str | None = None) -> datetime:
         """Convert to timezone (defaults to default_tz)."""
         if tz_name is None:
             tz_name = self.default_tz.zone
         return self.convert_to_timezone(dt, tz_name)
 
-    def format_datetime(self, dt: datetime, use_12_hour: Optional[bool] = None) -> str:
+    def format_datetime(self, dt: datetime, use_12_hour: bool | None = None) -> str:
         """Format datetime with timezone info."""
         if use_12_hour is None:
             use_12_hour = TimeFormatDetector.get_preference(
@@ -473,7 +473,7 @@ def get_system_time_format() -> str:
     return SystemTimeDetector.get_time_format()
 
 
-def format_time(minutes: Union[int, float]) -> str:
+def format_time(minutes: int | float) -> str:
     """Format minutes into human-readable time (e.g., '3h 45m')."""
     if minutes < 60:
         return f"{int(minutes)}m"
@@ -503,7 +503,7 @@ def percentage(part: float, whole: float, decimal_places: int = 1) -> float:
 
 def format_display_time(
     dt_obj: datetime,
-    use_12h_format: Optional[bool] = None,
+    use_12h_format: bool | None = None,
     include_seconds: bool = True,
 ) -> str:
     """Central time formatting with 12h/24h support."""
