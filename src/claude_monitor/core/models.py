@@ -255,8 +255,8 @@ class LimitDetectionInfo(TypedDict):
     content: str
     reset_time: NotRequired[datetime]
     wait_minutes: NotRequired[float]
-    raw_data: NotRequired[dict[str, str | int | float]]
-    block_context: NotRequired[dict[str, str | int | float]]
+    raw_data: NotRequired[RawJSONEntry]
+    block_context: NotRequired[dict[str, str | int]]
 
 
 class FormattedLimitInfo(TypedDict):

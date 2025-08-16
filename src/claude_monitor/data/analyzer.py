@@ -8,6 +8,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from claude_monitor.core.models import (
+    LimitDetectionInfo,
     LimitInfo,
     RawJSONEntry,
     SessionBlock,
@@ -79,7 +80,7 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, raw_entries: list[RawJSONEntry]) -> list[LimitInfo]:
+    def detect_limits(self, raw_entries: list[RawJSONEntry]) -> list[LimitDetectionInfo]:
         """Detect token limit messages from raw JSONL entries.
 
         Args:
@@ -88,7 +89,7 @@ class SessionAnalyzer:
         Returns:
             List of detected limit information
         """
-        limits: list[LimitInfo] = []
+        limits: list[LimitDetectionInfo] = []
 
         for raw_data in raw_entries:
             limit_info = self._detect_single_limit(raw_data)
@@ -103,7 +104,7 @@ class SessionAnalyzer:
             return True
 
         return (
-            block.entries
+            len(block.entries) > 0
             and (entry.timestamp - block.entries[-1].timestamp) >= self.session_duration
         )
 
@@ -148,7 +149,7 @@ class SessionAnalyzer:
                 "entries_count": 0,
             }
 
-        model_stats: dict[str, int | float] = block.per_model_stats[model]
+        model_stats = block.per_model_stats[model]
         model_stats["input_tokens"] += entry.input_tokens
         model_stats["output_tokens"] += entry.output_tokens
         model_stats["cache_creation_tokens"] += entry.cache_creation_tokens
@@ -219,7 +220,7 @@ class SessionAnalyzer:
 
     def _detect_single_limit(
         self, raw_data: RawJSONEntry
-    ) -> LimitInfo | None:
+    ) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = raw_data.get("type")
 
@@ -232,7 +233,7 @@ class SessionAnalyzer:
 
     def _process_system_message(
         self, raw_data: RawJSONEntry
-    ) -> LimitInfo | None:
+    ) -> LimitDetectionInfo | None:
         """Process system messages for limit detection."""
         content = raw_data.get("content", "")
         if not isinstance(content, str):
@@ -264,21 +265,21 @@ class SessionAnalyzer:
                 }
 
             # General system limit
-            return {
+            result = {
                 "type": "system_limit",
                 "timestamp": timestamp,
                 "content": content,
-                "reset_time": None,
                 "raw_data": raw_data,
                 "block_context": block_context,
             }
+            return result  # type: ignore[return-value]
 
         except (ValueError, TypeError):
             return None
 
     def _process_user_message(
         self, raw_data: RawJSONEntry
-    ) -> LimitInfo | None:
+    ) -> LimitDetectionInfo | None:
         """Process user messages for tool result limit detection."""
         message = raw_data.get("message", {})
         content_list = message.get("content", [])
@@ -288,7 +289,7 @@ class SessionAnalyzer:
 
         for item in content_list:
             if isinstance(item, dict) and item.get("type") == "tool_result":
-                limit_info = self._process_tool_result(item, raw_data, message)
+                limit_info = self._process_tool_result(item, raw_data, message)  # type: ignore[arg-type]
                 if limit_info:
                     return limit_info
 
@@ -296,7 +297,7 @@ class SessionAnalyzer:
 
     def _process_tool_result(
         self, item: RawJSONEntry, raw_data: RawJSONEntry, message: dict[str, str | int]
-    ) -> LimitInfo | None:
+    ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
         if not isinstance(tool_content, list):
@@ -316,14 +317,19 @@ class SessionAnalyzer:
 
             try:
                 timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
-                return {
+                result = {
                     "type": "general_limit",
                     "timestamp": timestamp,
                     "content": text,
-                    "reset_time": self._parse_reset_timestamp(text),
                     "raw_data": raw_data,
                     "block_context": self._extract_block_context(raw_data, message),
                 }
+                
+                reset_time = self._parse_reset_timestamp(text)
+                if reset_time is not None:
+                    result["reset_time"] = reset_time
+                    
+                return result  # type: ignore[return-value]
             except (ValueError, TypeError):
                 continue
 
@@ -333,19 +339,41 @@ class SessionAnalyzer:
         self, raw_data: RawJSONEntry, message: dict[str, str | int] | None = None
     ) -> dict[str, str | int]:
         """Extract block context from raw data."""
-        context: dict[str, str | int] = {
-            "message_id": raw_data.get("messageId") or raw_data.get("message_id"),
-            "request_id": raw_data.get("requestId") or raw_data.get("request_id"),
-            "session_id": raw_data.get("sessionId") or raw_data.get("session_id"),
-            "version": raw_data.get("version"),
-            "model": raw_data.get("model"),
-        }
+        context: dict[str, str | int] = {}
+        
+        # Safe extraction with defaults
+        message_id = raw_data.get("messageId") or raw_data.get("message_id")
+        if isinstance(message_id, (str, int)):
+            context["message_id"] = message_id
+            
+        request_id = raw_data.get("requestId") or raw_data.get("request_id")
+        if isinstance(request_id, (str, int)):
+            context["request_id"] = request_id
+            
+        session_id = raw_data.get("sessionId") or raw_data.get("session_id")
+        if isinstance(session_id, (str, int)):
+            context["session_id"] = session_id
+            
+        version = raw_data.get("version")
+        if isinstance(version, (str, int)):
+            context["version"] = version
+            
+        model = raw_data.get("model")
+        if isinstance(model, (str, int)):
+            context["model"] = model
 
         if message:
-            context["message_id"] = message.get("id") or context["message_id"]
-            context["model"] = message.get("model") or context["model"]
-            context["usage"] = message.get("usage", {})
-            context["stop_reason"] = message.get("stop_reason")
+            msg_id = message.get("id")
+            if isinstance(msg_id, (str, int)):
+                context["message_id"] = msg_id
+                
+            msg_model = message.get("model")
+            if isinstance(msg_model, (str, int)):
+                context["model"] = msg_model
+                
+            stop_reason = message.get("stop_reason")
+            if isinstance(stop_reason, (str, int)):
+                context["stop_reason"] = stop_reason
 
         return context
 

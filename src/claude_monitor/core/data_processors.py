@@ -5,7 +5,7 @@ code duplication across different components.
 """
 
 from datetime import datetime
-from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage
+from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage, RawJSONEntry
 
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -66,7 +66,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: UsageData) -> dict[str, int]:
+    def extract_tokens(data: UsageData | RawJSONEntry) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -96,7 +96,7 @@ class TokenExtractor:
 
         # Build token sources - these are dicts that might contain token info
         from typing import Any
-        token_sources: list[dict[str, Any] | TokenUsage | UsageData] = []
+        token_sources: list[dict[str, Any] | TokenUsage | UsageData | RawJSONEntry] = []
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
@@ -208,7 +208,7 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: UsageData, default: str = "claude-3-5-sonnet"
+        data: UsageData | RawJSONEntry, default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 

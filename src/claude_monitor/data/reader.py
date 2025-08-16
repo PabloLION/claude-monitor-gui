@@ -44,7 +44,7 @@ def load_usage_entries(
     Returns:
         Tuple of (usage_entries, raw_data) where raw_data is None unless include_raw=True
     """
-    data_path = Path(data_path if data_path else "~/.claude/projects").expanduser()
+    data_path_resolved = Path(data_path if data_path else "~/.claude/projects").expanduser()
     timezone_handler = TimezoneHandler()
     pricing_calculator = PricingCalculator()
 
@@ -52,9 +52,9 @@ def load_usage_entries(
     if hours_back:
         cutoff_time = datetime.now(tz.utc) - timedelta(hours=hours_back)
 
-    jsonl_files = _find_jsonl_files(data_path)
+    jsonl_files = _find_jsonl_files(data_path_resolved)
     if not jsonl_files:
-        logger.warning("No JSONL files found in %s", data_path)
+        logger.warning("No JSONL files found in %s", data_path_resolved)
         return [], None
 
     all_entries = list[UsageEntry]()
@@ -91,8 +91,8 @@ def load_all_raw_entries(data_path: str | None = None) -> list[RawJSONEntry]:
     Returns:
         List of raw JSON dictionaries
     """
-    data_path = Path(data_path if data_path else "~/.claude/projects").expanduser()
-    jsonl_files = _find_jsonl_files(data_path)
+    data_path_resolved = Path(data_path if data_path else "~/.claude/projects").expanduser()
+    jsonl_files = _find_jsonl_files(data_path_resolved)
 
     all_raw_entries = list[RawJSONEntry]()
     for file_path in jsonl_files:

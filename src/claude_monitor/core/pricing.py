@@ -6,7 +6,7 @@ based on token usage and model pricing. It supports all Claude model types
 with caching.
 """
 
-from claude_monitor.core.models import CostMode, JSONSerializable, TokenCounts, normalize_model_name
+from claude_monitor.core.models import CostMode, JSONSerializable, TokenCounts, EntryData, normalize_model_name
 
 
 class PricingCalculator:
@@ -181,7 +181,7 @@ class PricingCalculator:
         return self.FALLBACK_PRICING["sonnet"]
 
     def calculate_cost_for_entry(
-        self, entry_data: dict[str, JSONSerializable], mode: CostMode
+        self, entry_data: dict[str, JSONSerializable] | EntryData, mode: CostMode
     ) -> float:
         """Calculate cost for a single entry (backward compatibility).
 
