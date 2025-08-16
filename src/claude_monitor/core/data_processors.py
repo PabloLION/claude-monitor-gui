@@ -5,7 +5,7 @@ code duplication across different components.
 """
 
 from datetime import datetime
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage
 
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -66,7 +66,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: dict[str, JSONSerializable]) -> dict[str, int]:
+    def extract_tokens(data: UsageData) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -87,93 +87,95 @@ class TokenExtractor:
             "total_tokens": 0,
         }
 
-        token_sources: list[dict[str, JSONSerializable]] = []
+        # Define token extraction helper
+        def safe_get_int(value: int | float | str | None) -> int:
+            """Safely convert value to int."""
+            if isinstance(value, (int, float)):
+                return int(value)
+            return 0
 
+        # Build token sources - these are dicts that might contain token info
+        from typing import Any
+        token_sources: list[dict[str, Any]] = []
+
+        # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
-
+        
         if is_assistant:
-            if (
-                "message" in data
-                and isinstance(data["message"], dict)
-                and "usage" in data["message"]
-                and isinstance(data["message"]["usage"], dict)
-            ):
-                token_sources.append(data["message"]["usage"])
-            if "usage" in data and isinstance(data["usage"], dict):
-                token_sources.append(data["usage"])
+            # Assistant message: check message.usage first, then usage, then top-level
+            if message := data.get("message"):
+                if isinstance(message, dict) and (usage := message.get("usage")):
+                    if isinstance(usage, dict):
+                        token_sources.append(usage)
+            
+            if usage := data.get("usage"):
+                if isinstance(usage, dict):
+                    token_sources.append(usage)
+            
+            # Top-level fields as fallback
             token_sources.append(data)
         else:
-            if "usage" in data and isinstance(data["usage"], dict):
-                token_sources.append(data["usage"])
-            if (
-                "message" in data
-                and isinstance(data["message"], dict)
-                and "usage" in data["message"]
-                and isinstance(data["message"]["usage"], dict)
-            ):
-                token_sources.append(data["message"]["usage"])
+            # User message: check usage first, then message.usage, then top-level
+            if usage := data.get("usage"):
+                if isinstance(usage, dict):
+                    token_sources.append(usage)
+            
+            if message := data.get("message"):
+                if isinstance(message, dict) and (usage := message.get("usage")):
+                    if isinstance(usage, dict):
+                        token_sources.append(usage)
+            
+            # Top-level fields as fallback
             token_sources.append(data)
 
         logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
 
+        # Extract tokens from first valid source
         for source in token_sources:
-            if not isinstance(source, dict):
-                continue
-
-            def safe_get_numeric(source: dict[str, JSONSerializable], key: str, default: int = 0) -> int:
-                """Safely extract numeric value from JSONSerializable dict."""
-                value = source.get(key, default)
-                if isinstance(value, (int, float)):
-                    return int(value)
-                return default
-
+            # Try multiple field name variations
             input_tokens = (
-                safe_get_numeric(source, "input_tokens")
-                or safe_get_numeric(source, "inputTokens")
-                or safe_get_numeric(source, "prompt_tokens")
-                or 0
+                safe_get_int(source.get("input_tokens"))
+                or safe_get_int(source.get("inputTokens"))
+                or safe_get_int(source.get("prompt_tokens"))
             )
 
             output_tokens = (
-                safe_get_numeric(source, "output_tokens")
-                or safe_get_numeric(source, "outputTokens")
-                or safe_get_numeric(source, "completion_tokens")
-                or 0
+                safe_get_int(source.get("output_tokens"))
+                or safe_get_int(source.get("outputTokens"))
+                or safe_get_int(source.get("completion_tokens"))
             )
 
             cache_creation = (
-                safe_get_numeric(source, "cache_creation_tokens")
-                or safe_get_numeric(source, "cache_creation_input_tokens")
-                or safe_get_numeric(source, "cacheCreationInputTokens")
-                or 0
+                safe_get_int(source.get("cache_creation_tokens"))
+                or safe_get_int(source.get("cache_creation_input_tokens"))
+                or safe_get_int(source.get("cacheCreationInputTokens"))
             )
 
             cache_read = (
-                safe_get_numeric(source, "cache_read_input_tokens")
-                or safe_get_numeric(source, "cache_read_tokens")
-                or safe_get_numeric(source, "cacheReadInputTokens")
-                or 0
+                safe_get_int(source.get("cache_read_input_tokens"))
+                or safe_get_int(source.get("cache_read_tokens"))
+                or safe_get_int(source.get("cacheReadInputTokens"))
             )
 
             if input_tokens > 0 or output_tokens > 0:
                 tokens.update(
                     {
-                        "input_tokens": int(input_tokens),
-                        "output_tokens": int(output_tokens),
-                        "cache_creation_tokens": int(cache_creation),
-                        "cache_read_tokens": int(cache_read),
-                        "total_tokens": int(
-                            input_tokens + output_tokens + cache_creation + cache_read
-                        ),
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "cache_creation_tokens": cache_creation,
+                        "cache_read_tokens": cache_read,
+                        "total_tokens": input_tokens + output_tokens + cache_creation + cache_read,
                     }
                 )
                 logger.debug(
                     f"TokenExtractor: Found tokens - input={input_tokens}, output={output_tokens}, cache_creation={cache_creation}, cache_read={cache_read}"
                 )
                 break
-            logger.debug(
-                f"TokenExtractor: No valid tokens in source: {list(source.keys()) if isinstance(source, dict) else 'not a dict'}"
-            )
+            
+            logger.debug(f"TokenExtractor: No valid tokens in source")
+        
+        if tokens["total_tokens"] == 0:
+            logger.debug("TokenExtractor: No tokens found in any source")
 
         return tokens
 
@@ -206,7 +208,7 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: dict[str, JSONSerializable], default: str = "claude-3-5-sonnet"
+        data: UsageData, default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 
@@ -217,23 +219,28 @@ class DataConverter:
         Returns:
             Extracted model name
         """
-        def safe_get_nested(data: dict[str, JSONSerializable], outer_key: str, inner_key: str) -> JSONSerializable | None:
-            """Safely get nested value from dict."""
-            outer_value = data.get(outer_key)
-            if isinstance(outer_value, dict):
-                return outer_value.get(inner_key)
-            return None
-
-        model_candidates: list[JSONSerializable | None] = [
-            safe_get_nested(data, "message", "model"),
-            data.get("model"),
-            data.get("Model"),
-            safe_get_nested(data, "usage", "model"),
-            safe_get_nested(data, "request", "model"),
+        # Check model in priority order with TypedDict fields
+        model_candidates: list[str | None] = [
+            data.get("model"),  # Direct model field
+            None,
         ]
+        
+        # Check nested message.model
+        if message := data.get("message"):
+            if message and isinstance(message, dict):
+                model = message.get("model")
+                if isinstance(model, str):
+                    model_candidates.insert(0, model)
+        
+        # Check nested usage.model
+        if usage := data.get("usage"):
+            if usage and isinstance(usage, dict):
+                model = usage.get("model")
+                if isinstance(model, str):
+                    model_candidates.append(model)
 
         for candidate in model_candidates:
-            if candidate and isinstance(candidate, str):
+            if candidate:
                 return candidate
 
         return default

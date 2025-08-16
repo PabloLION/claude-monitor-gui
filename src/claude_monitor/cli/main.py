@@ -19,7 +19,7 @@ from claude_monitor.cli.bootstrap import ensure_directories
 from claude_monitor.cli.bootstrap import init_timezone
 from claude_monitor.cli.bootstrap import setup_environment
 from claude_monitor.cli.bootstrap import setup_logging
-from claude_monitor.core.models import JSONSerializable, MonitoringData
+from claude_monitor.core.models import BlockData, MonitoringData
 from claude_monitor.core.plans import Plans
 from claude_monitor.core.plans import PlanType
 from claude_monitor.core.plans import get_token_limit
@@ -192,13 +192,13 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                     if not isinstance(blocks_raw, list):
                         return
                     # Validate each block is a dict
-                    blocks: list[dict[str, JSONSerializable]] = [
+                    blocks: list[BlockData] = [
                         block for block in blocks_raw if isinstance(block, dict)
                     ]
 
                     logger.debug(f"Display data has {len(blocks)} blocks")
                     if blocks:
-                        active_blocks: list[dict[str, JSONSerializable]] = [
+                        active_blocks: list[BlockData] = [
                             b for b in blocks if b.get("isActive")
                         ]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
@@ -326,7 +326,7 @@ def _get_initial_token_limit(
                 blocks_raw = usage_data_raw["blocks"]
                 if isinstance(blocks_raw, list):
                     # Validate and convert blocks
-                    blocks: list[dict[str, JSONSerializable]] = []
+                    blocks: list[BlockData] = []
                     if isinstance(blocks_raw, list):
                         for block in blocks_raw:
                             if isinstance(block, dict):

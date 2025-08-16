@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypedDict
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.core.models import BlockData
 
 
 class PlanType(Enum):
@@ -131,7 +131,7 @@ class Plans:
 
     @classmethod
     def get_token_limit(
-        cls, plan: str, blocks: list[dict[str, JSONSerializable]] | None = None
+        cls, plan: str, blocks: list[BlockData] | None = None
     ) -> int:
         """
         Get the token limit for a plan.
@@ -190,7 +190,7 @@ DEFAULT_COST_LIMIT: float = Plans.DEFAULT_COST_LIMIT
 
 
 def get_token_limit(
-    plan: str, blocks: list[dict[str, JSONSerializable]] | None = None
+    plan: str, blocks: list[BlockData] | None = None
 ) -> int:
     """Get token limit for a plan, using P90 for custom plans.
 

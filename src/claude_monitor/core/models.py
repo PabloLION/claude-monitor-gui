@@ -348,6 +348,83 @@ class MonitoringData(TypedDict):
     session_count: int
 
 
+# TypedDict for block data from session analysis
+class BlockData(TypedDict, total=False):
+    """Block data from Claude session analysis."""
+    
+    # Required fields
+    id: str
+    isActive: bool
+    isGap: bool
+    totalTokens: int
+    startTime: str
+    endTime: str
+    costUSD: float
+    
+    # Optional fields
+    actualEndTime: str
+    tokenCounts: dict[str, int]
+    models: list[str]
+    perModelStats: dict[str, dict[str, int | float]]
+    sentMessagesCount: int
+    durationMinutes: float
+    entries: list[dict[str, str | int | float]]
+    entries_count: int
+    burnRate: dict[str, float]
+    projection: dict[str, int | float]
+    limitMessages: list[dict[str, str]]
+
+
+# TypedDict for token usage data
+class TokenUsage(TypedDict, total=False):
+    """Token usage information from various sources."""
+    
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    cache_creation_input_tokens: int  # Alternative field name
+    cache_read_input_tokens: int      # Alternative field name
+    inputTokens: int                  # Alternative field name (camelCase)
+    outputTokens: int                 # Alternative field name (camelCase)
+    cacheCreationInputTokens: int     # Alternative field name (camelCase)
+    cacheReadInputTokens: int         # Alternative field name (camelCase)
+    prompt_tokens: int                # Alternative field name (OpenAI format)
+    completion_tokens: int            # Alternative field name (OpenAI format)
+    total_tokens: int
+
+
+# TypedDict for usage data from JSONL files
+class UsageData(TypedDict, total=False):
+    """Raw usage data from Claude JSONL files."""
+    
+    # Core fields
+    timestamp: str
+    type: str
+    model: str
+    
+    # Token usage (various formats)
+    usage: TokenUsage
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    
+    # Message data
+    message: dict[str, str | int | TokenUsage]
+    message_id: str
+    request_id: str
+    requestId: str  # Alternative field name
+    
+    # Cost data
+    cost: float
+    cost_usd: float
+    
+    # Any other fields from JSON
+    content: str | list[dict[str, str]]
+    role: str
+
+
 # Type aliases for common patterns
 JSONSerializable = (
     str

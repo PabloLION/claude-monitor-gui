@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.core.models import BlockData
 
 from claude_monitor.core.models import (
     BurnRate,
@@ -94,7 +94,7 @@ class BurnRateCalculator:
 
 
 def calculate_hourly_burn_rate(
-    blocks: list[dict[str, JSONSerializable]], current_time: datetime
+    blocks: list[BlockData], current_time: datetime
 ) -> float:
     """Calculate burn rate based on all sessions in the last hour."""
     if not blocks:
@@ -107,7 +107,7 @@ def calculate_hourly_burn_rate(
 
 
 def _calculate_total_tokens_in_hour(
-    blocks: list[dict[str, JSONSerializable]], one_hour_ago: datetime, current_time: datetime
+    blocks: list[BlockData], one_hour_ago: datetime, current_time: datetime
 ) -> float:
     """Calculate total tokens for all blocks in the last hour."""
     total_tokens = 0.0
@@ -117,7 +117,7 @@ def _calculate_total_tokens_in_hour(
 
 
 def _process_block_for_burn_rate(
-    block: dict[str, JSONSerializable], one_hour_ago: datetime, current_time: datetime
+    block: BlockData, one_hour_ago: datetime, current_time: datetime
 ) -> float:
     """Process a single block for burn rate calculation."""
     start_time = _parse_block_start_time(block)
@@ -133,13 +133,10 @@ def _process_block_for_burn_rate(
     )
 
 
-def _parse_block_start_time(block: dict[str, JSONSerializable]) -> datetime | None:
+def _parse_block_start_time(block: BlockData) -> datetime | None:
     """Parse start time from block with error handling."""
     start_time_str = block.get("startTime")
     if not start_time_str:
-        return None
-
-    if not isinstance(start_time_str, str):
         return None
         
     tz_handler = TimezoneHandler()
@@ -156,14 +153,14 @@ def _parse_block_start_time(block: dict[str, JSONSerializable]) -> datetime | No
 
 
 def _determine_session_end_time(
-    block: dict[str, JSONSerializable], current_time: datetime
+    block: BlockData, current_time: datetime
 ) -> datetime:
     """Determine session end time based on block status."""
     if block.get("isActive", False):
         return current_time
 
     actual_end_str = block.get("actualEndTime")
-    if actual_end_str and isinstance(actual_end_str, str):
+    if actual_end_str:
         tz_handler = TimezoneHandler()
         try:
             session_actual_end = tz_handler.parse_timestamp(actual_end_str)
@@ -177,7 +174,7 @@ def _determine_session_end_time(
 
 
 def _calculate_tokens_in_hour(
-    block: dict[str, JSONSerializable],
+    block: BlockData,
     start_time: datetime,
     session_actual_end: datetime,
     one_hour_ago: datetime,
@@ -194,10 +191,8 @@ def _calculate_tokens_in_hour(
     hour_duration = (session_end_in_hour - session_start_in_hour).total_seconds() / 60
 
     if total_session_duration > 0:
-        session_tokens_raw = block.get("totalTokens", 0)
-        if isinstance(session_tokens_raw, (int, float)):
-            session_tokens = float(session_tokens_raw)
-            return session_tokens * (hour_duration / total_session_duration)
+        session_tokens = float(block.get("totalTokens", 0))
+        return session_tokens * (hour_duration / total_session_duration)
     return 0
 
 
