@@ -186,7 +186,7 @@ def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[BlockDict
 
 def _create_base_block_dict(block: SessionBlock) -> BlockDict:
     """Create base block dictionary with required fields."""
-    return {
+    return {  # type: ignore[typeddict-item]
         "id": block.id,
         "isActive": block.is_active,
         "isGap": block.is_gap,

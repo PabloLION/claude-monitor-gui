@@ -116,8 +116,8 @@ class SessionBlock:
     models: list[str] = field(default_factory=list)
     sent_messages_count: int = 0
     cost_usd: float = 0.0
-    limit_messages: list[LimitInfo] = field(default_factory=list)
-    projection_data: ProjectionData | None = None
+    limit_messages: list["FormattedLimitInfo"] = field(default_factory=list)
+    projection_data: "ProjectionDict | None" = None
     burn_rate_snapshot: BurnRate | None = None
 
     @property
