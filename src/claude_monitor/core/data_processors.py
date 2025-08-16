@@ -96,7 +96,7 @@ class TokenExtractor:
 
         # Build token sources - these are dicts that might contain token info
         from typing import Any
-        token_sources: list[dict[str, Any]] = []
+        token_sources: list[dict[str, Any] | TokenUsage | UsageData] = []
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
@@ -235,7 +235,9 @@ class DataConverter:
         # Check nested usage.model
         if usage := data.get("usage"):
             if usage and isinstance(usage, dict):
-                model = usage.get("model")
+                # Cast to dict to handle additional fields not in TokenUsage
+                usage_dict = dict(usage)
+                model = usage_dict.get("model")
                 if isinstance(model, str):
                     model_candidates.append(model)
 

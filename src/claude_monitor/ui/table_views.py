@@ -95,23 +95,46 @@ class TableViewsController:
             period_key: Key to use for period column ('date' or 'month')
         """
         for data in data_list:
-            models_text = self._format_models(data["models_used"])
+            # Safely extract models_used as a list of strings
+            models_used = data.get("models_used", [])
+            if isinstance(models_used, list):
+                models_list = [str(model) for model in models_used if model]
+            else:
+                models_list = []
+            models_text = self._format_models(models_list)
+            
+            # Safely extract numeric values
+            def safe_int(value: JSONSerializable) -> int:
+                if isinstance(value, (int, float)):
+                    return int(value)
+                return 0
+            
             total_tokens = (
-                data["input_tokens"]
-                + data["output_tokens"]
-                + data["cache_creation_tokens"]
-                + data["cache_read_tokens"]
+                safe_int(data.get("input_tokens", 0))
+                + safe_int(data.get("output_tokens", 0))
+                + safe_int(data.get("cache_creation_tokens", 0))
+                + safe_int(data.get("cache_read_tokens", 0))
             )
 
+            # Safely extract period key value
+            period_value = data.get(period_key, "")
+            period_str = str(period_value) if period_value is not None else ""
+            
+            # Safely extract cost
+            def safe_float(value: JSONSerializable) -> float:
+                if isinstance(value, (int, float)):
+                    return float(value)
+                return 0.0
+            
             table.add_row(
-                data[period_key],
+                period_str,
                 models_text,
-                format_number(data["input_tokens"]),
-                format_number(data["output_tokens"]),
-                format_number(data["cache_creation_tokens"]),
-                format_number(data["cache_read_tokens"]),
+                format_number(safe_int(data.get("input_tokens", 0))),
+                format_number(safe_int(data.get("output_tokens", 0))),
+                format_number(safe_int(data.get("cache_creation_tokens", 0))),
+                format_number(safe_int(data.get("cache_read_tokens", 0))),
                 format_number(total_tokens),
-                format_currency(data["total_cost"]),
+                format_currency(safe_float(data.get("total_cost", 0.0))),
             )
 
     def _add_totals_row(self, table: Table, totals: dict[str, JSONSerializable]) -> None:
@@ -121,6 +144,17 @@ class TableViewsController:
             table: Table to add totals to
             totals: Dictionary with total statistics
         """
+        # Helper functions for safe type conversion
+        def safe_int(value: JSONSerializable) -> int:
+            if isinstance(value, (int, float)):
+                return int(value)
+            return 0
+
+        def safe_float(value: JSONSerializable) -> float:
+            if isinstance(value, (int, float)):
+                return float(value)
+            return 0.0
+            
         # Add separator
         table.add_row("", "", "", "", "", "", "", "")
 
@@ -128,14 +162,14 @@ class TableViewsController:
         table.add_row(
             Text("Total", style=self.accent_style),
             "",
-            Text(format_number(totals["input_tokens"]), style=self.accent_style),
-            Text(format_number(totals["output_tokens"]), style=self.accent_style),
+            Text(format_number(safe_int(totals.get("input_tokens", 0))), style=self.accent_style),
+            Text(format_number(safe_int(totals.get("output_tokens", 0))), style=self.accent_style),
             Text(
-                format_number(totals["cache_creation_tokens"]), style=self.accent_style
+                format_number(safe_int(totals.get("cache_creation_tokens", 0))), style=self.accent_style
             ),
-            Text(format_number(totals["cache_read_tokens"]), style=self.accent_style),
-            Text(format_number(totals["total_tokens"]), style=self.accent_style),
-            Text(format_currency(totals["total_cost"]), style=self.success_style),
+            Text(format_number(safe_int(totals.get("cache_read_tokens", 0))), style=self.accent_style),
+            Text(format_number(safe_int(totals.get("total_tokens", 0))), style=self.accent_style),
+            Text(format_currency(safe_float(totals.get("total_cost", 0.0))), style=self.success_style),
         )
 
     def create_daily_table(
@@ -213,13 +247,24 @@ class TableViewsController:
         Returns:
             Rich Panel object
         """
+        # Helper functions for safe type conversion
+        def safe_int(value: JSONSerializable) -> int:
+            if isinstance(value, (int, float)):
+                return int(value)
+            return 0
+
+        def safe_float(value: JSONSerializable) -> float:
+            if isinstance(value, (int, float)):
+                return float(value)
+            return 0.0
+            
         # Create summary text
         summary_lines = [
             f"📊 {view_type.capitalize()} Usage Summary - {period}",
             "",
-            f"Total Tokens: {format_number(totals['total_tokens'])}",
-            f"Total Cost: {format_currency(totals['total_cost'])}",
-            f"Entries: {format_number(totals['entries_count'])}",
+            f"Total Tokens: {format_number(safe_int(totals.get('total_tokens', 0)))}",
+            f"Total Cost: {format_currency(safe_float(totals.get('total_cost', 0.0)))}",
+            f"Entries: {format_number(safe_int(totals.get('entries_count', 0)))}",
         ]
 
         summary_text = Text("\n".join(summary_lines), style=self.value_style)
@@ -342,34 +387,52 @@ class TableViewsController:
                 print(no_data_display)
             return
 
-        # Calculate totals
+        # Helper function for safe numeric extraction
+        def safe_numeric(value: JSONSerializable) -> float:
+            if isinstance(value, (int, float)):
+                return float(value)
+            return 0.0
+        
+        # Calculate totals with safe type conversion
         totals = {
-            "input_tokens": sum(d["input_tokens"] for d in data),
-            "output_tokens": sum(d["output_tokens"] for d in data),
-            "cache_creation_tokens": sum(d["cache_creation_tokens"] for d in data),
-            "cache_read_tokens": sum(d["cache_read_tokens"] for d in data),
+            "input_tokens": sum(safe_numeric(d.get("input_tokens", 0)) for d in data),
+            "output_tokens": sum(safe_numeric(d.get("output_tokens", 0)) for d in data),
+            "cache_creation_tokens": sum(safe_numeric(d.get("cache_creation_tokens", 0)) for d in data),
+            "cache_read_tokens": sum(safe_numeric(d.get("cache_read_tokens", 0)) for d in data),
             "total_tokens": sum(
-                d["input_tokens"]
-                + d["output_tokens"]
-                + d["cache_creation_tokens"]
-                + d["cache_read_tokens"]
+                safe_numeric(d.get("input_tokens", 0))
+                + safe_numeric(d.get("output_tokens", 0))
+                + safe_numeric(d.get("cache_creation_tokens", 0))
+                + safe_numeric(d.get("cache_read_tokens", 0))
                 for d in data
             ),
-            "total_cost": sum(d["total_cost"] for d in data),
-            "entries_count": sum(d.get("entries_count", 0) for d in data),
+            "total_cost": sum(safe_numeric(d.get("total_cost", 0)) for d in data),
+            "entries_count": sum(safe_numeric(d.get("entries_count", 0)) for d in data),
         }
 
         # Determine period for summary
         if view_mode == "daily":
-            period = f"{data[0]['date']} to {data[-1]['date']}" if data else "No data"
+            if data:
+                start_date = str(data[0].get('date', 'Unknown'))
+                end_date = str(data[-1].get('date', 'Unknown'))
+                period = f"{start_date} to {end_date}"
+            else:
+                period = "No data"
         else:  # monthly
-            period = f"{data[0]['month']} to {data[-1]['month']}" if data else "No data"
+            if data:
+                start_month = str(data[0].get('month', 'Unknown'))
+                end_month = str(data[-1].get('month', 'Unknown'))
+                period = f"{start_month} to {end_month}"
+            else:
+                period = "No data"
 
-        # Create and display summary panel
-        summary_panel = self.create_summary_panel(view_mode, totals, period)
+        # Create and display summary panel  
+        # Cast totals to JSONSerializable since float/int are part of JSONSerializable
+        json_totals: dict[str, JSONSerializable] = dict(totals)
+        summary_panel = self.create_summary_panel(view_mode, json_totals, period)
 
         # Create and display table
-        table = self.create_aggregate_table(data, totals, view_mode, timezone)
+        table = self.create_aggregate_table(data, json_totals, view_mode, timezone)
 
         # Display using console if provided
         if console:
