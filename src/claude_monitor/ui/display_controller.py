@@ -75,7 +75,7 @@ class DisplayController:
 
     def _calculate_time_data(
         self, session_data: dict[str, JSONSerializable], current_time: datetime
-    ) -> dict[str, JSONSerializable]:
+    ) -> dict[str, JSONSerializable | datetime]:
         """Calculate time-related data for the session."""
         return self.session_calculator.calculate_time_data(session_data, current_time)
 
@@ -595,14 +595,16 @@ class SessionCalculator:
         """
         # Parse start time
         start_time = None
-        if session_data.get("start_time_str"):
-            start_time = self.tz_handler.parse_timestamp(session_data["start_time_str"])
+        start_time_str = session_data.get("start_time_str")
+        if isinstance(start_time_str, str):
+            start_time = self.tz_handler.parse_timestamp(start_time_str)
             if start_time is not None:
                 start_time = self.tz_handler.ensure_utc(start_time)
 
         # Calculate reset time
-        if session_data.get("end_time_str"):
-            reset_time = self.tz_handler.parse_timestamp(session_data["end_time_str"])
+        end_time_str = session_data.get("end_time_str")
+        if isinstance(end_time_str, str):
+            reset_time = self.tz_handler.parse_timestamp(end_time_str)
             if reset_time is not None:
                 reset_time = self.tz_handler.ensure_utc(reset_time)
         else:
@@ -613,10 +615,13 @@ class SessionCalculator:
             )
 
         # Calculate session times
-        time_to_reset = reset_time - current_time
-        minutes_to_reset = time_to_reset.total_seconds() / 60
+        if reset_time is not None:
+            time_to_reset = reset_time - current_time
+            minutes_to_reset = time_to_reset.total_seconds() / 60
+        else:
+            minutes_to_reset = 0.0
 
-        if start_time and session_data.get("end_time_str"):
+        if start_time and reset_time and session_data.get("end_time_str"):
             total_session_minutes = (reset_time - start_time).total_seconds() / 60
             elapsed_session_minutes = (current_time - start_time).total_seconds() / 60
             elapsed_session_minutes = max(0, elapsed_session_minutes)
