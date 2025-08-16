@@ -445,3 +445,37 @@ class ErrorContext(TypedDict, total=False):
     file_path: NotRequired[str]
     session_id: NotRequired[str]
     additional_info: NotRequired[str]
+
+
+class AggregatedData(TypedDict, total=False):
+    """Type-safe aggregated data for daily/monthly statistics."""
+    
+    # Period identifiers (one of these will be present)
+    date: NotRequired[str]  # For daily aggregation (YYYY-MM-DD)
+    month: NotRequired[str]  # For monthly aggregation (YYYY-MM)
+    
+    # Token statistics
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    
+    # Cost and count
+    total_cost: float
+    entries_count: int
+    
+    # Model information
+    models_used: list[str]
+    model_breakdowns: dict[str, dict[str, int | float]]
+
+
+class AggregatedTotals(TypedDict):
+    """Type-safe totals from aggregated data."""
+    
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    total_tokens: int
+    total_cost: float
+    entries_count: int

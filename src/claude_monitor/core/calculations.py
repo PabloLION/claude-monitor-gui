@@ -24,10 +24,14 @@ class BlockLike(Protocol):
     """Protocol for objects that behave like session blocks."""
 
     is_active: bool
-    duration_minutes: float
     token_counts: TokenCounts
     cost_usd: float
     end_time: datetime
+    
+    @property
+    def duration_minutes(self) -> float:
+        """Get duration in minutes."""
+        ...
 
 
 class BurnRateCalculator:

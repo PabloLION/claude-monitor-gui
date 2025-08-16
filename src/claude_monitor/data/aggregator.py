@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from collections.abc import Callable
 
-from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
+from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name, AggregatedData, AggregatedTotals
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 logger = logging.getLogger(__name__)
@@ -71,10 +71,9 @@ class AggregatedPeriod:
         # Add to model-specific stats
         self.model_breakdowns[model].add_entry(entry)
 
-    def to_dict(self, period_type: str) -> dict[str, str | int | float]:
+    def to_dict(self, period_type: str) -> AggregatedData:
         """Convert to dictionary format for display."""
-        result = {
-            period_type: self.period_key,
+        result: AggregatedData = {
             "input_tokens": self.stats.input_tokens,
             "output_tokens": self.stats.output_tokens,
             "cache_creation_tokens": self.stats.cache_creation_tokens,
@@ -86,6 +85,13 @@ class AggregatedPeriod:
             },
             "entries_count": self.stats.count,
         }
+        
+        # Add the period-specific key
+        if period_type == "date":
+            result["date"] = self.period_key
+        elif period_type == "month":
+            result["month"] = self.period_key
+            
         return result
 
 
@@ -114,7 +120,7 @@ class UsageAggregator:
         period_type: str,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-    ) -> list[dict[str, str | int | float]]:
+    ) -> list[AggregatedData]:
         """Generic aggregation by time period.
 
         Args:
@@ -159,7 +165,7 @@ class UsageAggregator:
         entries: list[UsageEntry],
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-    ) -> list[dict[str, str | int | float]]:
+    ) -> list[AggregatedData]:
         """Aggregate usage data by day.
 
         Args:
@@ -183,7 +189,7 @@ class UsageAggregator:
         entries: list[UsageEntry],
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-    ) -> list[dict[str, str | int | float]]:
+    ) -> list[AggregatedData]:
         """Aggregate usage data by month.
 
         Args:
@@ -204,7 +210,7 @@ class UsageAggregator:
 
     def aggregate_from_blocks(
         self, blocks: list[SessionBlock], view_type: str = "daily"
-    ) -> list[dict[str, str | int | float]]:
+    ) -> list[AggregatedData]:
         """Aggregate data from session blocks.
 
         Args:
@@ -232,7 +238,7 @@ class UsageAggregator:
         else:
             return self.aggregate_monthly(all_entries)
 
-    def calculate_totals(self, aggregated_data: list[dict[str, str | int | float]]) -> dict[str, str | int | float]:
+    def calculate_totals(self, aggregated_data: list[AggregatedData]) -> AggregatedTotals:
         """Calculate totals from aggregated data.
 
         Args:
@@ -244,12 +250,12 @@ class UsageAggregator:
         total_stats = AggregatedStats()
 
         for data in aggregated_data:
-            total_stats.input_tokens += data.get("input_tokens", 0)
-            total_stats.output_tokens += data.get("output_tokens", 0)
-            total_stats.cache_creation_tokens += data.get("cache_creation_tokens", 0)
-            total_stats.cache_read_tokens += data.get("cache_read_tokens", 0)
-            total_stats.cost += data.get("total_cost", 0.0)
-            total_stats.count += data.get("entries_count", 0)
+            total_stats.input_tokens += data["input_tokens"]
+            total_stats.output_tokens += data["output_tokens"]
+            total_stats.cache_creation_tokens += data["cache_creation_tokens"]
+            total_stats.cache_read_tokens += data["cache_read_tokens"]
+            total_stats.cost += data["total_cost"]
+            total_stats.count += data["entries_count"]
 
         return {
             "input_tokens": total_stats.input_tokens,
@@ -266,7 +272,7 @@ class UsageAggregator:
             "entries_count": total_stats.count,
         }
 
-    def aggregate(self) -> list[dict[str, str | int | float]]:
+    def aggregate(self) -> list[AggregatedData]:
         """Main aggregation method that reads data and returns aggregated results.
 
         Returns:
