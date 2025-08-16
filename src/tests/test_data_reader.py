@@ -9,7 +9,6 @@ import json
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -17,6 +16,7 @@ import pytest
 from claude_monitor.core.models import CostMode, UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.data.reader import (
+    UsageEntryMapper,
     _create_unique_hash,
     _find_jsonl_files,
     _map_to_usage_entry,
@@ -1102,7 +1102,7 @@ class TestUsageEntryMapper:
     """Test the UsageEntryMapper compatibility wrapper."""
 
     @pytest.fixture
-    def mapper_components(self) -> tuple[Any, Mock, Mock]:
+    def mapper_components(self) -> tuple[UsageEntryMapper, Mock, Mock]:
         """Setup mapper components."""
         timezone_handler = Mock(spec=TimezoneHandler)
         pricing_calculator = Mock(spec=PricingCalculator)
@@ -1115,7 +1115,7 @@ class TestUsageEntryMapper:
         return mapper, timezone_handler, pricing_calculator
 
     def test_usage_entry_mapper_init(
-        self, mapper_components: tuple[Any, Mock, Mock]
+        self, mapper_components: tuple[UsageEntryMapper, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper initialization."""
         mapper, timezone_handler, pricing_calculator = mapper_components
@@ -1124,7 +1124,7 @@ class TestUsageEntryMapper:
         assert mapper.timezone_handler == timezone_handler
 
     def test_usage_entry_mapper_map_success(
-        self, mapper_components: tuple[Any, Mock, Mock]
+        self, mapper_components: tuple[UsageEntryMapper, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper.map with valid data."""
         mapper, timezone_handler, pricing_calculator = mapper_components

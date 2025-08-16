@@ -5,7 +5,7 @@ Handles formatting of active session screens and session data display.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+import argparse
 
 import pytz
 
@@ -40,7 +40,7 @@ class SessionDisplayData:
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, Any]
+    per_model_stats: dict[str, dict[str, int | float]]
     sent_messages: int
     entries: list[dict]
     predicted_end_str: str
@@ -140,7 +140,7 @@ class SessionDisplayComponent:
         total_session_minutes: float,
         burn_rate: float,
         session_cost: float,
-        per_model_stats: dict[str, Any],
+        per_model_stats: dict[str, dict[str, int | float]],
         sent_messages: int,
         entries: list[dict],
         predicted_end_str: str,
@@ -381,7 +381,7 @@ class SessionDisplayComponent:
         timezone: str,
         token_limit: int,
         current_time: datetime | None = None,
-        args: Any | None = None,
+        args: argparse.Namespace | None = None,
     ) -> list[str]:
         """Format screen for no active session state.
 

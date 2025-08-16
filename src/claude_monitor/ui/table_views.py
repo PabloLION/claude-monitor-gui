@@ -5,9 +5,9 @@ in table format using Rich library.
 """
 
 import logging
-from typing import Any
-
 from rich.align import Align
+
+from claude_monitor.core.models import JSONSerializable
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -85,7 +85,7 @@ class TableViewsController:
         return table
 
     def _add_data_rows(
-        self, table: Table, data_list: list[dict[str, Any]], period_key: str
+        self, table: Table, data_list: list[dict[str, JSONSerializable]], period_key: str
     ) -> None:
         """Add data rows to the table.
 
@@ -114,7 +114,7 @@ class TableViewsController:
                 format_currency(data["total_cost"]),
             )
 
-    def _add_totals_row(self, table: Table, totals: dict[str, Any]) -> None:
+    def _add_totals_row(self, table: Table, totals: dict[str, JSONSerializable]) -> None:
         """Add totals row to the table.
 
         Args:
@@ -140,8 +140,8 @@ class TableViewsController:
 
     def create_daily_table(
         self,
-        daily_data: list[dict[str, Any]],
-        totals: dict[str, Any],
+        daily_data: list[dict[str, JSONSerializable]],
+        totals: dict[str, JSONSerializable],
         timezone: str = "UTC",
     ) -> Table:
         """Create a daily statistics table.
@@ -171,8 +171,8 @@ class TableViewsController:
 
     def create_monthly_table(
         self,
-        monthly_data: list[dict[str, Any]],
-        totals: dict[str, Any],
+        monthly_data: list[dict[str, JSONSerializable]],
+        totals: dict[str, JSONSerializable],
         timezone: str = "UTC",
     ) -> Table:
         """Create a monthly statistics table.
@@ -201,7 +201,7 @@ class TableViewsController:
         return table
 
     def create_summary_panel(
-        self, view_type: str, totals: dict[str, Any], period: str
+        self, view_type: str, totals: dict[str, JSONSerializable], period: str
     ) -> Panel:
         """Create a summary panel for the table view.
 
@@ -289,8 +289,8 @@ class TableViewsController:
 
     def create_aggregate_table(
         self,
-        aggregate_data: list[dict[str, Any]] | list[dict[str, Any]],
-        totals: dict[str, Any],
+        aggregate_data: list[dict[str, JSONSerializable]],
+        totals: dict[str, JSONSerializable],
         view_type: str,
         timezone: str = "UTC",
     ) -> Table:
@@ -317,7 +317,7 @@ class TableViewsController:
 
     def display_aggregated_view(
         self,
-        data: list[dict[str, Any]],
+        data: list[dict[str, JSONSerializable]],
         view_mode: str,
         timezone: str,
         plan: str,

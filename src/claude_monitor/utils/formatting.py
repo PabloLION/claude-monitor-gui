@@ -5,7 +5,7 @@ This module provides formatting functions for currency, time, and display output
 
 import logging
 from datetime import datetime
-from typing import Any
+import argparse
 
 from claude_monitor.utils.time_utils import format_display_time as _format_display_time
 from claude_monitor.utils.time_utils import get_time_format_preference
@@ -38,13 +38,13 @@ def format_currency(amount: float, currency: str = "USD") -> str:
     Returns:
         Formatted currency string
     """
-    amount: float = round(amount, 2)
+    rounded_amount: float = round(amount, 2)
 
     if currency == "USD":
-        if amount >= 0:
-            return f"${amount:,.2f}"
-        return f"$-{abs(amount):,.2f}"
-    return f"{amount:,.2f} {currency}"
+        if rounded_amount >= 0:
+            return f"${rounded_amount:,.2f}"
+        return f"$-{abs(rounded_amount):,.2f}"
+    return f"{rounded_amount:,.2f} {currency}"
 
 
 def format_time(minutes: float) -> str:
@@ -83,7 +83,7 @@ def format_display_time(
     return _format_display_time(dt_obj, use_12h_format, include_seconds)
 
 
-def _get_pref(args: Any) -> bool:
+def _get_pref(args: argparse.Namespace | None) -> bool:
     """Internal helper function for getting time format preference.
 
     Args:

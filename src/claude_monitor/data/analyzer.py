@@ -6,9 +6,10 @@ Combines session block creation and limit detection functionality.
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 from claude_monitor.core.models import (
+    LimitInfo,
+    RawJSONEntry,
     SessionBlock,
     TokenCounts,
     UsageEntry,
@@ -78,7 +79,7 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, raw_entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def detect_limits(self, raw_entries: list[RawJSONEntry]) -> list[LimitInfo]:
         """Detect token limit messages from raw JSONL entries.
 
         Args:
@@ -87,7 +88,7 @@ class SessionAnalyzer:
         Returns:
             List of detected limit information
         """
-        limits: list[dict[str, Any]] = []
+        limits: list[LimitInfo] = []
 
         for raw_data in raw_entries:
             limit_info = self._detect_single_limit(raw_data)
@@ -217,8 +218,8 @@ class SessionAnalyzer:
     # Limit detection methods
 
     def _detect_single_limit(
-        self, raw_data: dict[str, Any]
-    ) -> dict[str, Any] | None:
+        self, raw_data: RawJSONEntry
+    ) -> LimitInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = raw_data.get("type")
 
@@ -230,8 +231,8 @@ class SessionAnalyzer:
         return None
 
     def _process_system_message(
-        self, raw_data: dict[str, Any]
-    ) -> dict[str, Any] | None:
+        self, raw_data: RawJSONEntry
+    ) -> LimitInfo | None:
         """Process system messages for limit detection."""
         content = raw_data.get("content", "")
         if not isinstance(content, str):
@@ -276,8 +277,8 @@ class SessionAnalyzer:
             return None
 
     def _process_user_message(
-        self, raw_data: dict[str, Any]
-    ) -> dict[str, Any] | None:
+        self, raw_data: RawJSONEntry
+    ) -> LimitInfo | None:
         """Process user messages for tool result limit detection."""
         message = raw_data.get("message", {})
         content_list = message.get("content", [])
@@ -294,8 +295,8 @@ class SessionAnalyzer:
         return None
 
     def _process_tool_result(
-        self, item: dict[str, Any], raw_data: dict[str, Any], message: dict[str, Any]
-    ) -> dict[str, Any] | None:
+        self, item: RawJSONEntry, raw_data: RawJSONEntry, message: dict[str, str | int]
+    ) -> LimitInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
         if not isinstance(tool_content, list):
@@ -329,10 +330,10 @@ class SessionAnalyzer:
         return None
 
     def _extract_block_context(
-        self, raw_data: dict[str, Any], message: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+        self, raw_data: RawJSONEntry, message: dict[str, str | int] | None = None
+    ) -> dict[str, str | int]:
         """Extract block context from raw data."""
-        context: dict[str, Any] = {
+        context: dict[str, str | int] = {
             "message_id": raw_data.get("messageId") or raw_data.get("message_id"),
             "request_id": raw_data.get("requestId") or raw_data.get("request_id"),
             "session_id": raw_data.get("sessionId") or raw_data.get("session_id"),

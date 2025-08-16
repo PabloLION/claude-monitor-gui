@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 import pytz
 from pydantic import Field, field_validator
@@ -52,7 +52,7 @@ class LastUsedParams:
         except Exception as e:
             logger.warning(f"Failed to save last used params: {e}")
 
-    def load(self) -> dict[str, Any]:
+    def load(self) -> dict[str, str | int | float | bool]:
         """Load last used parameters."""
         if not self.params_file.exists():
             return {}
@@ -172,7 +172,7 @@ class Settings(BaseSettings):
 
     @field_validator("plan", mode="before")
     @classmethod
-    def validate_plan(cls, v: Any) -> str:
+    def validate_plan(cls, v: str | None) -> str:
         """Validate and normalize plan value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -186,7 +186,7 @@ class Settings(BaseSettings):
 
     @field_validator("view", mode="before")
     @classmethod
-    def validate_view(cls, v: Any) -> str:
+    def validate_view(cls, v: str | None) -> str:
         """Validate and normalize view value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -200,7 +200,7 @@ class Settings(BaseSettings):
 
     @field_validator("theme", mode="before")
     @classmethod
-    def validate_theme(cls, v: Any) -> str:
+    def validate_theme(cls, v: str | None) -> str:
         """Validate and normalize theme value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -243,12 +243,12 @@ class Settings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Any,
-        init_settings: Any,
-        env_settings: Any,
-        dotenv_settings: Any,
-        file_secret_settings: Any,
-    ) -> tuple[Any, ...]:
+        settings_cls: type[BaseSettings],
+        init_settings: BaseSettings,
+        env_settings: BaseSettings,
+        dotenv_settings: BaseSettings,
+        file_secret_settings: BaseSettings,
+    ) -> tuple[BaseSettings, ...]:
         """Custom sources - only init and last used."""
         _ = (
             settings_cls,

@@ -6,9 +6,7 @@ based on token usage and model pricing. It supports all Claude model types
 with caching.
 """
 
-from typing import Any
-
-from claude_monitor.core.models import CostMode, TokenCounts, normalize_model_name
+from claude_monitor.core.models import CostMode, JSONSerializable, TokenCounts, normalize_model_name
 
 
 class PricingCalculator:
@@ -183,7 +181,7 @@ class PricingCalculator:
         return self.FALLBACK_PRICING["sonnet"]
 
     def calculate_cost_for_entry(
-        self, entry_data: dict[str, Any], mode: CostMode
+        self, entry_data: dict[str, JSONSerializable], mode: CostMode
     ) -> float:
         """Calculate cost for a single entry (backward compatibility).
 
@@ -197,29 +195,35 @@ class PricingCalculator:
         # If cost is present and mode is cached, use it
         if mode.value == "cached":
             cost_value = entry_data.get("costUSD") or entry_data.get("cost_usd")
-            if cost_value is not None:
+            if cost_value is not None and isinstance(cost_value, (int, float)):
                 return float(cost_value)
 
         # Otherwise calculate from tokens
         model = entry_data.get("model") or entry_data.get("Model")
-        if not model:
-            raise KeyError("Missing 'model' key in entry_data")
+        if not model or not isinstance(model, str):
+            raise KeyError("Missing or invalid 'model' key in entry_data")
 
         # Extract token counts with different possible keys
-        input_tokens = entry_data.get("inputTokens", 0) or entry_data.get(
+        input_tokens_raw = entry_data.get("inputTokens", 0) or entry_data.get(
             "input_tokens", 0
         )
-        output_tokens = entry_data.get("outputTokens", 0) or entry_data.get(
+        output_tokens_raw = entry_data.get("outputTokens", 0) or entry_data.get(
             "output_tokens", 0
         )
-        cache_creation = entry_data.get(
+        cache_creation_raw = entry_data.get(
             "cacheCreationInputTokens", 0
         ) or entry_data.get("cache_creation_tokens", 0)
-        cache_read = (
+        cache_read_raw = (
             entry_data.get("cacheReadInputTokens", 0)
             or entry_data.get("cache_read_input_tokens", 0)
             or entry_data.get("cache_read_tokens", 0)
         )
+        
+        # Ensure all token values are integers
+        input_tokens = int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
+        output_tokens = int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
+        cache_creation = int(cache_creation_raw) if isinstance(cache_creation_raw, (int, float)) else 0
+        cache_read = int(cache_read_raw) if isinstance(cache_read_raw, (int, float)) else 0
 
         return self.calculate_cost(
             model=model,

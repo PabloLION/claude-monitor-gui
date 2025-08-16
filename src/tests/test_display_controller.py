@@ -1,11 +1,11 @@
 """Tests for DisplayController class."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 
+from claude_monitor.core.models import JSONSerializable
 from claude_monitor.ui.display_controller import (
     DisplayController,
     LiveDisplayManager,
@@ -18,12 +18,12 @@ class TestDisplayController:
     """Test cases for DisplayController class."""
 
     @pytest.fixture
-    def controller(self) -> Any:
+    def controller(self) -> DisplayController:
         with patch("claude_monitor.ui.display_controller.NotificationManager"):
             return DisplayController()
 
     @pytest.fixture
-    def sample_active_block(self) -> dict[str, Any]:
+    def sample_active_block(self) -> dict[str, JSONSerializable]:
         """Sample active block data."""
         return {
             "isActive": True,
@@ -52,7 +52,7 @@ class TestDisplayController:
         args.custom_limit_tokens = None
         return args
 
-    def test_init(self, controller: Any) -> None:
+    def test_init(self, controller: DisplayController) -> None:
         """Test DisplayController initialization."""
         assert controller.session_display is not None
         assert controller.loading_screen is not None
@@ -62,7 +62,7 @@ class TestDisplayController:
         assert controller.notification_manager is not None
 
     def test_extract_session_data(
-        self, controller: Any, sample_active_block: dict[str, Any]
+        self, controller: DisplayController, sample_active_block: dict[str, JSONSerializable]
     ) -> None:
         """Test session data extraction."""
         result = controller._extract_session_data(sample_active_block)

@@ -3,7 +3,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from claude_monitor.core.models import JSONSerializable
 
 
 class NotificationManager:
@@ -32,7 +32,7 @@ class NotificationManager:
 
         try:
             with open(self.notification_file) as f:
-                states: dict[str, dict[str, Any]] = json.load(f)
+                states: dict[str, dict[str, JSONSerializable]] = json.load(f)
                 # Convert timestamp strings back to datetime objects
                 parsed_states: dict[
                     str, dict[str, bool | datetime | None]
@@ -42,9 +42,10 @@ class NotificationManager:
                         "triggered": bool(state.get("triggered", False)),
                         "timestamp": None,
                     }
-                    if state.get("timestamp"):
+                    timestamp_value = state.get("timestamp")
+                    if timestamp_value and isinstance(timestamp_value, str):
                         parsed_state["timestamp"] = datetime.fromisoformat(
-                            state["timestamp"]
+                            timestamp_value
                         )
                     parsed_states[key] = parsed_state
                 return parsed_states

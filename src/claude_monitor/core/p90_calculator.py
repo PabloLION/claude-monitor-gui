@@ -3,8 +3,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
-from typing import Any
 from collections.abc import Callable
+
+from claude_monitor.core.models import JSONSerializable
 
 
 @dataclass(frozen=True)
@@ -20,26 +21,27 @@ def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) 
 
 
 def _extract_sessions(
-    blocks: Sequence[dict[str, Any]], filter_fn: Callable[[dict[str, Any]], bool]
+    blocks: Sequence[dict[str, JSONSerializable]], filter_fn: Callable[[dict[str, JSONSerializable]], bool]
 ) -> list[int]:
-    return [
-        block["totalTokens"]
-        for block in blocks
-        if filter_fn(block) and block.get("totalTokens", 0) > 0
-    ]
+    tokens: list[int] = []
+    for block in blocks:
+        if filter_fn(block):
+            total_tokens_raw = block.get("totalTokens", 0)
+            if isinstance(total_tokens_raw, (int, float)) and total_tokens_raw > 0:
+                tokens.append(int(total_tokens_raw))
+    return tokens
 
 
-def _calculate_p90_from_blocks(blocks: Sequence[dict[str, Any]], cfg: P90Config) -> int:
-    hits = _extract_sessions(
-        blocks,
-        lambda b: (
-            not b.get("isGap", False)
-            and not b.get("isActive", False)
-            and _did_hit_limit(
-                b.get("totalTokens", 0), cfg.common_limits, cfg.limit_threshold
-            )
-        ),
-    )
+def _calculate_p90_from_blocks(blocks: Sequence[dict[str, JSONSerializable]], cfg: P90Config) -> int:
+    def hit_limit_filter(b: dict[str, JSONSerializable]) -> bool:
+        if b.get("isGap", False) or b.get("isActive", False):
+            return False
+        total_tokens_raw = b.get("totalTokens", 0)
+        if isinstance(total_tokens_raw, (int, float)):
+            return _did_hit_limit(int(total_tokens_raw), cfg.common_limits, cfg.limit_threshold)
+        return False
+    
+    hits = _extract_sessions(blocks, hit_limit_filter)
     if not hits:
         hits = _extract_sessions(
             blocks, lambda b: not b.get("isGap", False) and not b.get("isActive", False)
@@ -71,14 +73,14 @@ class P90Calculator:
     def _cached_calc(
         self, key: int, blocks_tuple: tuple[tuple[bool, bool, int], ...]
     ) -> int:
-        blocks: list[dict[str, Any]] = [
+        blocks: list[dict[str, JSONSerializable]] = [
             {"isGap": g, "isActive": a, "totalTokens": t} for g, a, t in blocks_tuple
         ]
         return _calculate_p90_from_blocks(blocks, self._cfg)
 
     def calculate_p90_limit(
         self,
-        blocks: list[dict[str, Any]] | None = None,
+        blocks: list[dict[str, JSONSerializable]] | None = None,
         use_cache: bool = True,
     ) -> int | None:
         if not blocks:
@@ -89,9 +91,13 @@ class P90Calculator:
         expire_key: int = int(time.time() // ttl)
         blocks_tuple: tuple[tuple[bool, bool, int], ...] = tuple(
             (
-                b.get("isGap", False),
-                b.get("isActive", False),
-                b.get("totalTokens", 0),
+                bool(b.get("isGap", False)),
+                bool(b.get("isActive", False)),
+                (
+                    int(total_tokens) 
+                    if isinstance((total_tokens := b.get("totalTokens", 0)), (int, float)) 
+                    else 0
+                ),
             )
             for b in blocks
         )

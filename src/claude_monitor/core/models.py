@@ -2,10 +2,12 @@
 Core data structures for usage tracking, session management, and token calculations.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import NotRequired
+from typing import TypedDict
 
 
 class CostMode(Enum):
@@ -68,6 +70,35 @@ class UsageProjection:
     remaining_minutes: float
 
 
+# TypedDict classes needed by dataclasses
+class ModelStats(TypedDict):
+    """Statistics for a specific model's usage."""
+
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    cost_usd: float
+    entries_count: int
+
+
+class LimitInfo(TypedDict):
+    """Information about detected usage limits."""
+
+    timestamp: datetime
+    limit_type: str
+    tokens_used: int
+    message: str
+
+
+class ProjectionData(TypedDict):
+    """Projection data for session blocks."""
+
+    projected_total_tokens: int
+    projected_total_cost: float
+    remaining_minutes: float
+
+
 @dataclass
 class SessionBlock:
     """Aggregated session block representing a 5-hour period."""
@@ -81,12 +112,12 @@ class SessionBlock:
     is_gap: bool = False
     burn_rate: BurnRate | None = None
     actual_end_time: datetime | None = None
-    per_model_stats: dict[str, dict[str, Any]] = field(default_factory=dict)
+    per_model_stats: dict[str, ModelStats] = field(default_factory=dict)
     models: list[str] = field(default_factory=list)
     sent_messages_count: int = 0
     cost_usd: float = 0.0
-    limit_messages: list[dict[str, Any]] = field(default_factory=list)
-    projection_data: dict[str, Any] | None = None
+    limit_messages: list[LimitInfo] = field(default_factory=list)
+    projection_data: ProjectionData | None = None
     burn_rate_snapshot: BurnRate | None = None
 
     @property
@@ -103,7 +134,9 @@ class SessionBlock:
     def duration_minutes(self) -> float:
         """Get duration in minutes."""
         if self.actual_end_time:
-            duration = (self.actual_end_time - self.start_time).total_seconds() / 60
+            duration = (
+                self.actual_end_time - self.start_time
+            ).total_seconds() / 60
         else:
             duration = (self.end_time - self.start_time).total_seconds() / 60
         return max(duration, 1.0)
@@ -158,3 +191,180 @@ def normalize_model_name(model: str) -> str:
         return "claude-3-haiku"
 
     return model
+
+
+class RawJSONEntry(TypedDict, total=False):
+    """Raw JSONL entry from Claude usage data files."""
+
+    timestamp: str
+    message_id: NotRequired[str]
+    request_id: NotRequired[str]
+    requestId: NotRequired[str]  # Alternative field name
+    message: NotRequired[dict[str, str | int]]
+    cost: NotRequired[float]
+    cost_usd: NotRequired[float]
+    model: NotRequired[str]
+    # Token usage fields
+    usage: NotRequired[dict[str, int]]
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+
+
+class EntryData(TypedDict):
+    """Processed entry data for cost calculation."""
+
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    cost_usd: float | None
+
+
+class TokenCountsDict(TypedDict):
+    """Token counts dictionary for JSON output."""
+
+    inputTokens: int
+    outputTokens: int
+    cacheCreationInputTokens: int
+    cacheReadInputTokens: int
+
+
+class BurnRateDict(TypedDict):
+    """Burn rate dictionary for JSON output."""
+
+    tokensPerMinute: float
+    costPerHour: float
+
+
+class ProjectionDict(TypedDict):
+    """Projection data dictionary for JSON output."""
+
+    totalTokens: int
+    totalCost: float
+    remainingMinutes: float
+
+
+class LimitDetectionInfo(TypedDict):
+    """Raw limit detection info from analyzer."""
+
+    type: str
+    timestamp: datetime
+    content: str
+    reset_time: NotRequired[datetime]
+    wait_minutes: NotRequired[float]
+    raw_data: NotRequired[dict[str, str | int | float]]
+    block_context: NotRequired[dict[str, str | int | float]]
+
+
+class FormattedLimitInfo(TypedDict):
+    """Formatted limit info for JSON output."""
+
+    type: str
+    timestamp: str
+    content: str
+    reset_time: str | None
+
+
+class BlockEntry(TypedDict):
+    """Formatted usage entry for JSON output."""
+
+    timestamp: str
+    inputTokens: int
+    outputTokens: int
+    cacheCreationTokens: int
+    cacheReadInputTokens: int
+    costUSD: float
+    model: str
+    messageId: str
+    requestId: str
+
+
+class AnalysisMetadata(TypedDict):
+    """Metadata from usage analysis."""
+
+    generated_at: str
+    hours_analyzed: int | str
+    entries_processed: int
+    blocks_created: int
+    limits_detected: int
+    load_time_seconds: float
+    transform_time_seconds: float
+    cache_used: bool
+    quick_start: bool
+
+
+class BlockDict(TypedDict):
+    """Serialized SessionBlock for JSON output."""
+
+    id: str
+    isActive: bool
+    isGap: bool
+    startTime: str
+    endTime: str
+    actualEndTime: str | None
+    tokenCounts: TokenCountsDict
+    totalTokens: int
+    costUSD: float
+    models: list[str]
+    perModelStats: dict[str, ModelStats]
+    sentMessagesCount: int
+    durationMinutes: float
+    entries: list[BlockEntry]
+    entries_count: int
+    burnRate: NotRequired[BurnRateDict]
+    projection: NotRequired[ProjectionDict]
+    limitMessages: NotRequired[list[FormattedLimitInfo]]
+
+
+class AnalysisResult(TypedDict):
+    """Result from analyze_usage function."""
+
+    blocks: list[BlockDict]
+    metadata: AnalysisMetadata
+    entries_count: int
+    total_tokens: int
+    total_cost: float
+
+
+class SessionData(TypedDict):
+    """Data for session monitoring."""
+
+    session_id: str
+    block_data: BlockDict
+    is_new: bool
+    timestamp: datetime
+
+
+class MonitoringData(TypedDict):
+    """Data from monitoring orchestrator."""
+
+    data: AnalysisResult
+    token_limit: int
+    args: object  # argparse.Namespace
+    session_id: str | None
+    session_count: int
+
+
+# Type aliases for common patterns
+JSONSerializable = (
+    str
+    | int
+    | float
+    | bool
+    | None
+    | dict[str, "JSONSerializable"]
+    | list["JSONSerializable"]
+)
+
+
+class ErrorContext(TypedDict, total=False):
+    """Context data for error reporting."""
+
+    component: str
+    operation: str
+    file_path: NotRequired[str]
+    session_id: NotRequired[str]
+    additional_info: NotRequired[str]

@@ -8,7 +8,7 @@ import platform
 import re
 import subprocess
 from datetime import datetime
-from typing import Any
+import argparse
 
 import pytz
 from pytz import BaseTzInfo
@@ -156,7 +156,7 @@ class TimeFormatDetector:
     }
 
     @classmethod
-    def detect_from_cli(cls, args: Any) -> bool | None:
+    def detect_from_cli(cls, args: argparse.Namespace) -> bool | None:
         """Detect from CLI arguments.
 
         Returns:
@@ -266,10 +266,10 @@ class TimeFormatDetector:
 
     @classmethod
     def get_preference(
-        cls, args: Any = None, timezone_name: str | None = None
+        cls, args: argparse.Namespace | None = None, timezone_name: str | None = None
     ) -> bool:
         """Main entry point - returns True for 12h, False for 24h."""
-        cli_pref: bool | None = cls.detect_from_cli(args)
+        cli_pref: bool | None = cls.detect_from_cli(args) if args is not None else None
         if cli_pref is not None:
             return cli_pref
 
@@ -380,8 +380,10 @@ class TimezoneHandler:
                 if tz_str == "Z":
                     return dt.replace(tzinfo=pytz.UTC)
                 if tz_str:
-                    return datetime.fromisoformat(timestamp_str)
-                return self.default_tz.localize(dt)
+                    result = datetime.fromisoformat(timestamp_str)
+                    return result if isinstance(result, datetime) else None
+                result = self.default_tz.localize(dt)
+                return result if isinstance(result, datetime) else None
             except Exception as e:
                 logger.debug(f"Failed to parse ISO timestamp: {e}")
 
@@ -397,7 +399,8 @@ class TimezoneHandler:
         for fmt in formats:
             try:
                 parsed_dt: datetime = datetime.strptime(timestamp_str, fmt)
-                return self.default_tz.localize(parsed_dt)
+                result = self.default_tz.localize(parsed_dt)
+                return result
             except ValueError:
                 continue
 
@@ -458,7 +461,7 @@ class TimezoneHandler:
         return dt.strftime(fmt)
 
 
-def get_time_format_preference(args: Any = None) -> bool:
+def get_time_format_preference(args: argparse.Namespace | None = None) -> bool:
     """Get time format preference - returns True for 12h, False for 24h."""
     return TimeFormatDetector.get_preference(args)
 

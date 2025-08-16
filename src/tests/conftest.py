@@ -1,12 +1,11 @@
 """Shared pytest fixtures for Claude Monitor tests."""
 
 from datetime import datetime, timezone
-from typing import Any
 from unittest.mock import Mock
 
 import pytest
 
-from claude_monitor.core.models import CostMode, UsageEntry
+from claude_monitor.core.models import CostMode, UsageEntry, JSONSerializable
 
 
 @pytest.fixture
@@ -45,7 +44,7 @@ def sample_usage_entry() -> UsageEntry:
 
 
 @pytest.fixture
-def sample_valid_data() -> dict[str, Any]:
+def sample_valid_data() -> dict[str, JSONSerializable]:
     """Sample valid data structure for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -65,7 +64,7 @@ def sample_valid_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_assistant_data() -> dict[str, Any]:
+def sample_assistant_data() -> dict[str, JSONSerializable]:
     """Sample assistant-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -85,7 +84,7 @@ def sample_assistant_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_user_data() -> dict[str, Any]:
+def sample_user_data() -> dict[str, JSONSerializable]:
     """Sample user-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -103,7 +102,7 @@ def sample_user_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_malformed_data() -> dict[str, Any]:
+def sample_malformed_data() -> dict[str, JSONSerializable]:
     """Sample malformed data for testing error handling."""
     return {
         "timestamp": "invalid_timestamp",
@@ -113,7 +112,7 @@ def sample_malformed_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_minimal_data() -> dict[str, Any]:
+def sample_minimal_data() -> dict[str, JSONSerializable]:
     """Sample minimal valid data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -123,7 +122,7 @@ def sample_minimal_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_empty_tokens_data() -> dict[str, Any]:
+def sample_empty_tokens_data() -> dict[str, JSONSerializable]:
     """Sample data with empty/zero tokens for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -138,7 +137,7 @@ def sample_empty_tokens_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_duplicate_data() -> list[dict[str, Any]]:
+def sample_duplicate_data() -> list[dict[str, JSONSerializable]]:
     """Sample data for testing duplicate detection."""
     return [
         {
@@ -300,7 +299,7 @@ def mock_session_monitor() -> Mock:
 
 
 @pytest.fixture
-def sample_monitoring_data() -> dict[str, Any]:
+def sample_monitoring_data() -> dict[str, JSONSerializable]:
     """Sample monitoring data structure for testing."""
     return {
         "blocks": [
@@ -323,7 +322,7 @@ def sample_monitoring_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_session_data() -> dict[str, Any]:
+def sample_session_data() -> dict[str, JSONSerializable]:
     """Sample session data for testing."""
     return {
         "id": "session_1",
@@ -335,7 +334,7 @@ def sample_session_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_invalid_monitoring_data() -> dict[str, Any]:
+def sample_invalid_monitoring_data() -> dict[str, JSONSerializable]:
     """Sample invalid monitoring data for testing."""
     return {
         "blocks": [

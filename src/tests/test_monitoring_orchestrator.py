@@ -2,11 +2,11 @@
 
 import threading
 import time
-from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 
+from claude_monitor.core.models import JSONSerializable
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
 
@@ -352,7 +352,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process with validation failure."""
-        test_data: dict[str, list[Any]] = {"blocks": []}
+        test_data: dict[str, list[JSONSerializable]] = {"blocks": []}
         orchestrator.data_manager.get_data.return_value = test_data
         orchestrator.session_monitor.update.return_value = (False, ["Validation error"])
 
@@ -463,7 +463,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test token limit calculation without args."""
-        data: dict[str, list[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
         result = orchestrator._calculate_token_limit(data)
 
@@ -477,7 +477,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         args.plan = "pro"
         orchestrator.set_args(args)
 
-        data: dict[str, list[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
@@ -519,7 +519,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         args.plan = "pro"
         orchestrator.set_args(args)
 
-        data: dict[str, list[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
@@ -549,9 +549,9 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.data_manager.get_data.return_value = test_data
 
         # Setup callback to capture monitoring data
-        captured_data: list[dict[str, Any]] = []
+        captured_data: list[dict[str, JSONSerializable]] = []
 
-        def capture_callback(data: dict[str, Any]) -> None:
+        def capture_callback(data: dict[str, JSONSerializable]) -> None:
             captured_data.append(data)
 
         orchestrator.register_update_callback(capture_callback)
@@ -626,7 +626,7 @@ class TestMonitoringOrchestratorIntegration:
         # Mock session monitor to return different session IDs
         session_call_count = 0
 
-        def mock_update(data: dict[str, Any]) -> tuple[bool, list[str]]:
+        def mock_update(data: dict[str, JSONSerializable]) -> tuple[bool, list[str]]:
             nonlocal session_call_count
             session_call_count += 1
             orchestrator.session_monitor.current_session_id = (
@@ -638,7 +638,7 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.session_monitor.update.side_effect = mock_update
 
         # Capture callback data
-        captured_data: list[dict[str, Any]] = []
+        captured_data: list[dict[str, JSONSerializable]] = []
         orchestrator.register_update_callback(lambda data: captured_data.append(data))
 
         with patch(

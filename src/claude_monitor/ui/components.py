@@ -3,9 +3,9 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from typing import Any
-
 from rich.console import Console, RenderableType
+
+from claude_monitor.core.models import JSONSerializable
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
 from claude_monitor.ui.layouts import HeaderManager
@@ -188,8 +188,8 @@ class AdvancedCustomLimitDisplay:
         self.console = console
 
     def _collect_session_data(
-        self, blocks: list[dict[str, Any]] | None = None
-    ) -> dict[str, Any]:
+        self, blocks: list[dict[str, JSONSerializable]] | None = None
+    ) -> dict[str, JSONSerializable]:
         """Collect session data and identify limit sessions."""
         if not blocks:
             return {
@@ -232,7 +232,7 @@ class AdvancedCustomLimitDisplay:
             "active_sessions": active_sessions,
         }
 
-    def _is_limit_session(self, session: dict[str, Any]) -> bool:
+    def _is_limit_session(self, session: dict[str, JSONSerializable]) -> bool:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
@@ -248,8 +248,8 @@ class AdvancedCustomLimitDisplay:
         return False
 
     def _calculate_session_percentiles(
-        self, sessions: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+        self, sessions: list[dict[str, JSONSerializable]]
+    ) -> dict[str, JSONSerializable]:
         """Calculate percentiles from session data."""
         if not sessions:
             return {

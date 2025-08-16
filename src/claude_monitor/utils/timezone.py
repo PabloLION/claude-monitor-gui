@@ -6,14 +6,14 @@ for backward compatibility.
 
 import logging
 from datetime import datetime
-from typing import Any
+import argparse
 
 from claude_monitor.utils.time_utils import TimezoneHandler, get_time_format_preference
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def _detect_timezone_time_preference(args: Any = None) -> bool:
+def _detect_timezone_time_preference(args: argparse.Namespace | None = None) -> bool:
     """Detect timezone and time preference.
 
     This is a backward compatibility function that delegates to the new

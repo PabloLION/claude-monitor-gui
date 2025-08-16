@@ -5,7 +5,7 @@ code duplication across different components.
 """
 
 from datetime import datetime
-from typing import Any
+from claude_monitor.core.models import JSONSerializable
 
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -66,7 +66,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: dict[str, Any]) -> dict[str, int]:
+    def extract_tokens(data: dict[str, JSONSerializable]) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -87,7 +87,7 @@ class TokenExtractor:
             "total_tokens": 0,
         }
 
-        token_sources: list[dict[str, Any]] = []
+        token_sources: list[dict[str, JSONSerializable]] = []
 
         is_assistant: bool = data.get("type") == "assistant"
 
@@ -173,7 +173,7 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    def flatten_nested_dict(data: dict[str, JSONSerializable], prefix: str = "") -> dict[str, JSONSerializable]:
         """Flatten nested dictionary structure.
 
         Args:
@@ -183,7 +183,7 @@ class DataConverter:
         Returns:
             Flattened dictionary
         """
-        result: dict[str, Any] = {}
+        result: dict[str, JSONSerializable] = {}
 
         for key, value in data.items():
             new_key = f"{prefix}.{key}" if prefix else key
@@ -197,7 +197,7 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: dict[str, Any], default: str = "claude-3-5-sonnet"
+        data: dict[str, JSONSerializable], default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 
@@ -208,7 +208,7 @@ class DataConverter:
         Returns:
             Extracted model name
         """
-        model_candidates: list[Any | None] = [
+        model_candidates: list[JSONSerializable | None] = [
             data.get("message", {}).get("model"),
             data.get("model"),
             data.get("Model"),
@@ -223,7 +223,7 @@ class DataConverter:
         return default
 
     @staticmethod
-    def to_serializable(obj: Any) -> Any:
+    def to_serializable(obj: JSONSerializable) -> JSONSerializable:
         """Convert object to JSON-serializable format.
 
         Args:

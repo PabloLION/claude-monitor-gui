@@ -8,7 +8,6 @@ import os
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any
 
 
 class ErrorLevel(str, Enum):
@@ -22,7 +21,7 @@ def report_error(
     exception: Exception,
     component: str,
     context_name: str | None = None,
-    context_data: dict[str, Any] | None = None,
+    context_data: dict[str, str | int | float | None] | None = None,
     tags: dict[str, str] | None = None,
     level: ErrorLevel = ErrorLevel.ERROR,
 ) -> None:
@@ -57,7 +56,7 @@ def report_file_error(
     exception: Exception,
     file_path: str | Path,
     operation: str = "read",
-    additional_context: dict[str, Any] | None = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report file-related errors with standardized context.
 
@@ -84,7 +83,7 @@ def report_file_error(
     )
 
 
-def get_error_context() -> dict[str, Any]:
+def get_error_context() -> dict[str, str | int | float | None]:
     """Get standard error context information.
 
     Returns:
@@ -102,7 +101,7 @@ def get_error_context() -> dict[str, Any]:
 def report_application_startup_error(
     exception: Exception,
     component: str = "application_startup",
-    additional_context: dict[str, Any] | None = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report application startup-related errors with system context.
 
@@ -129,7 +128,7 @@ def report_configuration_error(
     exception: Exception,
     config_file: str | Path | None = None,
     config_section: str | None = None,
-    additional_context: dict[str, Any] | None = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report configuration-related errors.
 

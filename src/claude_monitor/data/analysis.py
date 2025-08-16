@@ -5,10 +5,20 @@ Contains the main analyze_usage function and related analysis components.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+# TypedDict imports moved to models.py for centralization
 
 from claude_monitor.core.calculations import BurnRateCalculator
-from claude_monitor.core.models import CostMode, SessionBlock, UsageEntry
+from claude_monitor.core.models import (
+    AnalysisMetadata,
+    AnalysisResult,
+    BlockDict,
+    BlockEntry,
+    CostMode,
+    FormattedLimitInfo,
+    LimitDetectionInfo,
+    SessionBlock,
+    UsageEntry,
+)
 from claude_monitor.data.analyzer import SessionAnalyzer
 from claude_monitor.data.reader import load_usage_entries
 
@@ -20,7 +30,7 @@ def analyze_usage(
     use_cache: bool = True,
     quick_start: bool = False,
     data_path: str | None = None,
-) -> dict[str, Any]:
+) -> AnalysisResult:
     """
     Main entry point to generate response_final.json.
 
@@ -83,7 +93,7 @@ def analyze_usage(
             if block_limits:
                 block.limit_messages = block_limits
 
-    metadata: dict[str, Any] = {
+    metadata: AnalysisMetadata = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "hours_analyzed": hours_back or "all",
         "entries_processed": len(entries),
@@ -119,8 +129,8 @@ def _process_burn_rates(
 
 
 def _create_result(
-    blocks: list[SessionBlock], entries: list[UsageEntry], metadata: dict[str, Any]
-) -> dict[str, Any]:
+    blocks: list[SessionBlock], entries: list[UsageEntry], metadata: AnalysisMetadata
+) -> AnalysisResult:
     """Create the final result dictionary."""
     blocks_data = _convert_blocks_to_dict_format(blocks)
 
@@ -137,7 +147,7 @@ def _create_result(
 
 
 def _is_limit_in_block_timerange(
-    limit_info: dict[str, Any], block: SessionBlock
+    limit_info: LimitDetectionInfo, block: SessionBlock
 ) -> bool:
     """Check if limit timestamp falls within block's time range."""
     limit_timestamp = limit_info["timestamp"]
@@ -148,7 +158,7 @@ def _is_limit_in_block_timerange(
     return block.start_time <= limit_timestamp <= block.end_time
 
 
-def _format_limit_info(limit_info: dict[str, Any]) -> dict[str, Any]:
+def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:
     """Format limit info for block assignment."""
     return {
         "type": limit_info["type"],
@@ -162,9 +172,9 @@ def _format_limit_info(limit_info: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[dict[str, Any]]:
+def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[BlockDict]:
     """Convert blocks to dictionary format for JSON output."""
-    blocks_data: list[dict[str, Any]] = []
+    blocks_data: list[BlockDict] = []
 
     for block in blocks:
         block_dict = _create_base_block_dict(block)
@@ -174,7 +184,7 @@ def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[dict[str,
     return blocks_data
 
 
-def _create_base_block_dict(block: SessionBlock) -> dict[str, Any]:
+def _create_base_block_dict(block: SessionBlock) -> BlockDict:
     """Create base block dictionary with required fields."""
     return {
         "id": block.id,
@@ -203,7 +213,7 @@ def _create_base_block_dict(block: SessionBlock) -> dict[str, Any]:
     }
 
 
-def _format_block_entries(entries: list[UsageEntry]) -> list[dict[str, Any]]:
+def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
     """Format block entries for JSON output."""
     return [
         {
@@ -221,7 +231,7 @@ def _format_block_entries(entries: list[UsageEntry]) -> list[dict[str, Any]]:
     ]
 
 
-def _add_optional_block_data(block: SessionBlock, block_dict: dict[str, Any]) -> None:
+def _add_optional_block_data(block: SessionBlock, block_dict: BlockDict) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
         block_dict["burnRate"] = {

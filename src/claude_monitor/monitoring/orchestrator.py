@@ -3,9 +3,9 @@
 import logging
 import threading
 import time
-from typing import Any
 from collections.abc import Callable
 
+from claude_monitor.core.models import AnalysisResult, MonitoringData
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT, get_token_limit
 from claude_monitor.error_handling import report_error
 from claude_monitor.monitoring.data_manager import DataManager
@@ -34,9 +34,9 @@ class MonitoringOrchestrator:
         self._monitoring: bool = False
         self._monitor_thread: threading.Thread | None = None
         self._stop_event: threading.Event = threading.Event()
-        self._update_callbacks: list[Callable[[dict[str, Any]], None]] = []
-        self._last_valid_data: dict[str, Any] | None = None
-        self._args: Any | None = None
+        self._update_callbacks: list[Callable[[MonitoringData], None]] = []
+        self._last_valid_data: MonitoringData | None = None
+        self._args: object | None = None
         self._first_data_event: threading.Event = threading.Event()
 
     def start(self) -> None:
@@ -70,7 +70,7 @@ class MonitoringOrchestrator:
         self._monitor_thread = None
         self._first_data_event.clear()
 
-    def set_args(self, args: Any) -> None:
+    def set_args(self, args: object) -> None:
         """Set command line arguments for token limit calculation.
 
         Args:
@@ -79,7 +79,7 @@ class MonitoringOrchestrator:
         self._args = args
 
     def register_update_callback(
-        self, callback: Callable[[dict[str, Any]], None]
+        self, callback: Callable[[MonitoringData], None]
     ) -> None:
         """Register callback for data updates.
 
@@ -91,7 +91,7 @@ class MonitoringOrchestrator:
             logger.debug("Registered update callback")
 
     def register_session_callback(
-        self, callback: Callable[[str, str, dict[str, Any] | None], None]
+        self, callback: Callable[[str, str, object | None], None]
     ) -> None:
         """Register callback for session changes.
 
@@ -100,7 +100,7 @@ class MonitoringOrchestrator:
         """
         self.session_monitor.register_callback(callback)
 
-    def force_refresh(self) -> dict[str, Any] | None:
+    def force_refresh(self) -> MonitoringData | None:
         """Force immediate data refresh.
 
         Returns:
@@ -139,7 +139,7 @@ class MonitoringOrchestrator:
 
     def _fetch_and_process_data(
         self, force_refresh: bool = False
-    ) -> dict[str, Any] | None:
+    ) -> MonitoringData | None:
         """Fetch data and notify callbacks.
 
         Args:
@@ -151,7 +151,7 @@ class MonitoringOrchestrator:
         try:
             # Fetch data
             start_time: float = time.time()
-            data: dict[str, Any] | None = self.data_manager.get_data(
+            data: AnalysisResult | None = self.data_manager.get_data(
                 force_refresh=force_refresh
             )
 
@@ -171,7 +171,7 @@ class MonitoringOrchestrator:
             token_limit: int = self._calculate_token_limit(data)
 
             # Prepare monitoring data
-            monitoring_data: dict[str, Any] = {
+            monitoring_data: MonitoringData = {
                 "data": data,
                 "token_limit": token_limit,
                 "args": self._args,
@@ -210,7 +210,7 @@ class MonitoringOrchestrator:
             )
             return None
 
-    def _calculate_token_limit(self, data: dict[str, Any]) -> int:
+    def _calculate_token_limit(self, data: AnalysisResult) -> int:
         """Calculate token limit based on plan and data.
 
         Args:
@@ -226,7 +226,7 @@ class MonitoringOrchestrator:
 
         try:
             if plan == "custom":
-                blocks: list[Any] = data.get("blocks", [])
+                blocks = data.get("blocks", [])
                 return get_token_limit(plan, blocks)
             return get_token_limit(plan)
         except Exception as e:

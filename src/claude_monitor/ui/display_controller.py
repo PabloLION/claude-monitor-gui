@@ -6,10 +6,12 @@ Orchestrates UI components and coordinates display updates.
 import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+import argparse
 
 import pytz
 from rich.console import Console, Group, RenderableType
+
+from claude_monitor.core.models import JSONSerializable
 from rich.live import Live
 from rich.text import Text
 
@@ -49,7 +51,7 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(self, active_block: dict[str, Any]) -> dict[str, Any]:
+    def _extract_session_data(self, active_block: dict[str, str | int | float | list | dict]) -> dict[str, str | int | float | list | dict]:
         """Extract basic session data from active block."""
         return {
             "tokens_used": active_block.get("totalTokens", 0),
@@ -61,7 +63,7 @@ class DisplayController:
             "end_time_str": active_block.get("endTime"),
         }
 
-    def _calculate_token_limits(self, args: Any, token_limit: int) -> tuple[int, int]:
+    def _calculate_token_limits(self, args: argparse.Namespace, token_limit: int) -> tuple[int, int]:
         """Calculate token limits based on plan and arguments."""
         if (
             args.plan == "custom"
@@ -72,18 +74,18 @@ class DisplayController:
         return token_limit, token_limit
 
     def _calculate_time_data(
-        self, session_data: dict[str, Any], current_time: datetime
-    ) -> dict[str, Any]:
+        self, session_data: dict[str, JSONSerializable], current_time: datetime
+    ) -> dict[str, JSONSerializable]:
         """Calculate time-related data for the session."""
         return self.session_calculator.calculate_time_data(session_data, current_time)
 
     def _calculate_cost_predictions(
         self,
-        session_data: dict[str, Any],
-        time_data: dict[str, Any],
-        args: Any,
+        session_data: dict[str, JSONSerializable],
+        time_data: dict[str, JSONSerializable],
+        args: argparse.Namespace,
         cost_limit_p90: float | None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, JSONSerializable]:
         """Calculate cost-related predictions."""
         # Determine cost limit based on plan
         if Plans.is_valid_plan(args.plan) and cost_limit_p90 is not None:
@@ -150,7 +152,7 @@ class DisplayController:
 
     def _format_display_times(
         self,
-        args: Any,
+        args: argparse.Namespace,
         current_time: datetime,
         predicted_end_time: datetime,
         reset_time: datetime,
@@ -196,7 +198,7 @@ class DisplayController:
         }
 
     def create_data_display(
-        self, data: dict[str, Any], args: Any, token_limit: int
+        self, data: dict[str, str | int | float | list], args: argparse.Namespace, token_limit: int
     ) -> RenderableType:
         """Create display renderable from data.
 
@@ -303,13 +305,13 @@ class DisplayController:
 
     def _process_active_session_data(
         self,
-        active_block: dict[str, Any],
-        data: dict[str, Any],
-        args: Any,
+        active_block: dict[str, JSONSerializable],
+        data: dict[str, JSONSerializable],
+        args: argparse.Namespace,
         token_limit: int,
         current_time: datetime,
         cost_limit_p90: float | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, JSONSerializable]:
         """Process active session data for display.
 
         Args:
@@ -393,7 +395,7 @@ class DisplayController:
         }
 
     def _calculate_model_distribution(
-        self, raw_per_model_stats: dict[str, Any]
+        self, raw_per_model_stats: dict[str, JSONSerializable]
     ) -> dict[str, float]:
         """Calculate model distribution percentages from current active session only.
 
@@ -580,8 +582,8 @@ class SessionCalculator:
         self.tz_handler = TimezoneHandler()
 
     def calculate_time_data(
-        self, session_data: dict[str, Any], current_time: datetime
-    ) -> dict[str, Any]:
+        self, session_data: dict[str, JSONSerializable], current_time: datetime
+    ) -> dict[str, JSONSerializable]:
         """Calculate time-related data for the session.
 
         Args:
@@ -630,10 +632,10 @@ class SessionCalculator:
 
     def calculate_cost_predictions(
         self,
-        session_data: dict[str, Any],
-        time_data: dict[str, Any],
+        session_data: dict[str, JSONSerializable],
+        time_data: dict[str, JSONSerializable],
         cost_limit: float | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, JSONSerializable | datetime]:
         """Calculate cost-related predictions.
 
         Args:
@@ -649,15 +651,21 @@ class SessionCalculator:
         current_time = datetime.now(timezone.utc)
 
         # Calculate cost per minute
-        cost_per_minute = (
-            session_cost / max(1, elapsed_minutes) if elapsed_minutes > 0 else 0
-        )
+        if isinstance(session_cost, (int, float)) and isinstance(elapsed_minutes, (int, float)):
+            cost_per_minute = (
+                float(session_cost) / max(1, float(elapsed_minutes)) if elapsed_minutes > 0 else 0
+            )
+        else:
+            cost_per_minute = 0.0
 
         # Use provided cost limit or default
         if cost_limit is None:
             cost_limit = 100.0
 
-        cost_remaining = max(0, cost_limit - session_cost)
+        if isinstance(session_cost, (int, float)):
+            cost_remaining = max(0, cost_limit - float(session_cost))
+        else:
+            cost_remaining = cost_limit
 
         # Calculate predicted end time
         if cost_per_minute > 0 and cost_remaining > 0:
@@ -666,7 +674,9 @@ class SessionCalculator:
                 minutes=minutes_to_cost_depletion
             )
         else:
-            predicted_end_time = time_data["reset_time"]
+            from datetime import datetime as dt_type
+            reset_time = time_data["reset_time"]
+            predicted_end_time = reset_time if isinstance(reset_time, dt_type) else current_time
 
         return {
             "cost_per_minute": cost_per_minute,

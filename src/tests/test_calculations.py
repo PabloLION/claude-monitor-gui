@@ -1,7 +1,6 @@
 """Tests for calculations module."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,7 +11,7 @@ from claude_monitor.core.calculations import (
     _process_block_for_burn_rate,
     calculate_hourly_burn_rate,
 )
-from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
+from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection, JSONSerializable
 
 
 class TestBurnRateCalculator:
@@ -159,7 +158,7 @@ class TestHourlyBurnRateCalculation:
         return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     @pytest.fixture
-    def mock_blocks(self) -> list[dict[str, Any]]:
+    def mock_blocks(self) -> list[dict[str, JSONSerializable]]:
         """Create mock blocks for testing."""
         block1 = {
             "start_time": "2024-01-01T11:30:00Z",

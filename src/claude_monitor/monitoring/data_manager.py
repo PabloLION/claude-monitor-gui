@@ -2,8 +2,8 @@
 
 import logging
 import time
-from typing import Any
 
+from claude_monitor.core.models import AnalysisResult
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
 
@@ -27,7 +27,7 @@ class DataManager:
             data_path: Path to data directory
         """
         self.cache_ttl: int = cache_ttl
-        self._cache: dict[str, Any] | None = None
+        self._cache: AnalysisResult | None = None
         self._cache_timestamp: float | None = None
 
         self.hours_back: int = hours_back
@@ -35,7 +35,7 @@ class DataManager:
         self._last_error: str | None = None
         self._last_successful_fetch: float | None = None
 
-    def get_data(self, force_refresh: bool = False) -> dict[str, Any] | None:
+    def get_data(self, force_refresh: bool = False) -> AnalysisResult | None:
         """Get monitoring data with caching and error handling.
 
         Args:
@@ -55,7 +55,7 @@ class DataManager:
                 logger.debug(
                     f"Fetching fresh usage data (attempt {attempt + 1}/{max_retries})"
                 )
-                data: dict[str, Any] | None = analyze_usage(
+                data: AnalysisResult | None = analyze_usage(
                     hours_back=self.hours_back,
                     quick_start=False,
                     use_cache=False,
@@ -123,7 +123,7 @@ class DataManager:
         cache_age = time.time() - self._cache_timestamp
         return cache_age <= self.cache_ttl
 
-    def _set_cache(self, data: dict[str, Any]) -> None:
+    def _set_cache(self, data: AnalysisResult) -> None:
         """Set cache with current timestamp."""
         self._cache = data
         self._cache_timestamp = time.time()
