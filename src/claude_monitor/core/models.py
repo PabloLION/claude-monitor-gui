@@ -479,3 +479,39 @@ class AggregatedTotals(TypedDict):
     total_tokens: int
     total_cost: float
     entries_count: int
+
+
+class TimeData(TypedDict):
+    """Time-related data for session calculations."""
+    
+    start_time: datetime | None
+    reset_time: datetime | None
+    minutes_to_reset: float
+    total_session_minutes: float
+    elapsed_session_minutes: float
+
+
+class CostPredictions(TypedDict):
+    """Cost-related predictions for session calculations."""
+    
+    cost_per_minute: float
+    cost_limit: float
+    cost_remaining: float
+    predicted_end_time: datetime
+
+
+class LastUsedParamsDict(TypedDict, total=False):
+    """Type-safe structure for last used parameters."""
+    
+    plan: str
+    view: str
+    timezone: str
+    theme: str
+    time_format: str
+    custom_limit_tokens: int
+    refresh_rate: int
+    refresh_per_second: float
+    reset_hour: int
+    debug: bool
+    data_path: str
+    timestamp: str  # Added for compatibility with existing code

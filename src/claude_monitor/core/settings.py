@@ -12,6 +12,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from claude_monitor import __version__
+from claude_monitor.core.models import LastUsedParamsDict
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +53,14 @@ class LastUsedParams:
         except Exception as e:
             logger.warning(f"Failed to save last used params: {e}")
 
-    def load(self) -> dict[str, str | int | float | bool]:
+    def load(self) -> LastUsedParamsDict:
         """Load last used parameters."""
         if not self.params_file.exists():
             return {}
 
         try:
             with open(self.params_file) as f:
-                params = json.load(f)
+                params: LastUsedParamsDict = json.load(f)
 
             params.pop("timestamp", None)
 
@@ -182,7 +183,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid plan: {v}. Must be one of: {', '.join(valid_plans)}"
             )
-        return v
+        return "custom"  # Default plan if None
 
     @field_validator("view", mode="before")
     @classmethod
@@ -196,7 +197,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid view: {v}. Must be one of: {', '.join(valid_views)}"
             )
-        return v
+        return "realtime"  # Default view if None
 
     @field_validator("theme", mode="before")
     @classmethod
@@ -210,7 +211,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid theme: {v}. Must be one of: {', '.join(valid_themes)}"
             )
-        return v
+        return "auto"  # Default theme if None
 
     @field_validator("timezone")
     @classmethod

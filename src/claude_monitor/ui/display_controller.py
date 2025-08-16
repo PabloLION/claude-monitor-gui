@@ -11,7 +11,7 @@ import argparse
 import pytz
 from rich.console import Console, Group, RenderableType
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions
 from rich.live import Live
 from rich.text import Text
 
@@ -75,17 +75,17 @@ class DisplayController:
 
     def _calculate_time_data(
         self, session_data: dict[str, JSONSerializable], current_time: datetime
-    ) -> dict[str, JSONSerializable | datetime]:
+    ) -> TimeData:
         """Calculate time-related data for the session."""
         return self.session_calculator.calculate_time_data(session_data, current_time)
 
     def _calculate_cost_predictions(
         self,
         session_data: dict[str, JSONSerializable],
-        time_data: dict[str, JSONSerializable],
+        time_data: TimeData,
         args: argparse.Namespace,
         cost_limit_p90: float | None,
-    ) -> dict[str, JSONSerializable]:
+    ) -> CostPredictions:
         """Calculate cost-related predictions."""
         # Determine cost limit based on plan
         if Plans.is_valid_plan(args.plan) and cost_limit_p90 is not None:
@@ -583,7 +583,7 @@ class SessionCalculator:
 
     def calculate_time_data(
         self, session_data: dict[str, JSONSerializable], current_time: datetime
-    ) -> dict[str, JSONSerializable]:
+    ) -> TimeData:
         """Calculate time-related data for the session.
 
         Args:
@@ -640,9 +640,9 @@ class SessionCalculator:
     def calculate_cost_predictions(
         self,
         session_data: dict[str, JSONSerializable],
-        time_data: dict[str, JSONSerializable],
+        time_data: TimeData,
         cost_limit: float | None = None,
-    ) -> dict[str, JSONSerializable | datetime]:
+    ) -> CostPredictions:
         """Calculate cost-related predictions.
 
         Args:

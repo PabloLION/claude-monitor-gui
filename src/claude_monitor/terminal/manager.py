@@ -13,10 +13,9 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 try:
     import termios
-
-    HAS_TERMIOS: bool = True
+    HAS_TERMIOS = True
 except ImportError:
-    HAS_TERMIOS: bool = False
+    HAS_TERMIOS = False
 
 
 def setup_terminal() -> list[Any] | None:
@@ -97,11 +96,19 @@ def handle_error_and_exit(
     logger.error(f"Terminal error: {error}")
     sys.stderr.write(f"\n\nError: {error}\n")
 
+    # Convert string errors to exceptions for reporting
+    exception_to_report = error if isinstance(error, Exception) else RuntimeError(str(error))
+    
     report_error(
-        exception=error,
+        exception=exception_to_report,
         component="terminal_manager",
         context_name="terminal",
         context_data={"phase": "cleanup"},
         tags={"exit_type": "error_handler"},
     )
-    raise error
+    
+    # Raise the original error or exception
+    if isinstance(error, Exception):
+        raise error
+    else:
+        raise RuntimeError(str(error))
