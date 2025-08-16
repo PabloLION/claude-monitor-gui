@@ -139,12 +139,19 @@ def _parse_block_start_time(block: dict[str, JSONSerializable]) -> datetime | No
     if not start_time_str:
         return None
 
+    if not isinstance(start_time_str, str):
+        return None
+        
     tz_handler = TimezoneHandler()
     try:
         start_time = tz_handler.parse_timestamp(start_time_str)
+        if start_time is None:
+            return None
         return tz_handler.ensure_utc(start_time)
     except (ValueError, TypeError, AttributeError) as e:
-        _log_timestamp_error(e, start_time_str, block.get("id"), "start_time")
+        block_id = block.get("id")
+        block_id_str = str(block_id) if block_id is not None else None
+        _log_timestamp_error(e, start_time_str, block_id_str, "start_time")
         return None
 
 
@@ -156,13 +163,16 @@ def _determine_session_end_time(
         return current_time
 
     actual_end_str = block.get("actualEndTime")
-    if actual_end_str:
+    if actual_end_str and isinstance(actual_end_str, str):
         tz_handler = TimezoneHandler()
         try:
             session_actual_end = tz_handler.parse_timestamp(actual_end_str)
-            return tz_handler.ensure_utc(session_actual_end)
+            if session_actual_end is not None:
+                return tz_handler.ensure_utc(session_actual_end)
         except (ValueError, TypeError, AttributeError) as e:
-            _log_timestamp_error(e, actual_end_str, block.get("id"), "actual_end_time")
+            block_id = block.get("id")
+            block_id_str = str(block_id) if block_id is not None else None
+            _log_timestamp_error(e, actual_end_str, block_id_str, "actual_end_time")
     return current_time
 
 
@@ -184,8 +194,10 @@ def _calculate_tokens_in_hour(
     hour_duration = (session_end_in_hour - session_start_in_hour).total_seconds() / 60
 
     if total_session_duration > 0:
-        session_tokens = block.get("totalTokens", 0)
-        return session_tokens * (hour_duration / total_session_duration)
+        session_tokens_raw = block.get("totalTokens", 0)
+        if isinstance(session_tokens_raw, (int, float)):
+            session_tokens = float(session_tokens_raw)
+            return session_tokens * (hour_duration / total_session_duration)
     return 0
 
 

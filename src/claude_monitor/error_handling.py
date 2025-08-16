@@ -66,7 +66,7 @@ def report_file_error(
         operation: The operation that failed (read, write, parse, etc.)
         additional_context: Any additional context data
     """
-    context_data = {
+    context_data: dict[str, str | int | float | None] = {
         "file_path": str(file_path),
         "operation": operation,
     }
@@ -94,7 +94,7 @@ def get_error_context() -> dict[str, str | int | float | None]:
         "platform": sys.platform,
         "cwd": os.getcwd(),
         "pid": os.getpid(),
-        "argv": sys.argv,
+        "argv": " ".join(sys.argv),
     }
 
 
@@ -138,7 +138,7 @@ def report_configuration_error(
         config_section: Configuration section that failed
         additional_context: Additional context data
     """
-    context_data = {
+    context_data: dict[str, str | int | float | None] = {
         "config_file": str(config_file) if config_file else None,
         "config_section": config_section,
     }

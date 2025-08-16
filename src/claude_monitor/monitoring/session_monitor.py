@@ -17,7 +17,7 @@ class SessionMonitor:
         ] = []
         self._session_history: list[dict[str, str | int | float]] = []
 
-    def update(self, data: dict[str, list[dict[str, str | int | float | bool]]]) -> tuple[bool, list[str]]:
+    def update(self, data: dict[str, list[dict[str, str | int | float | bool]] | int | str]) -> tuple[bool, list[str]]:
         """Update session tracking with new data and validate.
 
         Args:
@@ -33,7 +33,10 @@ class SessionMonitor:
             logger.warning(f"Data validation failed: {errors}")
             return is_valid, errors
 
-        blocks: list[dict[str, str | int | float | bool]] = data.get("blocks", [])
+        blocks_raw = data.get("blocks", [])
+        if not isinstance(blocks_raw, list):
+            return False, ["blocks must be a list"]
+        blocks: list[dict[str, str | int | float | bool]] = blocks_raw
 
         active_session: dict[str, str | int | float | bool] | None = None
         for block in blocks:
@@ -42,12 +45,12 @@ class SessionMonitor:
                 break
 
         if active_session:
-            session_id: str | None = active_session.get("id")
-            if session_id is not None and session_id != self._current_session_id:
+            session_id_raw = active_session.get("id")
+            if isinstance(session_id_raw, str) and session_id_raw != self._current_session_id:
                 self._on_session_change(
-                    self._current_session_id, session_id, active_session
+                    self._current_session_id, session_id_raw, active_session
                 )
-                self._current_session_id = session_id
+                self._current_session_id = session_id_raw
         elif self._current_session_id is not None:
             self._on_session_end(self._current_session_id)
             self._current_session_id = None
@@ -73,11 +76,11 @@ class SessionMonitor:
             errors.append("Missing required key: blocks")
 
         if "blocks" in data:
-            blocks: list[dict[str, str | int | float | bool]] = data["blocks"]
-            if not isinstance(blocks, list):
+            blocks_raw = data["blocks"]
+            if not isinstance(blocks_raw, list):
                 errors.append("blocks must be a list")
             else:
-                for i, block in enumerate(blocks):
+                for i, block in enumerate(blocks_raw):
                     block_errors: list[str] = self._validate_block(block, i)
                     errors.extend(block_errors)
 
@@ -132,10 +135,11 @@ class SessionMonitor:
         else:
             logger.info(f"Session changed from {old_id} to {new_id}")
 
+        start_time = session_data.get("startTime")
         self._session_history.append(
             {
                 "id": new_id,
-                "started_at": session_data.get("startTime"),
+                "started_at": start_time if start_time is not None else "",
                 "tokens": session_data.get("totalTokens", 0),
                 "cost": session_data.get("costUSD", 0),
             }

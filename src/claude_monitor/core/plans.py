@@ -6,6 +6,7 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypedDict
 
 from claude_monitor.core.models import JSONSerializable
 
@@ -45,7 +46,16 @@ class PlanConfig:
         return str(self.token_limit)
 
 
-PLAN_LIMITS: dict[PlanType, dict[str, JSONSerializable]] = {
+class PlanLimitsEntry(TypedDict):
+    """Typed structure for plan limit definitions."""
+    
+    token_limit: int
+    cost_limit: float
+    message_limit: int
+    display_name: str
+
+
+PLAN_LIMITS: dict[PlanType, PlanLimitsEntry] = {
     PlanType.PRO: {
         "token_limit": 19_000,
         "cost_limit": 18.0,
@@ -72,7 +82,7 @@ PLAN_LIMITS: dict[PlanType, dict[str, JSONSerializable]] = {
     },
 }
 
-_DEFAULTS: dict[str, JSONSerializable] = {
+_DEFAULTS: dict[str, int | float] = {
     "token_limit": PLAN_LIMITS[PlanType.PRO]["token_limit"],
     "cost_limit": PLAN_LIMITS[PlanType.CUSTOM]["cost_limit"],
     "message_limit": PLAN_LIMITS[PlanType.PRO]["message_limit"],
@@ -82,21 +92,9 @@ _DEFAULTS: dict[str, JSONSerializable] = {
 class Plans:
     """Registry and shared constants for all plan configurations."""
 
-    DEFAULT_TOKEN_LIMIT: int = (
-        int(_DEFAULTS["token_limit"])
-        if isinstance(_DEFAULTS["token_limit"], (int, float))
-        else 200_000
-    )
-    DEFAULT_COST_LIMIT: float = (
-        float(_DEFAULTS["cost_limit"])
-        if isinstance(_DEFAULTS["cost_limit"], (int, float))
-        else 10.0
-    )
-    DEFAULT_MESSAGE_LIMIT: int = (
-        int(_DEFAULTS["message_limit"])
-        if isinstance(_DEFAULTS["message_limit"], (int, float))
-        else 1_000
-    )
+    DEFAULT_TOKEN_LIMIT: int = int(_DEFAULTS["token_limit"])
+    DEFAULT_COST_LIMIT: float = float(_DEFAULTS["cost_limit"])
+    DEFAULT_MESSAGE_LIMIT: int = int(_DEFAULTS["message_limit"])
     COMMON_TOKEN_LIMITS: list[int] = [19_000, 88_000, 220_000, 880_000]
     LIMIT_DETECTION_THRESHOLD: float = 0.95
 
@@ -106,27 +104,10 @@ class Plans:
         data = PLAN_LIMITS[plan_type]
         return PlanConfig(
             name=plan_type.value,
-            # #TODO: do these check with @dataclass on creation.
-            token_limit=(
-                int(data["token_limit"])
-                if isinstance(data["token_limit"], (int, float))
-                else cls.DEFAULT_TOKEN_LIMIT
-            ),
-            cost_limit=(
-                float(data["cost_limit"])
-                if isinstance(data["cost_limit"], (int, float))
-                else cls.DEFAULT_COST_LIMIT
-            ),
-            message_limit=(
-                int(data["message_limit"])
-                if isinstance(data["message_limit"], (int, float))
-                else cls.DEFAULT_MESSAGE_LIMIT
-            ),
-            display_name=(
-                str(data["display_name"])
-                if isinstance(data["display_name"], str)
-                else plan_type.value
-            ),
+            token_limit=data["token_limit"],
+            cost_limit=data["cost_limit"],
+            message_limit=data["message_limit"],
+            display_name=data["display_name"],
         )
 
     @classmethod

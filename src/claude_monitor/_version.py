@@ -52,7 +52,10 @@ def _get_version_from_pyproject() -> str:
             if pyproject_path.exists():
                 with open(pyproject_path, "rb") as f:
                     data: dict[str, str | dict[str, str]] = tomllib.load(f)
-                    project_data: dict[str, str] = data.get("project", {})
+                    project_raw = data.get("project", {})
+                    if not isinstance(project_raw, dict):
+                        return "unknown"
+                    project_data: dict[str, str] = project_raw
                     version: str = project_data.get("version", "unknown")
                     return version
             current_dir = current_dir.parent
@@ -91,7 +94,7 @@ def get_package_info() -> dict[str, str | None]:
         }
 
 
-def get_version_info() -> dict[str, str]:
+def get_version_info() -> dict[str, str | dict[str, int] | dict[str, str | None]]:
     """Get detailed version and system information.
 
     Returns:

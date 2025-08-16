@@ -96,18 +96,20 @@ class TokenExtractor:
                 "message" in data
                 and isinstance(data["message"], dict)
                 and "usage" in data["message"]
+                and isinstance(data["message"]["usage"], dict)
             ):
                 token_sources.append(data["message"]["usage"])
-            if "usage" in data:
+            if "usage" in data and isinstance(data["usage"], dict):
                 token_sources.append(data["usage"])
             token_sources.append(data)
         else:
-            if "usage" in data:
+            if "usage" in data and isinstance(data["usage"], dict):
                 token_sources.append(data["usage"])
             if (
                 "message" in data
                 and isinstance(data["message"], dict)
                 and "usage" in data["message"]
+                and isinstance(data["message"]["usage"], dict)
             ):
                 token_sources.append(data["message"]["usage"])
             token_sources.append(data)
@@ -118,31 +120,38 @@ class TokenExtractor:
             if not isinstance(source, dict):
                 continue
 
+            def safe_get_numeric(source: dict[str, JSONSerializable], key: str, default: int = 0) -> int:
+                """Safely extract numeric value from JSONSerializable dict."""
+                value = source.get(key, default)
+                if isinstance(value, (int, float)):
+                    return int(value)
+                return default
+
             input_tokens = (
-                source.get("input_tokens", 0)
-                or source.get("inputTokens", 0)
-                or source.get("prompt_tokens", 0)
+                safe_get_numeric(source, "input_tokens")
+                or safe_get_numeric(source, "inputTokens")
+                or safe_get_numeric(source, "prompt_tokens")
                 or 0
             )
 
             output_tokens = (
-                source.get("output_tokens", 0)
-                or source.get("outputTokens", 0)
-                or source.get("completion_tokens", 0)
+                safe_get_numeric(source, "output_tokens")
+                or safe_get_numeric(source, "outputTokens")
+                or safe_get_numeric(source, "completion_tokens")
                 or 0
             )
 
             cache_creation = (
-                source.get("cache_creation_tokens", 0)
-                or source.get("cache_creation_input_tokens", 0)
-                or source.get("cacheCreationInputTokens", 0)
+                safe_get_numeric(source, "cache_creation_tokens")
+                or safe_get_numeric(source, "cache_creation_input_tokens")
+                or safe_get_numeric(source, "cacheCreationInputTokens")
                 or 0
             )
 
             cache_read = (
-                source.get("cache_read_input_tokens", 0)
-                or source.get("cache_read_tokens", 0)
-                or source.get("cacheReadInputTokens", 0)
+                safe_get_numeric(source, "cache_read_input_tokens")
+                or safe_get_numeric(source, "cache_read_tokens")
+                or safe_get_numeric(source, "cacheReadInputTokens")
                 or 0
             )
 
@@ -208,12 +217,19 @@ class DataConverter:
         Returns:
             Extracted model name
         """
+        def safe_get_nested(data: dict[str, JSONSerializable], outer_key: str, inner_key: str) -> JSONSerializable | None:
+            """Safely get nested value from dict."""
+            outer_value = data.get(outer_key)
+            if isinstance(outer_value, dict):
+                return outer_value.get(inner_key)
+            return None
+
         model_candidates: list[JSONSerializable | None] = [
-            data.get("message", {}).get("model"),
+            safe_get_nested(data, "message", "model"),
             data.get("model"),
             data.get("Model"),
-            data.get("usage", {}).get("model"),
-            data.get("request", {}).get("model"),
+            safe_get_nested(data, "usage", "model"),
+            safe_get_nested(data, "request", "model"),
         ]
 
         for candidate in model_candidates:

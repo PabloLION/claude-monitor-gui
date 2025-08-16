@@ -399,8 +399,8 @@ class TimezoneHandler:
         for fmt in formats:
             try:
                 parsed_dt: datetime = datetime.strptime(timestamp_str, fmt)
-                result = self.default_tz.localize(parsed_dt)
-                return result
+                localized_result: datetime = self.default_tz.localize(parsed_dt)
+                return localized_result
             except ValueError:
                 continue
 
@@ -415,7 +415,8 @@ class TimezoneHandler:
     def ensure_timezone(self, dt: datetime) -> datetime:
         """Ensure datetime has timezone info."""
         if dt.tzinfo is None:
-            return self.default_tz.localize(dt)
+            localized_dt: datetime = self.default_tz.localize(dt)
+            return localized_dt
         return dt
 
     def validate_timezone(self, tz_name: str) -> bool:
