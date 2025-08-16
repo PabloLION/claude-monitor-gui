@@ -15,9 +15,9 @@ try:
     import termios
     import tty
 
-    HAS_TERMIOS: bool = True
+    HAS_TERMIOS = True
 except ImportError:
-    HAS_TERMIOS: bool = False
+    HAS_TERMIOS = False
 
 from rich.console import Console
 from rich.theme import Theme

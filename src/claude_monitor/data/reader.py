@@ -72,7 +72,7 @@ def load_usage_entries(
             pricing_calculator,
         )
         all_entries.extend(entries)
-        if include_raw and raw_data:
+        if include_raw and raw_data and raw_entries is not None:
             raw_entries.extend(raw_data)
 
     all_entries.sort(key=lambda e: e.timestamp)
@@ -162,7 +162,7 @@ def _process_single_file(
                         entries.append(entry)
                         _update_processed_hashes(data, processed_hashes)
 
-                    if include_raw:
+                    if include_raw and raw_data is not None:
                         raw_data.append(data)
 
                 except json.JSONDecodeError as e:

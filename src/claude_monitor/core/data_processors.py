@@ -88,7 +88,7 @@ class TokenExtractor:
         }
 
         # Define token extraction helper
-        def safe_get_int(value: int | float | str | None) -> int:
+        def safe_get_int(value: JSONSerializable) -> int:
             """Safely convert value to int."""
             if isinstance(value, (int, float)):
                 return int(value)

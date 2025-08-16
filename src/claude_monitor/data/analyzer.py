@@ -251,7 +251,7 @@ class SessionAnalyzer:
             block_context = self._extract_block_context(raw_data)
 
             # Check for Opus-specific limit
-            if self._is_opus_limit(content_lower):
+            if self._is_opus_limit(content_lower) and timestamp is not None:
                 reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
                 return {
                     "type": "opus_limit",

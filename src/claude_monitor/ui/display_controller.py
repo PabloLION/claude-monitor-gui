@@ -597,12 +597,14 @@ class SessionCalculator:
         start_time = None
         if session_data.get("start_time_str"):
             start_time = self.tz_handler.parse_timestamp(session_data["start_time_str"])
-            start_time = self.tz_handler.ensure_utc(start_time)
+            if start_time is not None:
+                start_time = self.tz_handler.ensure_utc(start_time)
 
         # Calculate reset time
         if session_data.get("end_time_str"):
             reset_time = self.tz_handler.parse_timestamp(session_data["end_time_str"])
-            reset_time = self.tz_handler.ensure_utc(reset_time)
+            if reset_time is not None:
+                reset_time = self.tz_handler.ensure_utc(reset_time)
         else:
             reset_time = (
                 start_time + timedelta(hours=5)  # Default session duration

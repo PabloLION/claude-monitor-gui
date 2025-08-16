@@ -1,5 +1,6 @@
 """Unified time utilities module combining timezone and system time functionality."""
 
+import argparse
 import contextlib
 import locale
 import logging
@@ -7,11 +8,13 @@ import os
 import platform
 import re
 import subprocess
+
 from datetime import datetime
-import argparse
 
 import pytz
+
 from pytz import BaseTzInfo
+
 
 try:
     from babel.dates import get_timezone_location
@@ -185,7 +188,9 @@ class TimeFormatDetector:
             )
             if location:
                 for country_code in cls.TWELVE_HOUR_COUNTRIES:
-                    if country_code in location or location.endswith(country_code):
+                    if country_code in location or location.endswith(
+                        country_code
+                    ):
                         return True
             return False
         except Exception:
@@ -221,7 +226,12 @@ class TimeFormatDetector:
         if system == "Darwin":
             try:
                 result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["defaults", "read", "NSGlobalDomain", "AppleICUForce12HourTime"],
+                    [
+                        "defaults",
+                        "read",
+                        "NSGlobalDomain",
+                        "AppleICUForce12HourTime",
+                    ],
                     capture_output=True,
                     text=True,
                     check=False,
@@ -240,11 +250,20 @@ class TimeFormatDetector:
 
         elif system == "Linux":
             try:
-                locale_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["locale", "LC_TIME"], capture_output=True, text=True, check=True
+                locale_result: subprocess.CompletedProcess[str] = (
+                    subprocess.run(
+                        ["locale", "LC_TIME"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
                 )
-                lc_time: str = locale_result.stdout.strip().split("=")[-1].strip('"')
-                if lc_time and any(x in lc_time for x in ["en_US", "en_CA", "en_AU"]):
+                lc_time: str = (
+                    locale_result.stdout.strip().split("=")[-1].strip('"')
+                )
+                if lc_time and any(
+                    x in lc_time for x in ["en_US", "en_CA", "en_AU"]
+                ):
                     return "12h"
             except Exception:
                 pass
@@ -257,7 +276,9 @@ class TimeFormatDetector:
                     winreg.HKEY_CURRENT_USER, r"Control Panel\International"
                 ) as key:
                     time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]
-                    if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
+                    if "h" in time_fmt and (
+                        "tt" in time_fmt or "t" in time_fmt
+                    ):
                         return "12h"
             except Exception:
                 pass
@@ -266,10 +287,14 @@ class TimeFormatDetector:
 
     @classmethod
     def get_preference(
-        cls, args: argparse.Namespace | None = None, timezone_name: str | None = None
+        cls,
+        args: argparse.Namespace | None = None,
+        timezone_name: str | None = None,
     ) -> bool:
         """Main entry point - returns True for 12h, False for 24h."""
-        cli_pref: bool | None = cls.detect_from_cli(args) if args is not None else None
+        cli_pref: bool | None = (
+            cls.detect_from_cli(args) if args is not None else None
+        )
         if cli_pref is not None:
             return cli_pref
 
@@ -295,11 +320,13 @@ class SystemTimeDetector:
 
         if system == "Darwin":
             try:
-                readlink_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["readlink", "/etc/localtime"],
-                    capture_output=True,
-                    text=True,
-                    check=True,
+                readlink_result: subprocess.CompletedProcess[str] = (
+                    subprocess.run(
+                        ["readlink", "/etc/localtime"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
                 )
                 tz_path: str = readlink_result.stdout.strip()
                 if "zoneinfo/" in tz_path:
@@ -318,11 +345,13 @@ class SystemTimeDetector:
                     pass
 
             try:
-                timedatectl_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["timedatectl", "show", "-p", "Timezone", "--value"],
-                    capture_output=True,
-                    text=True,
-                    check=True,
+                timedatectl_result: subprocess.CompletedProcess[str] = (
+                    subprocess.run(
+                        ["timedatectl", "show", "-p", "Timezone", "--value"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
                 )
                 tz_result: str = timedatectl_result.stdout.strip()
                 if tz_result:
@@ -332,8 +361,13 @@ class SystemTimeDetector:
 
         elif system == "Windows":
             with contextlib.suppress(Exception):
-                tzutil_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["tzutil", "/g"], capture_output=True, text=True, check=True
+                tzutil_result: subprocess.CompletedProcess[str] = (
+                    subprocess.run(
+                        ["tzutil", "/g"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
                 )
                 return tzutil_result.stdout.strip()
 
@@ -360,6 +394,7 @@ class TimezoneHandler:
             logger.warning(f"Unknown timezone '{tz_name}', using UTC")
             return pytz.UTC
 
+    # #TODO: remove the "None" return type.
     def parse_timestamp(self, timestamp_str: str) -> datetime | None:
         """Parse various timestamp formats."""
         if not timestamp_str:
@@ -448,7 +483,9 @@ class TimezoneHandler:
             tz_name = self.default_tz.zone
         return self.convert_to_timezone(dt, tz_name)
 
-    def format_datetime(self, dt: datetime, use_12_hour: bool | None = None) -> str:
+    def format_datetime(
+        self, dt: datetime, use_12_hour: bool | None = None
+    ) -> str:
         """Format datetime with timezone info."""
         if use_12_hour is None:
             use_12_hour = TimeFormatDetector.get_preference(
@@ -457,7 +494,9 @@ class TimezoneHandler:
 
         dt = self.ensure_timezone(dt)
 
-        fmt: str = "%Y-%m-%d %I:%M:%S %p %Z" if use_12_hour else "%Y-%m-%d %H:%M:%S %Z"
+        fmt: str = (
+            "%Y-%m-%d %I:%M:%S %p %Z" if use_12_hour else "%Y-%m-%d %H:%M:%S %Z"
+        )
 
         return dt.strftime(fmt)
 
