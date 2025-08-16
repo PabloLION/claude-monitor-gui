@@ -170,7 +170,7 @@ addopts = [
   "--strict-config",
   "--color=yes",
   "--tb=short",
-  "--cov=claude_monitor",
+  "--cov=src/claude_monitor",
   "--cov-report=term-missing",
   "--cov-report=html",
   "--cov-report=xml",
@@ -198,7 +198,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 branch = true
-source = ["claude_monitor"]
+source = ["src/claude_monitor"]
 source_pkgs = ["claude_monitor"]
 omit = ["*/tests/*", "*/test_*", "*/__main__.py", "*/conftest.py"]
 relative_files = true
