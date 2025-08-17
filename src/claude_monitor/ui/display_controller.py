@@ -12,7 +12,7 @@ from typing import cast, Any
 import pytz
 from rich.console import Console, Group, RenderableType
 
-from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData
+from claude_monitor.types import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData
 from rich.live import Live
 from rich.text import Text
 

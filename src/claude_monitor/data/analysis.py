@@ -8,15 +8,16 @@ from datetime import datetime, timezone
 # TypedDict imports moved to models.py for centralization
 
 from claude_monitor.core.calculations import BurnRateCalculator
-from claude_monitor.core.models import (
+from claude_monitor.types import (
     AnalysisMetadata,
     AnalysisResult,
     BlockDict,
     BlockEntry,
-    ClaudeJSONEntry,
-    CostMode,
     FormattedLimitInfo,
     LimitDetectionInfo,
+)
+from claude_monitor.core.models import (
+    CostMode,
     SessionBlock,
     UsageEntry,
 )

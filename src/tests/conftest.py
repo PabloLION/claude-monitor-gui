@@ -5,7 +5,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from claude_monitor.core.models import CostMode, UsageEntry, JSONSerializable
+from claude_monitor.types import JSONSerializable
+from claude_monitor.core.models import CostMode, UsageEntry
 
 
 @pytest.fixture

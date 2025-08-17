@@ -12,7 +12,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
 from claude_monitor import __version__
-from claude_monitor.core.models import LastUsedParamsDict
+from claude_monitor.types import LastUsedParamsDict
 
 logger = logging.getLogger(__name__)
 

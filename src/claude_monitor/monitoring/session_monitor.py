@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Callable
 
-from claude_monitor.core.models import AnalysisResult, BlockDict
+from claude_monitor.types import AnalysisResult, BlockDict
 
 logger = logging.getLogger(__name__)
 

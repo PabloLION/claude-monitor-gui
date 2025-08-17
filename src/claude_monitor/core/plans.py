@@ -6,9 +6,8 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypedDict
 
-from claude_monitor.core.models import BlockData, BlockDict
+from claude_monitor.types import BlockData, BlockDict, PlanLimitsEntry
 
 
 class PlanType(Enum):
@@ -45,14 +44,6 @@ class PlanConfig:
             return f"{self.token_limit // 1_000}k"
         return str(self.token_limit)
 
-
-class PlanLimitsEntry(TypedDict):
-    """Typed structure for plan limit definitions."""
-    
-    token_limit: int
-    cost_limit: float
-    message_limit: int
-    display_name: str
 
 
 PLAN_LIMITS: dict[PlanType, PlanLimitsEntry] = {

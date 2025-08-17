@@ -5,7 +5,7 @@ Consolidates display indicators, error/loading screens, and advanced custom disp
 
 from rich.console import Console, RenderableType
 
-from claude_monitor.core.models import JSONSerializable, SessionDataDict, SessionCollectionDict, SessionPercentilesDict, BlockDict
+from claude_monitor.types import JSONSerializable, SessionDataDict, SessionCollectionDict, SessionPercentilesDict, BlockDict
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
 from claude_monitor.ui.layouts import HeaderManager

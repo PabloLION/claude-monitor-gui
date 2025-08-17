@@ -14,7 +14,8 @@ from claude_monitor.core.data_processors import (
     TimestampProcessor,
     TokenExtractor,
 )
-from claude_monitor.core.models import CostMode, EntryData, UsageEntry, ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable
+from claude_monitor.types import ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable, EntryData
+from claude_monitor.core.models import CostMode, UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
 from claude_monitor.utils.time_utils import TimezoneHandler

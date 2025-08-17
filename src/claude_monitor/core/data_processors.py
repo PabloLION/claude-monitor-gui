@@ -7,7 +7,7 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.core.models import ClaudeJSONEntry, JSONSerializable
+from claude_monitor.types import ClaudeJSONEntry, JSONSerializable
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
-from claude_monitor.core.models import BlockData
+from claude_monitor.types import BlockData
 
 from claude_monitor.core.models import (
     BurnRate,
