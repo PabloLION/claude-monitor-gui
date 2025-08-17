@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Callable
 
-from claude_monitor.core.models import AnalysisResult
+from claude_monitor.core.models import AnalysisResult, BlockDict
 
 logger = logging.getLogger(__name__)
 
@@ -15,11 +15,11 @@ class SessionMonitor:
         """Initialize session monitor."""
         self._current_session_id: str | None = None
         self._session_callbacks: list[
-            Callable[[str, str, dict[str, str | int | float] | None], None]
+            Callable[[str, str, BlockDict | None], None]
         ] = []
         self._session_history: list[dict[str, str | int | float]] = []
 
-    def update(self, data: dict[str, list[dict[str, str | int | float | bool]] | int | str] | AnalysisResult) -> tuple[bool, list[str]]:
+    def update(self, data: AnalysisResult) -> tuple[bool, list[str]]:
         """Update session tracking with new data and validate.
 
         Args:
@@ -38,9 +38,9 @@ class SessionMonitor:
         blocks_raw = data.get("blocks", [])
         if not isinstance(blocks_raw, list):
             return False, ["blocks must be a list"]
-        blocks: list[dict[str, str | int | float | bool]] = blocks_raw
+        blocks: list[BlockDict] = blocks_raw
 
-        active_session: dict[str, str | int | float | bool] | None = None
+        active_session: BlockDict | None = None
         for block in blocks:
             if block.get("isActive", False):
                 active_session = block
@@ -59,7 +59,7 @@ class SessionMonitor:
 
         return is_valid, errors
 
-    def validate_data(self, data: dict[str, list[dict[str, str | int | float | bool]] | int | str]) -> tuple[bool, list[str]]:
+    def validate_data(self, data: AnalysisResult) -> tuple[bool, list[str]]:
         """Validate monitoring data structure and content.
 
         Args:
@@ -88,7 +88,7 @@ class SessionMonitor:
 
         return len(errors) == 0, errors
 
-    def _validate_block(self, block: dict[str, str | int | float | bool], index: int) -> list[str]:
+    def _validate_block(self, block: BlockDict, index: int) -> list[str]:
         """Validate individual block.
 
         Args:
@@ -123,7 +123,7 @@ class SessionMonitor:
         return errors
 
     def _on_session_change(
-        self, old_id: str | None, new_id: str, session_data: dict[str, str | int | float]
+        self, old_id: str | None, new_id: str, session_data: BlockDict
     ) -> None:
         """Handle session change.
 
@@ -168,7 +168,7 @@ class SessionMonitor:
                 logger.exception(f"Session callback error: {e}")
 
     def register_callback(
-        self, callback: Callable[[str, str, dict[str, str | int | float] | None], None]
+        self, callback: Callable[[str, str, BlockDict | None], None]
     ) -> None:
         """Register session change callback.
 
@@ -179,7 +179,7 @@ class SessionMonitor:
             self._session_callbacks.append(callback)
 
     def unregister_callback(
-        self, callback: Callable[[str, str, dict[str, str | int | float] | None], None]
+        self, callback: Callable[[str, str, BlockDict | None], None]
     ) -> None:
         """Unregister session change callback.
 
