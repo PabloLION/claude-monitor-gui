@@ -14,7 +14,7 @@ from claude_monitor.core.data_processors import (
     TimestampProcessor,
     TokenExtractor,
 )
-from claude_monitor.core.models import CostMode, EntryData, RawJSONEntry, UsageEntry, ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry
+from claude_monitor.core.models import CostMode, EntryData, UsageEntry, ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
 from claude_monitor.utils.time_utils import TimezoneHandler
@@ -27,7 +27,7 @@ TOKEN_OUTPUT = "output_tokens"
 logger = logging.getLogger(__name__)
 
 
-def _parse_claude_entry(raw_data: RawJSONEntry) -> ClaudeJSONEntry | None:
+def _parse_claude_entry(raw_data: dict[str, JSONSerializable]) -> ClaudeJSONEntry | None:
     """Parse raw JSON dict into specific ClaudeJSONEntry type by inferring from structure.
     
     Real Claude Code JSONL files don't have explicit 'type' fields, so we infer:
@@ -80,7 +80,7 @@ def load_usage_entries(
     hours_back: int | None = None,
     mode: CostMode = CostMode.AUTO,
     include_raw: bool = False,
-) -> tuple[list[UsageEntry], list[RawJSONEntry] | None]:
+) -> tuple[list[UsageEntry], list[ClaudeJSONEntry] | None]:
     """Load and convert JSONL files to UsageEntry objects.
 
     Args:
@@ -106,7 +106,7 @@ def load_usage_entries(
         return [], None
 
     all_entries = list[UsageEntry]()
-    raw_entries: list[RawJSONEntry] | None = list[RawJSONEntry]() if include_raw else None
+    raw_entries: list[ClaudeJSONEntry] | None = list[ClaudeJSONEntry]() if include_raw else None
     processed_hashes = set[str]()
 
     for file_path in jsonl_files:
@@ -130,7 +130,7 @@ def load_usage_entries(
     return all_entries, raw_entries
 
 
-def load_all_raw_entries(data_path: str | None = None) -> list[RawJSONEntry]:
+def load_all_raw_entries(data_path: str | None = None) -> list[ClaudeJSONEntry]:
     """Load all raw JSONL entries without processing.
 
     Args:
@@ -142,7 +142,7 @@ def load_all_raw_entries(data_path: str | None = None) -> list[RawJSONEntry]:
     data_path_resolved = Path(data_path if data_path else "~/.claude/projects").expanduser()
     jsonl_files = _find_jsonl_files(data_path_resolved)
 
-    all_raw_entries = list[RawJSONEntry]()
+    all_raw_entries = list[ClaudeJSONEntry]()
     for file_path in jsonl_files:
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -151,7 +151,10 @@ def load_all_raw_entries(data_path: str | None = None) -> list[RawJSONEntry]:
                     if not line:
                         continue
                     try:
-                        all_raw_entries.append(json.loads(line))
+                        raw_data = json.loads(line)
+                        parsed_entry = _parse_claude_entry(raw_data)
+                        if parsed_entry:
+                            all_raw_entries.append(parsed_entry)
                     except json.JSONDecodeError:
                         continue
         except Exception as e:
@@ -176,10 +179,10 @@ def _process_single_file(
     include_raw: bool,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
-) -> tuple[list[UsageEntry], list[RawJSONEntry] | None]:
+) -> tuple[list[UsageEntry], list[ClaudeJSONEntry] | None]:
     """Process a single JSONL file."""
     entries = list[UsageEntry]()
-    raw_data: list[RawJSONEntry] | None = list[RawJSONEntry]() if include_raw else None
+    raw_data: list[ClaudeJSONEntry] | None = list[ClaudeJSONEntry]() if include_raw else None
 
     try:
         entries_read = 0
@@ -211,7 +214,10 @@ def _process_single_file(
                         _update_processed_hashes(data, processed_hashes)
 
                     if include_raw and raw_data is not None:
-                        raw_data.append(data)
+                        # Parse raw data to ClaudeJSONEntry for consistency
+                        parsed_entry = _parse_claude_entry(data)
+                        if parsed_entry:
+                            raw_data.append(parsed_entry)
 
                 except json.JSONDecodeError as e:
                     logger.debug(f"Failed to parse JSON line in {file_path}: {e}")
@@ -236,7 +242,7 @@ def _process_single_file(
 
 
 def _should_process_entry(
-    data: RawJSONEntry,
+    data: dict[str, JSONSerializable],
     cutoff_time: datetime | None,
     processed_hashes: set[str],
     timezone_handler: TimezoneHandler,
@@ -244,7 +250,7 @@ def _should_process_entry(
     """Check if entry should be processed based on time and uniqueness."""
     if cutoff_time:
         timestamp_str = data.get("timestamp")
-        if timestamp_str:
+        if timestamp_str and isinstance(timestamp_str, (str, int, float)):
             processor = TimestampProcessor(timezone_handler)
             timestamp = processor.parse_timestamp(timestamp_str)
             if timestamp and timestamp < cutoff_time:
@@ -254,19 +260,27 @@ def _should_process_entry(
     return not (unique_hash and unique_hash in processed_hashes)
 
 
-def _create_unique_hash(data: RawJSONEntry) -> str | None:
+def _create_unique_hash(data: dict[str, JSONSerializable]) -> str | None:
     """Create unique hash for deduplication."""
-    message_id = data.get("message_id") or (
-        data.get("message", {}).get("id")
-        if isinstance(data.get("message"), dict)
-        else None
-    )
+    # Extract message_id with type checking
+    message_id = data.get("message_id")
+    if not isinstance(message_id, str):
+        message = data.get("message")
+        if isinstance(message, dict):
+            msg_id = message.get("id")
+            message_id = msg_id if isinstance(msg_id, str) else None
+        else:
+            message_id = None
+    
+    # Extract request_id with type checking  
     request_id = data.get("requestId") or data.get("request_id")
+    if not isinstance(request_id, str):
+        request_id = None
 
     return f"{message_id}:{request_id}" if message_id and request_id else None
 
 
-def _update_processed_hashes(data: RawJSONEntry, processed_hashes: set[str]) -> None:
+def _update_processed_hashes(data: dict[str, JSONSerializable], processed_hashes: set[str]) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
     if unique_hash:
@@ -274,7 +288,7 @@ def _update_processed_hashes(data: RawJSONEntry, processed_hashes: set[str]) -> 
 
 
 def _map_to_usage_entry(
-    raw_data: RawJSONEntry,
+    raw_data: dict[str, JSONSerializable],
     mode: CostMode,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
@@ -352,7 +366,7 @@ class UsageEntryMapper:
         self.pricing_calculator = pricing_calculator
         self.timezone_handler = timezone_handler
 
-    def map(self, data: RawJSONEntry, mode: CostMode) -> UsageEntry | None:
+    def map(self, data: dict[str, JSONSerializable], mode: CostMode) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
         return _map_to_usage_entry(
             data, mode, self.timezone_handler, self.pricing_calculator
@@ -362,21 +376,41 @@ class UsageEntryMapper:
         """Check if tokens are valid (for test compatibility)."""
         return any(v > 0 for v in tokens.values())
 
-    def _extract_timestamp(self, data: RawJSONEntry) -> datetime | None:
+    def _extract_timestamp(self, data: dict[str, JSONSerializable]) -> datetime | None:
         """Extract timestamp (for test compatibility)."""
-        if "timestamp" not in data:
+        timestamp = data.get("timestamp")
+        if not timestamp or not isinstance(timestamp, (str, int, float)):
             return None
         processor = TimestampProcessor(self.timezone_handler)
-        return processor.parse_timestamp(data["timestamp"])
+        return processor.parse_timestamp(timestamp)
 
-    def _extract_model(self, data: RawJSONEntry) -> str:
+    def _extract_model(self, data: dict[str, JSONSerializable]) -> str:
         """Extract model name (for test compatibility)."""
-        return DataConverter.extract_model_name(data, default="unknown")
+        # Convert to ClaudeJSONEntry for compatibility
+        parsed_data = _parse_claude_entry(data)
+        if parsed_data:
+            return DataConverter.extract_model_name(parsed_data, default="unknown")
+        return "unknown"
 
-    def _extract_metadata(self, data: RawJSONEntry) -> dict[str, str]:
+    def _extract_metadata(self, data: dict[str, JSONSerializable]) -> dict[str, str]:
         """Extract metadata (for test compatibility)."""
         message = data.get("message", {})
+        
+        # Extract message_id with type checking
+        message_id = data.get("message_id")
+        if not isinstance(message_id, str):
+            if isinstance(message, dict):
+                msg_id = message.get("id", "")
+                message_id = msg_id if isinstance(msg_id, str) else ""
+            else:
+                message_id = ""
+        
+        # Extract request_id with type checking
+        request_id = data.get("request_id") or data.get("requestId")
+        if not isinstance(request_id, str):
+            request_id = "unknown"
+            
         return {
-            "message_id": data.get("message_id") or message.get("id", ""),
-            "request_id": data.get("request_id") or data.get("requestId", "unknown"),
+            "message_id": message_id,
+            "request_id": request_id,
         }

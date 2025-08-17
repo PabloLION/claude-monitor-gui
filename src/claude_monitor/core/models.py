@@ -194,26 +194,7 @@ def normalize_model_name(model: str) -> str:
     return model
 
 
-class RawJSONEntry(TypedDict, total=False):
-    """Raw JSONL entry from Claude usage data files."""
-
-    timestamp: str
-    message_id: NotRequired[str]
-    request_id: NotRequired[str]
-    requestId: NotRequired[str]  # Alternative field name
-    message: NotRequired[dict[str, str | int]]
-    cost: NotRequired[float]
-    cost_usd: NotRequired[float]
-    model: NotRequired[str]
-    # Token usage fields
-    usage: NotRequired[dict[str, int]]
-    input_tokens: NotRequired[int]
-    output_tokens: NotRequired[int]
-    cache_creation_tokens: NotRequired[int]
-    cache_read_tokens: NotRequired[int]
-
-
-# New specific TypedDicts for different Claude message types
+# Specific TypedDicts for different Claude message types
 
 
 class SystemEntry(TypedDict, total=False):
@@ -304,7 +285,7 @@ class LimitDetectionInfo(TypedDict):
     content: str
     reset_time: NotRequired[datetime]
     wait_minutes: NotRequired[float]
-    raw_data: NotRequired[RawJSONEntry]
+    raw_data: NotRequired[ClaudeJSONEntry]
     block_context: NotRequired[dict[str, str | int]]
 
 
@@ -444,34 +425,6 @@ class TokenUsage(TypedDict, total=False):
 
 
 # TypedDict for usage data from JSONL files
-class UsageData(TypedDict, total=False):
-    """Raw usage data from Claude JSONL files."""
-
-    # Core fields
-    timestamp: str
-    type: str
-    model: str
-
-    # Token usage (various formats)
-    usage: TokenUsage
-    input_tokens: int
-    output_tokens: int
-    cache_creation_tokens: int
-    cache_read_tokens: int
-
-    # Message data
-    message: dict[str, str | int | TokenUsage]
-    message_id: str
-    request_id: str
-    requestId: str  # Alternative field name
-
-    # Cost data
-    cost: float
-    cost_usd: float
-
-    # Any other fields from JSON
-    content: str | list[dict[str, str]]
-    role: str
 
 
 # Type aliases for common patterns

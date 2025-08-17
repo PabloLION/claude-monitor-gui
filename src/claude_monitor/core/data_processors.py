@@ -7,7 +7,7 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.core.models import ClaudeJSONEntry, JSONSerializable, RawJSONEntry
+from claude_monitor.core.models import ClaudeJSONEntry, JSONSerializable
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -69,7 +69,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: ClaudeJSONEntry | RawJSONEntry) -> dict[str, int]:
+    def extract_tokens(data: ClaudeJSONEntry) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -280,7 +280,7 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: ClaudeJSONEntry | RawJSONEntry, default: str = "claude-3-5-sonnet"
+        data: ClaudeJSONEntry, default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 

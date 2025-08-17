@@ -9,9 +9,9 @@ from datetime import datetime, timedelta, timezone
 
 from claude_monitor.core.models import (
     ClaudeJSONEntry,
+    JSONSerializable,
     LimitDetectionInfo,
     LimitInfo,
-    RawJSONEntry,
     SessionBlock,
     SystemEntry,
     TokenCounts,
@@ -83,7 +83,7 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, entries: list[ClaudeJSONEntry | RawJSONEntry]) -> list[LimitDetectionInfo]:
+    def detect_limits(self, entries: list[ClaudeJSONEntry]) -> list[LimitDetectionInfo]:
         """Detect token limit messages from JSONL entries.
 
         Args:
@@ -222,7 +222,7 @@ class SessionAnalyzer:
     # Limit detection methods
 
     def _detect_single_limit(
-        self, entry: ClaudeJSONEntry | RawJSONEntry
+        self, entry: ClaudeJSONEntry
     ) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = entry.get("type")
@@ -235,7 +235,7 @@ class SessionAnalyzer:
         return None
 
     def _process_system_message(
-        self, entry: ClaudeJSONEntry | RawJSONEntry
+        self, entry: ClaudeJSONEntry
     ) -> LimitDetectionInfo | None:
         """Process system messages for limit detection."""
         content = entry.get("content", "")
@@ -281,7 +281,7 @@ class SessionAnalyzer:
             return None
 
     def _process_user_message(
-        self, entry: ClaudeJSONEntry | RawJSONEntry
+        self, entry: ClaudeJSONEntry
     ) -> LimitDetectionInfo | None:
         """Process user messages for tool result limit detection."""
         message = entry.get("message", {})
@@ -301,7 +301,7 @@ class SessionAnalyzer:
         return None
 
     def _process_tool_result(
-        self, item: RawJSONEntry, entry: ClaudeJSONEntry | RawJSONEntry, message: dict[str, str | int]
+        self, item: dict[str, JSONSerializable], entry: ClaudeJSONEntry, message: dict[str, str | int]
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -341,7 +341,7 @@ class SessionAnalyzer:
         return None
 
     def _extract_block_context(
-        self, entry: ClaudeJSONEntry | RawJSONEntry, message: dict[str, str | int] | None = None
+        self, entry: ClaudeJSONEntry, message: dict[str, str | int] | None = None
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}
