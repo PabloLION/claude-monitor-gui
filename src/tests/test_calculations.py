@@ -12,7 +12,7 @@ from claude_monitor.core.calculations import (
     calculate_hourly_burn_rate,
 )
 from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
-from claude_monitor.types import JSONSerializable, BlockData
+from claude_monitor.types import BlockData
 
 
 class TestBurnRateCalculator:

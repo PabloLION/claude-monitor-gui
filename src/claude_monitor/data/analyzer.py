@@ -17,9 +17,6 @@ from claude_monitor.types import (
     ClaudeJSONEntry,
     JSONSerializable,
     LimitDetectionInfo,
-    LimitInfo,
-    SystemEntry,
-    UserEntry,
 )
 from claude_monitor.utils.time_utils import TimezoneHandler
 
