@@ -187,7 +187,7 @@ class AdvancedCustomLimitDisplay:
     def __init__(self, console: Console | None) -> None:
         self.console = console or Console()
 
-    def _collect_session_data(
+    def collect_session_data(
         self, blocks: list[BlockDict] | None = None
     ) -> SessionCollectionDict:
         """Collect session data and identify limit sessions."""
@@ -258,7 +258,7 @@ class AdvancedCustomLimitDisplay:
 
         return False
 
-    def _calculate_session_percentiles(
+    def calculate_session_percentiles(
         self, sessions: list[SessionDataDict]
     ) -> SessionPercentilesDict:
         """Calculate percentiles from session data."""

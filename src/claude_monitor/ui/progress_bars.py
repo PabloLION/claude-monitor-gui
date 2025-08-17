@@ -221,6 +221,31 @@ class TokenProgressBar(BaseProgressBar):
         percentage_str: str = self._format_percentage(percentage)
         return f"{icon} [{bar}] {percentage_str}"
 
+    def render_with_style(
+        self, percentage: float, filled_style: str, empty_style: str = "table.border"
+    ) -> str:
+        """Render token usage progress bar with custom styling.
+
+        Args:
+            percentage: Usage percentage (can be > 100)
+            filled_style: Custom style for filled portion
+            empty_style: Custom style for empty portion
+
+        Returns:
+            Formatted progress bar string with custom styling
+        """
+        capped_percentage = min(percentage, 100.0)
+        filled: int = self._calculate_filled_segments(capped_percentage)
+
+        if percentage >= 100:
+            bar: str = self._render_bar(50, filled_style=filled_style)
+        else:
+            bar = self._render_bar(
+                filled, filled_style=filled_style, empty_style=empty_style
+            )
+
+        return bar
+
 
 class TimeProgressBar(BaseProgressBar):
     """Time progress bar component for session duration."""

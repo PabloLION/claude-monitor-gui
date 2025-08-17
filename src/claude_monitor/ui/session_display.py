@@ -82,15 +82,9 @@ class SessionDisplayComponent:
         progress_bar = TokenProgressBar(width=50)
         bar_style = get_cost_style(percentage)
 
-        capped_percentage = min(percentage, 100.0)
-        filled = progress_bar._calculate_filled_segments(capped_percentage, 100.0)
-
-        if percentage >= 100:
-            filled_bar = progress_bar._render_bar(50, filled_style=bar_style)
-        else:
-            filled_bar = progress_bar._render_bar(
-                filled, filled_style=bar_style, empty_style="table.border"
-            )
+        filled_bar = progress_bar.render_with_style(
+            percentage, filled_style=bar_style, empty_style="table.border"
+        )
 
         return f"{color} [{filled_bar}]"
 

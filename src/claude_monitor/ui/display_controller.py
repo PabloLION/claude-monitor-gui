@@ -239,8 +239,8 @@ class DisplayController:
 
         if args.plan == "custom":
             temp_display = AdvancedCustomLimitDisplay(None)
-            session_data = temp_display._collect_session_data(data["blocks"])
-            percentiles = temp_display._calculate_session_percentiles(
+            session_data = temp_display.collect_session_data(data["blocks"])
+            percentiles = temp_display.calculate_session_percentiles(
                 session_data["limit_sessions"]
             )
             cost_limit_p90 = percentiles["costs"]["p90"]
@@ -514,6 +514,14 @@ class LiveDisplayManager:
         self._console = console
         self._live_context: Live | None = None
         self._current_renderable: RenderableType | None = None
+
+    def set_console(self, console: Console) -> None:
+        """Set the console instance for live display operations.
+
+        Args:
+            console: Rich console instance to use for display
+        """
+        self._console = console
 
     def create_live_display(
         self,

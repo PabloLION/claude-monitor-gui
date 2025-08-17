@@ -146,7 +146,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         token_limit: int = _get_initial_token_limit(args, str(data_path))
 
         display_controller = DisplayController()
-        display_controller.live_manager._console = console
+        display_controller.live_manager.set_console(console)
 
         refresh_per_second: float = getattr(args, "refresh_per_second", 0.75)
         logger.info(

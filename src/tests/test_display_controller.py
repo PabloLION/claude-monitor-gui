@@ -631,8 +631,8 @@ class TestDisplayControllerAdvanced:
         # Mock advanced display
         mock_temp_display = Mock()
         mock_advanced_display.return_value = mock_temp_display
-        mock_temp_display._collect_session_data.return_value = {"limit_sessions": []}
-        mock_temp_display._calculate_session_percentiles.return_value = {
+        mock_temp_display.collect_session_data.return_value = {"limit_sessions": []}
+        mock_temp_display.calculate_session_percentiles.return_value = {
             "costs": {"p90": 5.0},
             "messages": {"p90": 100},
         }
@@ -680,7 +680,7 @@ class TestDisplayControllerAdvanced:
 
                 assert result == "rendered_screen"
                 mock_advanced_display.assert_called_once_with(None)
-                mock_temp_display._collect_session_data.assert_called_once_with(
+                mock_temp_display.collect_session_data.assert_called_once_with(
                     data["blocks"]
                 )
 
