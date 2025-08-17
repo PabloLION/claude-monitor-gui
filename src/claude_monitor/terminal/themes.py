@@ -452,7 +452,7 @@ class BackgroundDetector:
 class ThemeManager:
     """Manages themes with auto-detection and thread safety."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = threading.Lock()
         self._current_theme: ThemeConfig | None = None
         self._forced_theme: str | None = None

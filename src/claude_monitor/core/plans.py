@@ -131,7 +131,7 @@ class Plans:
 
     @classmethod
     def get_token_limit(
-        cls, plan: str, blocks: list[BlockData] | None = None
+        cls, plan: str, blocks: list[BlockData] | list[BlockDict] | None = None
     ) -> int:
         """
         Get the token limit for a plan.
@@ -146,7 +146,17 @@ class Plans:
         if cfg.name == PlanType.CUSTOM.value and blocks:
             from claude_monitor.core.p90_calculator import P90Calculator
 
-            p90_limit = P90Calculator().calculate_p90_limit(blocks)
+            # Convert BlockDict to BlockData if needed
+            block_data: list[BlockData] = []
+            for block in blocks:
+                if isinstance(block, dict) and "isActive" in block:
+                    # This is a BlockDict, convert to BlockData
+                    block_data.append(block)  # type: ignore[arg-type]
+                else:
+                    # This is already BlockData
+                    block_data.append(block)  # type: ignore[arg-type]
+
+            p90_limit = P90Calculator().calculate_p90_limit(block_data)
             if p90_limit:
                 return p90_limit
 

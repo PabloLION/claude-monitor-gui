@@ -273,16 +273,16 @@ class Settings(BaseSettings):
         if clear_config:
             last_used = LastUsedParams()
             last_used.clear()
-            settings = cls(_cli_parse_args=argv)
+            settings = cls(_cli_parse_args=argv)  # type: ignore[call-arg]
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()
 
-            settings = cls(_cli_parse_args=argv)
+            settings = cls(_cli_parse_args=argv)  # type: ignore[call-arg]
 
-            cli_provided_fields = set()
+            cli_provided_fields: set[str] = set()
             if argv:
-                for _i, arg in enumerate(argv):
+                for arg in argv:
                     if arg.startswith("--"):
                         field_name = arg[2:].replace("-", "_")
                         if field_name in cls.model_fields:
