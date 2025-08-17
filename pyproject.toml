@@ -229,5 +229,14 @@ directory = "htmlcov"
 [tool.coverage.xml]
 output = "coverage.xml"
 
+[tool.autoflake]
+in-place = true
+remove-unused-variables = true
+remove-all-unused-imports = true
+remove-duplicate-keys = true
+expand-star-imports = true
+ignore-pass-after-docstring = true
+recursive = true
+
 [dependency-groups]
 dev = ["autoflake>=2.3.1", "pyupgrade>=3.20.0"]
