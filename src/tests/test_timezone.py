@@ -8,7 +8,7 @@ import pytz
 
 from claude_monitor.utils.timezone import (
     TimezoneHandler,
-    _detect_timezone_time_preference,
+    detect_timezone_time_preference,
 )
 
 
@@ -313,13 +313,13 @@ class TestTimezonePreferenceDetection:
     """Test suite for timezone preference detection functions."""
 
     def test_detect_timezone_time_preference_delegation(self) -> None:
-        """Test that _detect_timezone_time_preference delegates correctly."""
+        """Test that detect_timezone_time_preference delegates correctly."""
         # This function delegates to get_time_format_preference
         with patch(
             "claude_monitor.utils.time_utils.get_time_format_preference",
             return_value=True,
         ):
-            result = _detect_timezone_time_preference()
+            result = detect_timezone_time_preference()
             assert result is True
 
     def test_detect_timezone_time_preference_with_args(self) -> None:
@@ -331,5 +331,5 @@ class TestTimezonePreferenceDetection:
             "claude_monitor.utils.time_utils.get_time_format_preference",
             return_value=False,
         ):
-            result = _detect_timezone_time_preference(mock_args)
+            result = detect_timezone_time_preference(mock_args)
             assert result is False
