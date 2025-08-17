@@ -410,14 +410,14 @@ class TestTimezoneHandler:
     def test_validate_and_get_tz_valid(self) -> None:
         """Test _validate_and_get_tz with valid timezone."""
         handler = TimezoneHandler()
-        tz = handler._validate_and_get_tz("Europe/London")
+        tz = handler._validate_and_get_tz("Europe/London")  # type: ignore[misc]
         assert tz.zone == "Europe/London"
 
     def test_validate_and_get_tz_invalid(self) -> None:
         """Test _validate_and_get_tz with invalid timezone."""
         handler = TimezoneHandler()
         with patch("claude_monitor.utils.time_utils.logger") as mock_logger:
-            tz = handler._validate_and_get_tz("Invalid/Timezone")
+            tz = handler._validate_and_get_tz("Invalid/Timezone")  # type: ignore[misc]
             assert tz == pytz.UTC
             mock_logger.warning.assert_called_once()
 

@@ -317,7 +317,7 @@ class TestFormattingAdvanced:
 
     def test_internal_get_pref_function(self) -> None:
         """Test the internal _get_pref helper function."""
-        from claude_monitor.utils.formatting import _get_pref
+        from claude_monitor.utils.formatting import _get_pref  # type: ignore[misc]
 
         # Test with mock args
         mock_args = Mock()

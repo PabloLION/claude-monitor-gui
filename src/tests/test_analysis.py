@@ -12,14 +12,14 @@ from claude_monitor.core.models import (
     UsageProjection,
 )
 from claude_monitor.data.analysis import (
-    _add_optional_block_data,
-    _convert_blocks_to_dict_format,
-    _create_base_block_dict,
-    _create_result,
-    _format_block_entries,
-    _format_limit_info,
-    _is_limit_in_block_timerange,
-    _process_burn_rates,
+    _add_optional_block_data,  # type: ignore[misc]
+    _convert_blocks_to_dict_format,  # type: ignore[misc]
+    _create_base_block_dict,  # type: ignore[misc]
+    _create_result,  # type: ignore[misc]
+    _format_block_entries,  # type: ignore[misc]
+    _format_limit_info,  # type: ignore[misc]
+    _is_limit_in_block_timerange,  # type: ignore[misc]
+    _process_burn_rates,  # type: ignore[misc]
     analyze_usage,
 )
 

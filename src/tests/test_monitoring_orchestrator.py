@@ -69,11 +69,11 @@ class TestMonitoringOrchestratorInit:
             orchestrator = MonitoringOrchestrator()
 
             assert orchestrator.update_interval == 10
-            assert not orchestrator._monitoring
-            assert orchestrator._monitor_thread is None
-            assert orchestrator._args is None
-            assert orchestrator._last_valid_data is None
-            assert len(orchestrator._update_callbacks) == 0
+            assert not orchestrator._monitoring  # type: ignore[misc]
+            assert orchestrator._monitor_thread is None  # type: ignore[misc]
+            assert orchestrator._args is None  # type: ignore[misc]
+            assert orchestrator._last_valid_data is None  # type: ignore[misc]
+            assert len(orchestrator._update_callbacks) == 0  # type: ignore[misc]
 
             mock_dm.assert_called_once_with(cache_ttl=5, data_path=None)
             mock_sm.assert_called_once()
@@ -97,15 +97,15 @@ class TestMonitoringOrchestratorLifecycle:
 
     def test_start_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test starting monitoring creates thread."""
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.start()
 
-        assert orchestrator._monitoring
-        assert orchestrator._monitor_thread is not None
-        assert orchestrator._monitor_thread.is_alive()
-        assert orchestrator._monitor_thread.name == "MonitoringThread"
-        assert orchestrator._monitor_thread.daemon
+        assert orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is not None  # type: ignore[misc]
+        assert orchestrator._monitor_thread.is_alive()  # type: ignore[misc]
+        assert orchestrator._monitor_thread.name == "MonitoringThread"  # type: ignore[misc]
+        assert orchestrator._monitor_thread.daemon  # type: ignore[misc]
 
         orchestrator.stop()
 
@@ -113,7 +113,7 @@ class TestMonitoringOrchestratorLifecycle:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test starting monitoring when already running."""
-        orchestrator._monitoring = True
+        orchestrator._monitoring = True  # type: ignore[misc]
 
         with patch("claude_monitor.monitoring.orchestrator.logger") as mock_logger:
             orchestrator.start()
@@ -123,22 +123,22 @@ class TestMonitoringOrchestratorLifecycle:
     def test_stop_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test stopping monitoring."""
         orchestrator.start()
-        assert orchestrator._monitoring
+        assert orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.stop()
 
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
 
     def test_stop_monitoring_not_running(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test stopping monitoring when not running."""
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.stop()  # Should not raise
 
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
     def test_stop_monitoring_with_timeout(
         self, orchestrator: MonitoringOrchestrator
@@ -149,7 +149,7 @@ class TestMonitoringOrchestratorLifecycle:
         # Mock thread that doesn't die quickly
         mock_thread = Mock()
         mock_thread.is_alive.return_value = True
-        orchestrator._monitor_thread = mock_thread
+        orchestrator._monitor_thread = mock_thread  # type: ignore[misc]
 
         orchestrator.stop()
 
@@ -167,7 +167,7 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_update_callback(callback)
 
-        assert callback in orchestrator._update_callbacks
+        assert callback in orchestrator._update_callbacks  # type: ignore[misc]
 
     def test_register_duplicate_callback(
         self, orchestrator: MonitoringOrchestrator
@@ -178,7 +178,7 @@ class TestMonitoringOrchestratorCallbacks:
         orchestrator.register_update_callback(callback)
         orchestrator.register_update_callback(callback)
 
-        assert orchestrator._update_callbacks.count(callback) == 1
+        assert orchestrator._update_callbacks.count(callback) == 1  # type: ignore[misc]
 
     def test_register_session_callback(
         self, orchestrator: MonitoringOrchestrator
@@ -221,7 +221,7 @@ class TestMonitoringOrchestratorDataProcessing:
 
         orchestrator.set_args(args)
 
-        assert orchestrator._args == args
+        assert orchestrator._args == args  # type: ignore[misc]
 
     def test_wait_for_initial_data_success(
         self, orchestrator: MonitoringOrchestrator
@@ -231,7 +231,7 @@ class TestMonitoringOrchestratorDataProcessing:
         orchestrator.start()
 
         # Mock the first data event as set
-        orchestrator._first_data_event.set()
+        orchestrator._first_data_event.set()  # type: ignore[misc]
 
         result = orchestrator.wait_for_initial_data(timeout=1.0)
 
@@ -291,8 +291,8 @@ class TestMonitoringOrchestratorMonitoringLoop:
 
             orchestrator.start()
             # Stop immediately
-            orchestrator._stop_event.set()
-            orchestrator._monitoring = False
+            orchestrator._stop_event.set()  # type: ignore[misc]
+            orchestrator._monitoring = False  # type: ignore[misc]
             time.sleep(0.1)  # Give it time to stop
 
             # Should have minimal calls
@@ -328,7 +328,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is not None
         assert result["data"] == test_data
@@ -336,7 +336,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         assert result["args"] == args
         assert result["session_id"] == "session_1"
         assert result["session_count"] == 1
-        assert orchestrator._last_valid_data == result
+        assert orchestrator._last_valid_data == result  # type: ignore[misc]
 
     def test_fetch_and_process_no_data(
         self, orchestrator: MonitoringOrchestrator
@@ -344,7 +344,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         """Test fetch and process when no data available."""
         orchestrator.data_manager.get_data.return_value = None
 
-        result = orchestrator._fetch_and_process_data()
+        result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
 
@@ -356,7 +356,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         orchestrator.data_manager.get_data.return_value = test_data
         orchestrator.session_monitor.update.return_value = (False, ["Validation error"])
 
-        result = orchestrator._fetch_and_process_data()
+        result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
 
@@ -380,7 +380,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is not None
         callback1.assert_called_once()
@@ -414,7 +414,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
             ),
             patch("claude_monitor.monitoring.orchestrator.report_error") as mock_report,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is not None  # Should still return data despite callback error
         callback_success.assert_called_once()  # Other callbacks should still work
@@ -429,7 +429,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
         ) as mock_report:
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
         mock_report.assert_called_once()
@@ -445,15 +445,15 @@ class TestMonitoringOrchestratorFetchAndProcess:
         }
         orchestrator.data_manager.get_data.return_value = test_data
 
-        assert not orchestrator._first_data_event.is_set()
+        assert not orchestrator._first_data_event.is_set()  # type: ignore[misc]
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            orchestrator._fetch_and_process_data()
+            orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert orchestrator._first_data_event.is_set()
+        assert orchestrator._first_data_event.is_set()  # type: ignore[misc]
 
 
 class TestMonitoringOrchestratorTokenLimitCalculation:
@@ -465,7 +465,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         """Test token limit calculation without args."""
         data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
-        result = orchestrator._calculate_token_limit(data)
+        result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -483,7 +483,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
 
         assert result == 200000
         mock_get_limit.assert_called_once_with("pro")
@@ -506,7 +506,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=175000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
 
         assert result == 175000
         mock_get_limit.assert_called_once_with("custom", blocks_data)
@@ -525,7 +525,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             side_effect=Exception("Calculation failed"),
         ):
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -646,11 +646,11 @@ class TestMonitoringOrchestratorIntegration:
             return_value=200000,
         ):
             # Process initial data
-            result1 = orchestrator._fetch_and_process_data()
+            result1 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result1["session_id"] == "session_1"
 
             # Process changed data
-            result2 = orchestrator._fetch_and_process_data()
+            result2 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result2["session_id"] == "session_2"
 
         # Verify both updates were captured
@@ -687,7 +687,7 @@ class TestMonitoringOrchestratorIntegration:
             "claude_monitor.monitoring.orchestrator.report_error"
         ) as mock_report:
             # First call should fail
-            result1 = orchestrator._fetch_and_process_data()
+            result1 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result1 is None
             mock_report.assert_called_once()
 
@@ -696,7 +696,7 @@ class TestMonitoringOrchestratorIntegration:
                 "claude_monitor.monitoring.orchestrator.get_token_limit",
                 return_value=200000,
             ):
-                result2 = orchestrator._fetch_and_process_data()
+                result2 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result2 is not None
             assert result2["data"]["blocks"][0]["id"] == "test"
 
@@ -728,7 +728,7 @@ class TestMonitoringOrchestratorThreadSafety:
             thread.join()
 
         # All callbacks should be registered
-        assert len(orchestrator._update_callbacks) == 30
+        assert len(orchestrator._update_callbacks) == 30  # type: ignore[misc]
 
     def test_concurrent_start_stop(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test thread-safe start/stop operations."""
@@ -751,8 +751,8 @@ class TestMonitoringOrchestratorThreadSafety:
             thread.join()
 
         # Should end in stopped state
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
 
 
 class TestMonitoringOrchestratorProperties:
@@ -773,27 +773,27 @@ class TestMonitoringOrchestratorProperties:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert orchestrator._last_valid_data == result
-        assert orchestrator._last_valid_data["data"] == test_data
+        assert orchestrator._last_valid_data == result  # type: ignore[misc]
+        assert orchestrator._last_valid_data["data"] == test_data  # type: ignore[misc]
 
     def test_monitoring_state_consistency(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring state remains consistent."""
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
-        assert not orchestrator._stop_event.is_set()
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
+        assert not orchestrator._stop_event.is_set()  # type: ignore[misc]
 
         orchestrator.start()
-        assert orchestrator._monitoring
-        assert orchestrator._monitor_thread is not None
-        assert not orchestrator._stop_event.is_set()
+        assert orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is not None  # type: ignore[misc]
+        assert not orchestrator._stop_event.is_set()  # type: ignore[misc]
 
         orchestrator.stop()
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
         # stop_event may remain set after stopping
 
 
@@ -806,9 +806,9 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        assert monitor._current_session_id is None
-        assert monitor._session_callbacks == []
-        assert monitor._session_history == []
+        assert monitor._current_session_id is None  # type: ignore[misc]
+        assert monitor._session_callbacks == []  # type: ignore[misc]
+        assert monitor._session_history == []  # type: ignore[misc]
 
     def test_session_monitor_update_valid_data(self) -> None:
         """Test updating session monitor with valid data."""
@@ -888,7 +888,7 @@ class TestSessionMonitor:
 
         monitor.register_callback(callback)
 
-        assert callback in monitor._session_callbacks
+        assert callback in monitor._session_callbacks  # type: ignore[misc]
 
     def test_session_monitor_callback_execution(self) -> None:
         """Test that callbacks are executed on session change."""
@@ -915,7 +915,7 @@ class TestSessionMonitor:
 
         # Callback may or may not be called depending on implementation
         # Just verify the structure is maintained
-        assert isinstance(monitor._session_callbacks, list)
+        assert isinstance(monitor._session_callbacks, list)  # type: ignore[misc]
 
     def test_session_monitor_session_history(self) -> None:
         """Test session history tracking."""
@@ -938,7 +938,7 @@ class TestSessionMonitor:
         monitor.update(data)
 
         # History may or may not change depending on implementation
-        assert isinstance(monitor._session_history, list)
+        assert isinstance(monitor._session_history, list)  # type: ignore[misc]
 
     def test_session_monitor_current_session_tracking(self) -> None:
         """Test current session ID tracking."""
@@ -961,7 +961,7 @@ class TestSessionMonitor:
         monitor.update(data)
 
         # Current session ID may be set depending on implementation
-        assert isinstance(monitor._current_session_id, (str, type(None)))
+        assert isinstance(monitor._current_session_id, (str, type(None)))  # type: ignore[misc]
 
     def test_session_monitor_multiple_blocks(self) -> None:
         """Test session monitor with multiple blocks."""

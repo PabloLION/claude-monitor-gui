@@ -7,8 +7,8 @@ import pytest
 
 from claude_monitor.core.calculations import (
     BurnRateCalculator,
-    _calculate_total_tokens_in_hour,
-    _process_block_for_burn_rate,
+    _calculate_total_tokens_in_hour,  # type: ignore[misc]
+    _process_block_for_burn_rate,  # type: ignore[misc]
     calculate_hourly_burn_rate,
 )
 from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
@@ -384,7 +384,7 @@ class TestP90Calculator:
 
     def test_did_hit_limit_true(self) -> None:
         """Test _did_hit_limit returns True when limit is hit."""
-        from claude_monitor.core.p90_calculator import _did_hit_limit
+        from claude_monitor.core.p90_calculator import _did_hit_limit  # type: ignore[misc]
 
         # 9000 tokens with 10000 limit and 0.9 threshold = 9000 >= 9000
         result = _did_hit_limit(9000, [10000, 50000], 0.9)
@@ -396,7 +396,7 @@ class TestP90Calculator:
 
     def test_did_hit_limit_false(self) -> None:
         """Test _did_hit_limit returns False when limit is not hit."""
-        from claude_monitor.core.p90_calculator import _did_hit_limit
+        from claude_monitor.core.p90_calculator import _did_hit_limit  # type: ignore[misc]
 
         # 8000 tokens with 10000 limit and 0.9 threshold = 8000 < 9000
         result = _did_hit_limit(8000, [10000, 50000], 0.9)
@@ -408,7 +408,7 @@ class TestP90Calculator:
 
     def test_extract_sessions_basic(self) -> None:
         """Test _extract_sessions with basic filtering."""
-        from claude_monitor.core.p90_calculator import _extract_sessions
+        from claude_monitor.core.p90_calculator import _extract_sessions  # type: ignore[misc]
 
         blocks = [
             {"totalTokens": 1000, "isGap": False},
@@ -428,7 +428,7 @@ class TestP90Calculator:
 
     def test_extract_sessions_complex_filter(self) -> None:
         """Test _extract_sessions with complex filtering."""
-        from claude_monitor.core.p90_calculator import _extract_sessions
+        from claude_monitor.core.p90_calculator import _extract_sessions  # type: ignore[misc]
 
         blocks = [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
@@ -448,7 +448,7 @@ class TestP90Calculator:
         """Test _calculate_p90_from_blocks when limit hits are found."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,
+            _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
         config = P90Config(
@@ -475,7 +475,7 @@ class TestP90Calculator:
         """Test _calculate_p90_from_blocks when no limit hits are found."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,
+            _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
         config = P90Config(
@@ -502,7 +502,7 @@ class TestP90Calculator:
         """Test _calculate_p90_from_blocks with empty or invalid blocks."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,
+            _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
         config = P90Config(
@@ -530,9 +530,9 @@ class TestP90Calculator:
         calculator = P90Calculator()
 
         assert hasattr(calculator, "_cfg")
-        assert calculator._cfg.common_limits is not None
-        assert calculator._cfg.limit_threshold > 0
-        assert calculator._cfg.default_min_limit > 0
+        assert calculator._cfg.common_limits is not None  # type: ignore[misc]
+        assert calculator._cfg.limit_threshold > 0  # type: ignore[misc]
+        assert calculator._cfg.default_min_limit > 0  # type: ignore[misc]
 
     def test_p90_calculator_custom_config(self) -> None:
         """Test P90Calculator with custom configuration."""
@@ -547,9 +547,9 @@ class TestP90Calculator:
 
         calculator = P90Calculator(custom_config)
 
-        assert calculator._cfg == custom_config
-        assert calculator._cfg.limit_threshold == 0.8
-        assert calculator._cfg.default_min_limit == 3000
+        assert calculator._cfg == custom_config  # type: ignore[misc]
+        assert calculator._cfg.limit_threshold == 0.8  # type: ignore[misc]
+        assert calculator._cfg.default_min_limit == 3000  # type: ignore[misc]
 
     def test_p90_calculator_calculate_basic(self) -> None:
         """Test P90Calculator.calculate with basic blocks."""
@@ -601,7 +601,7 @@ class TestP90Calculator:
         """Test P90 calculation with edge cases."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,
+            _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
         config = P90Config(
@@ -629,7 +629,7 @@ class TestP90Calculator:
         """Test that P90 uses proper quantiles calculation."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,
+            _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
         config = P90Config(

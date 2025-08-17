@@ -63,7 +63,7 @@ class TestPricingCalculator:
         assert "claude-3-sonnet" in calculator.pricing
         assert "claude-3-haiku" in calculator.pricing
         assert "claude-3-5-sonnet" in calculator.pricing
-        assert calculator._cost_cache == {}
+        assert calculator._cost_cache == {}  # type: ignore[misc]
 
     def test_init_custom_pricing(
         self,
@@ -72,7 +72,7 @@ class TestPricingCalculator:
     ) -> None:
         """Test initialization with custom pricing."""
         assert custom_calculator.pricing == custom_pricing
-        assert custom_calculator._cost_cache == {}
+        assert custom_calculator._cost_cache == {}  # type: ignore[misc]
 
     def test_fallback_pricing_structure(self, calculator: PricingCalculator) -> None:
         """Test that fallback pricing has correct structure."""

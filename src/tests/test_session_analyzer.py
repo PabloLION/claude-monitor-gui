@@ -133,8 +133,8 @@ class TestSessionAnalyzer:
             model="claude-3-haiku",
         )
 
-        assert not analyzer._should_create_new_block(block, entry1)
-        assert analyzer._should_create_new_block(block, entry2)
+        assert not analyzer._should_create_new_block(block, entry1)  # type: ignore[misc]
+        assert analyzer._should_create_new_block(block, entry2)  # type: ignore[misc]
 
     def test_round_to_hour(self) -> None:
         """Test _round_to_hour functionality."""
@@ -157,7 +157,7 @@ class TestSessionAnalyzer:
         ]
 
         for input_time, expected in test_cases:
-            result = analyzer._round_to_hour(input_time)
+            result = analyzer._round_to_hour(input_time)  # type: ignore[misc]
             assert result == expected
 
     def test_create_new_block(self) -> None:
@@ -172,7 +172,7 @@ class TestSessionAnalyzer:
             model="claude-3-haiku",
         )
 
-        block = analyzer._create_new_block(entry)
+        block = analyzer._create_new_block(entry)  # type: ignore[misc]
 
         assert block.start_time == datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
         assert block.end_time == datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc)
@@ -200,7 +200,7 @@ class TestSessionAnalyzer:
             message_id="msg_123",
         )
 
-        analyzer._add_entry_to_block(block, entry)
+        analyzer._add_entry_to_block(block, entry)  # type: ignore[misc]
 
         assert len(block.entries) == 1
         assert block.entries[0] == entry
@@ -231,7 +231,7 @@ class TestSessionAnalyzer:
             ],
         )
 
-        analyzer._finalize_block(block)
+        analyzer._finalize_block(block)  # type: ignore[misc]
 
         # Should set actual_end_time to last entry timestamp
         assert block.actual_end_time == datetime(
@@ -276,7 +276,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(raw_data)
+        result = analyzer._detect_single_limit(raw_data)  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
@@ -298,7 +298,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(raw_data)
+        result = analyzer._detect_single_limit(raw_data)  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
@@ -324,10 +324,10 @@ class TestSessionAnalyzer:
         ]
 
         for case in opus_cases:
-            assert analyzer._is_opus_limit(case) is True
+            assert analyzer._is_opus_limit(case) is True  # type: ignore[misc]
 
         for case in non_opus_cases:
-            assert analyzer._is_opus_limit(case) is False
+            assert analyzer._is_opus_limit(case) is False  # type: ignore[misc]
 
     def test_extract_wait_time(self) -> None:
         """Test _extract_wait_time functionality."""
@@ -345,7 +345,7 @@ class TestSessionAnalyzer:
         timestamp = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
 
         for text, expected_minutes in test_cases:
-            reset_time, wait_minutes = analyzer._extract_wait_time(text, timestamp)
+            reset_time, wait_minutes = analyzer._extract_wait_time(text, timestamp)  # type: ignore[misc]
             assert wait_minutes == expected_minutes
 
     def test_parse_reset_timestamp(self) -> None:
@@ -360,7 +360,7 @@ class TestSessionAnalyzer:
         ]
 
         for text in test_cases:
-            result = analyzer._parse_reset_timestamp(text)
+            result = analyzer._parse_reset_timestamp(text)  # type: ignore[misc]
             # Should either return a datetime or None
             assert result is None or isinstance(result, datetime)
 
@@ -384,7 +384,7 @@ class TestSessionAnalyzer:
             ),
         ]
 
-        analyzer._mark_active_blocks(blocks)
+        analyzer._mark_active_blocks(blocks)  # type: ignore[misc]
 
         # Old block should not be active
         assert blocks[0].is_active is False

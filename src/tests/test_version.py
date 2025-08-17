@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from claude_monitor._version import _get_version_from_pyproject, get_version
+from claude_monitor._version import _get_version_from_pyproject, get_version  # type: ignore[misc]
 
 
 def test_get_version_from_metadata() -> None:

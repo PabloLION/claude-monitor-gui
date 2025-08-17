@@ -65,7 +65,7 @@ class TestDisplayController:
         self, controller: DisplayController, sample_active_block: dict[str, JSONSerializable]
     ) -> None:
         """Test session data extraction."""
-        result = controller._extract_session_data(sample_active_block)
+        result = controller._extract_session_data(sample_active_block)  # type: ignore[misc]
 
         assert result["tokens_used"] == 15000
         assert result["session_cost"] == 0.45
@@ -429,16 +429,16 @@ class TestLiveDisplayManager:
         """Test LiveDisplayManager initialization with defaults."""
         manager = LiveDisplayManager()
 
-        assert manager._console is None
-        assert manager._live_context is None
-        assert manager._current_renderable is None
+        assert manager._console is None  # type: ignore[misc]
+        assert manager._live_context is None  # type: ignore[misc]
+        assert manager._current_renderable is None  # type: ignore[misc]
 
     def test_init_with_console(self):
         """Test LiveDisplayManager initialization with console."""
         mock_console = Mock()
         manager = LiveDisplayManager(console=mock_console)
 
-        assert manager._console is mock_console
+        assert manager._console is mock_console  # type: ignore[misc]
 
     @patch("claude_monitor.ui.display_controller.Live")
     def test_create_live_display_default(self, mock_live_class):

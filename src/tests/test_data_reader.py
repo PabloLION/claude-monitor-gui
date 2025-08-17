@@ -17,12 +17,12 @@ from claude_monitor.core.models import CostMode, UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.data.reader import (
     UsageEntryMapper,
-    _create_unique_hash,
-    _find_jsonl_files,
-    _map_to_usage_entry,
-    _process_single_file,
-    _should_process_entry,
-    _update_processed_hashes,
+    _create_unique_hash,  # type: ignore[misc]
+    _find_jsonl_files,  # type: ignore[misc]
+    _map_to_usage_entry,  # type: ignore[misc]
+    _process_single_file,  # type: ignore[misc]
+    _should_process_entry,  # type: ignore[misc]
+    _update_processed_hashes,  # type: ignore[misc]
     load_all_raw_entries,
     load_usage_entries,
 )

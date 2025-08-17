@@ -265,12 +265,12 @@ class TestTableViewsController:
 
     def test_format_models_single(self, controller: TableViewsController) -> None:
         """Test formatting single model."""
-        result = controller._format_models(["claude-3-haiku"])
+        result = controller._format_models(["claude-3-haiku"])  # type: ignore[misc]
         assert result == "claude-3-haiku"
 
     def test_format_models_multiple(self, controller: TableViewsController) -> None:
         """Test formatting multiple models."""
-        result = controller._format_models(
+        result = controller._format_models(  # type: ignore[misc]
             ["claude-3-haiku", "claude-3-sonnet", "claude-3-opus"]
         )
         expected = "• claude-3-haiku\n• claude-3-sonnet\n• claude-3-opus"
@@ -278,7 +278,7 @@ class TestTableViewsController:
 
     def test_format_models_empty(self, controller: TableViewsController) -> None:
         """Test formatting empty models list."""
-        result = controller._format_models([])
+        result = controller._format_models([])  # type: ignore[misc]
         assert result == "No models"
 
     def test_create_no_data_display(self, controller: TableViewsController) -> None:
