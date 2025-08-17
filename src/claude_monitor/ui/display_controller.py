@@ -7,11 +7,12 @@ import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import argparse
+from typing import cast, Any
 
 import pytz
 from rich.console import Console, Group, RenderableType
 
-from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData
+from claude_monitor.core.models import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData
 from rich.live import Live
 from rich.text import Text
 
@@ -51,21 +52,17 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(self, active_block: dict[str, JSONSerializable]) -> ExtractedSessionData:
+    def _extract_session_data(self, active_block: BlockDict) -> ExtractedSessionData:
         """Extract basic session data from active block."""
-        # Extract and cast values to ensure proper types
-        tokens_used_raw = active_block.get("totalTokens", 0)
-        session_cost_raw = active_block.get("costUSD", 0.0)
-        sent_messages_raw = active_block.get("sentMessagesCount", 0)
-        
+        # BlockDict has well-defined types, so we can access fields directly
         return {
-            "tokens_used": int(tokens_used_raw) if isinstance(tokens_used_raw, (int, float)) else 0,
-            "session_cost": float(session_cost_raw) if isinstance(session_cost_raw, (int, float)) else 0.0,
-            "raw_per_model_stats": active_block.get("perModelStats", {}) if isinstance(active_block.get("perModelStats"), dict) else {},
-            "sent_messages": int(sent_messages_raw) if isinstance(sent_messages_raw, (int, float)) else 0,
-            "entries": active_block.get("entries", []) if isinstance(active_block.get("entries"), list) else [],
-            "start_time_str": active_block.get("startTime") if isinstance(active_block.get("startTime"), str) else None,
-            "end_time_str": active_block.get("endTime") if isinstance(active_block.get("endTime"), str) else None,
+            "tokens_used": active_block["totalTokens"],
+            "session_cost": active_block["costUSD"],
+            "raw_per_model_stats": cast(dict[str, JSONSerializable], active_block["perModelStats"]),
+            "sent_messages": active_block["sentMessagesCount"],
+            "entries": cast(list[JSONSerializable], active_block["entries"]),
+            "start_time_str": active_block["startTime"],
+            "end_time_str": active_block["endTime"],
         }
 
     def _calculate_token_limits(self, args: argparse.Namespace, token_limit: int) -> tuple[int, int]:
@@ -79,14 +76,14 @@ class DisplayController:
         return token_limit, token_limit
 
     def _calculate_time_data(
-        self, session_data: dict[str, JSONSerializable], current_time: datetime
+        self, session_data: ExtractedSessionData, current_time: datetime
     ) -> TimeData:
         """Calculate time-related data for the session."""
         return self.session_calculator.calculate_time_data(session_data, current_time)
 
     def _calculate_cost_predictions(
         self,
-        session_data: dict[str, JSONSerializable],
+        session_data: ExtractedSessionData,
         time_data: TimeData,
         args: argparse.Namespace,
         cost_limit_p90: float | None,
@@ -203,7 +200,7 @@ class DisplayController:
         }
 
     def create_data_display(
-        self, data: dict[str, str | int | float | list], args: argparse.Namespace, token_limit: int
+        self, data: AnalysisResult, args: argparse.Namespace, token_limit: int
     ) -> RenderableType:
         """Create display renderable from data.
 
@@ -276,8 +273,9 @@ class DisplayController:
             processed_data["messages_limit_p90"] = messages_limit_p90
 
         try:
+            # Cast processed_data for type safety - we know the types are correct from construction
             screen_buffer = self.session_display.format_active_session_screen(
-                **processed_data
+                **cast(ProcessedDisplayData, processed_data)
             )
         except Exception as e:
             # Log the error with more details
@@ -310,13 +308,13 @@ class DisplayController:
 
     def _process_active_session_data(
         self,
-        active_block: dict[str, JSONSerializable],
-        data: dict[str, JSONSerializable],
+        active_block: BlockDict,
+        data: AnalysisResult,
         args: argparse.Namespace,
         token_limit: int,
         current_time: datetime,
         cost_limit_p90: float | None = None,
-    ) -> dict[str, JSONSerializable]:
+    ) -> dict[str, Any]:
         """Process active session data for display.
 
         Args:
@@ -352,26 +350,31 @@ class DisplayController:
         time_data = self._calculate_time_data(session_data, current_time)
 
         # Calculate burn rate
-        burn_rate = calculate_hourly_burn_rate(data["blocks"], current_time)
+        burn_rate = calculate_hourly_burn_rate(cast(list[BlockData], data["blocks"]), current_time)
 
         # Calculate cost predictions
         cost_data = self._calculate_cost_predictions(
             session_data, time_data, args, cost_limit_p90
         )
 
-        # Check notifications
+        # Check notifications (handle optional reset_time)
+        reset_time = time_data["reset_time"]
+        if reset_time is None:
+            # Use a default reset time if none available
+            reset_time = current_time + timedelta(hours=5)
+        
         notifications = self._check_notifications(
             token_limit,
             original_limit,
             session_data["session_cost"],
             cost_data["cost_limit"],
             cost_data["predicted_end_time"],
-            time_data["reset_time"],
+            reset_time,
         )
 
-        # Format display times
+        # Format display times (reset_time already handled above)
         display_times = self._format_display_times(
-            args, current_time, cost_data["predicted_end_time"], time_data["reset_time"]
+            args, current_time, cost_data["predicted_end_time"], reset_time
         )
 
         # Build result dictionary
@@ -386,10 +389,10 @@ class DisplayController:
             "total_session_minutes": time_data["total_session_minutes"],
             "burn_rate": burn_rate,
             "session_cost": session_data["session_cost"],
-            "per_model_stats": session_data["raw_per_model_stats"],
+            "per_model_stats": cast(dict[str, dict[str, int | float]], session_data["raw_per_model_stats"]),
             "model_distribution": model_distribution,
             "sent_messages": session_data["sent_messages"],
-            "entries": session_data["entries"],
+            "entries": cast(list[dict[str, JSONSerializable]], session_data["entries"]),
             "predicted_end_str": display_times["predicted_end_str"],
             "reset_time_str": display_times["reset_time_str"],
             "current_time_str": display_times["current_time_str"],
@@ -414,16 +417,21 @@ class DisplayController:
             return {}
 
         # Calculate total tokens per model for THIS SESSION ONLY
-        model_tokens = {}
+        model_tokens: dict[str, int] = {}
         for model, stats in raw_per_model_stats.items():
             if isinstance(stats, dict):
                 # Normalize model name
                 normalized_model = normalize_model_name(model)
                 if normalized_model and normalized_model != "unknown":
                     # Sum all token types for this model in current session
-                    total_tokens = stats.get("input_tokens", 0) + stats.get(
-                        "output_tokens", 0
-                    )
+                    input_tokens = stats.get("input_tokens", 0)
+                    output_tokens = stats.get("output_tokens", 0)
+                    
+                    # Ensure we have numeric values for arithmetic
+                    if isinstance(input_tokens, (int, float)) and isinstance(output_tokens, (int, float)):
+                        total_tokens = int(input_tokens) + int(output_tokens)
+                    else:
+                        continue
                     if total_tokens > 0:
                         if normalized_model in model_tokens:
                             model_tokens[normalized_model] += total_tokens
@@ -587,7 +595,7 @@ class SessionCalculator:
         self.tz_handler = TimezoneHandler()
 
     def calculate_time_data(
-        self, session_data: dict[str, JSONSerializable], current_time: datetime
+        self, session_data: ExtractedSessionData, current_time: datetime
     ) -> TimeData:
         """Calculate time-related data for the session.
 
@@ -644,7 +652,7 @@ class SessionCalculator:
 
     def calculate_cost_predictions(
         self,
-        session_data: dict[str, JSONSerializable],
+        session_data: ExtractedSessionData,
         time_data: TimeData,
         cost_limit: float | None = None,
     ) -> CostPredictions:

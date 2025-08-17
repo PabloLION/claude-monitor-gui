@@ -581,10 +581,10 @@ class ProcessedDisplayData(TypedDict):
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, JSONSerializable]
+    per_model_stats: dict[str, dict[str, int | float]]
     model_distribution: dict[str, float]
     sent_messages: int
-    entries: list[JSONSerializable]
+    entries: list[dict[str, JSONSerializable]]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
@@ -592,3 +592,5 @@ class ProcessedDisplayData(TypedDict):
     show_exceed_notification: bool
     show_tokens_will_run_out: bool
     original_limit: int
+    cost_limit_p90: NotRequired[float]
+    messages_limit_p90: NotRequired[int | float]

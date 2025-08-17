@@ -5,7 +5,7 @@ Consolidates display indicators, error/loading screens, and advanced custom disp
 
 from rich.console import Console, RenderableType
 
-from claude_monitor.core.models import JSONSerializable, SessionDataDict, SessionCollectionDict, SessionPercentilesDict
+from claude_monitor.core.models import JSONSerializable, SessionDataDict, SessionCollectionDict, SessionPercentilesDict, BlockDict
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
 from claude_monitor.ui.layouts import HeaderManager
@@ -184,11 +184,11 @@ class LoadingScreenComponent:
 class AdvancedCustomLimitDisplay:
     """Display component for session-based P90 limits from general_limit sessions."""
 
-    def __init__(self, console: Console) -> None:
-        self.console = console
+    def __init__(self, console: Console | None) -> None:
+        self.console = console or Console()
 
     def _collect_session_data(
-        self, blocks: list[dict[str, JSONSerializable]] | None = None
+        self, blocks: list[BlockDict] | None = None
     ) -> SessionCollectionDict:
         """Collect session data and identify limit sessions."""
         if not blocks:
