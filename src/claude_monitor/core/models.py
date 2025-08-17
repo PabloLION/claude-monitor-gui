@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
+from typing import Literal
 from typing import NotRequired
 from typing import TypedDict
 
@@ -212,6 +213,54 @@ class RawJSONEntry(TypedDict, total=False):
     cache_read_tokens: NotRequired[int]
 
 
+# New specific TypedDicts for different Claude message types
+
+
+class SystemEntry(TypedDict, total=False):
+    """System messages from Claude (type='system')."""
+
+    type: Literal["system"]
+    timestamp: str
+    content: str
+    message_id: NotRequired[str]
+    request_id: NotRequired[str]
+    requestId: NotRequired[str]  # Alternative field name
+
+
+class UserEntry(TypedDict, total=False):
+    """User messages (type='user')."""
+
+    type: Literal["user"]
+    timestamp: str
+    message: dict[str, str | int | list[dict[str, str]] | dict[str, str]]
+    message_id: NotRequired[str]
+    request_id: NotRequired[str]
+    requestId: NotRequired[str]  # Alternative field name
+
+
+class AssistantEntry(TypedDict, total=False):
+    """Assistant responses with token usage (type='assistant')."""
+
+    type: Literal["assistant"]
+    timestamp: str
+    model: str
+    message: dict[str, "str | int | TokenUsage"]
+    usage: dict[str, int]
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+    cost: NotRequired[float]
+    cost_usd: NotRequired[float]
+    message_id: NotRequired[str]
+    request_id: NotRequired[str]
+    requestId: NotRequired[str]  # Alternative field name
+
+
+# Discriminated union for all Claude JSONL entry types
+ClaudeJSONEntry = SystemEntry | UserEntry | AssistantEntry
+
+
 class EntryData(TypedDict):
     """Processed entry data for cost calculation."""
 
@@ -351,7 +400,7 @@ class MonitoringData(TypedDict):
 # TypedDict for block data from session analysis
 class BlockData(TypedDict, total=False):
     """Block data from Claude session analysis."""
-    
+
     # Required fields
     id: str
     isActive: bool
@@ -360,7 +409,7 @@ class BlockData(TypedDict, total=False):
     startTime: str
     endTime: str
     costUSD: float
-    
+
     # Optional fields
     actualEndTime: str
     tokenCounts: dict[str, int]
@@ -378,48 +427,48 @@ class BlockData(TypedDict, total=False):
 # TypedDict for token usage data
 class TokenUsage(TypedDict, total=False):
     """Token usage information from various sources."""
-    
+
     input_tokens: int
     output_tokens: int
     cache_creation_tokens: int
     cache_read_tokens: int
     cache_creation_input_tokens: int  # Alternative field name
-    cache_read_input_tokens: int      # Alternative field name
-    inputTokens: int                  # Alternative field name (camelCase)
-    outputTokens: int                 # Alternative field name (camelCase)
-    cacheCreationInputTokens: int     # Alternative field name (camelCase)
-    cacheReadInputTokens: int         # Alternative field name (camelCase)
-    prompt_tokens: int                # Alternative field name (OpenAI format)
-    completion_tokens: int            # Alternative field name (OpenAI format)
+    cache_read_input_tokens: int  # Alternative field name
+    inputTokens: int  # Alternative field name (camelCase)
+    outputTokens: int  # Alternative field name (camelCase)
+    cacheCreationInputTokens: int  # Alternative field name (camelCase)
+    cacheReadInputTokens: int  # Alternative field name (camelCase)
+    prompt_tokens: int  # Alternative field name (OpenAI format)
+    completion_tokens: int  # Alternative field name (OpenAI format)
     total_tokens: int
 
 
 # TypedDict for usage data from JSONL files
 class UsageData(TypedDict, total=False):
     """Raw usage data from Claude JSONL files."""
-    
+
     # Core fields
     timestamp: str
     type: str
     model: str
-    
+
     # Token usage (various formats)
     usage: TokenUsage
     input_tokens: int
     output_tokens: int
     cache_creation_tokens: int
     cache_read_tokens: int
-    
+
     # Message data
     message: dict[str, str | int | TokenUsage]
     message_id: str
     request_id: str
     requestId: str  # Alternative field name
-    
+
     # Cost data
     cost: float
     cost_usd: float
-    
+
     # Any other fields from JSON
     content: str | list[dict[str, str]]
     role: str
@@ -449,21 +498,21 @@ class ErrorContext(TypedDict, total=False):
 
 class AggregatedData(TypedDict, total=False):
     """Type-safe aggregated data for daily/monthly statistics."""
-    
+
     # Period identifiers (one of these will be present)
     date: NotRequired[str]  # For daily aggregation (YYYY-MM-DD)
     month: NotRequired[str]  # For monthly aggregation (YYYY-MM)
-    
+
     # Token statistics
     input_tokens: int
     output_tokens: int
     cache_creation_tokens: int
     cache_read_tokens: int
-    
+
     # Cost and count
     total_cost: float
     entries_count: int
-    
+
     # Model information
     models_used: list[str]
     model_breakdowns: dict[str, dict[str, int | float]]
@@ -471,7 +520,7 @@ class AggregatedData(TypedDict, total=False):
 
 class AggregatedTotals(TypedDict):
     """Type-safe totals from aggregated data."""
-    
+
     input_tokens: int
     output_tokens: int
     cache_creation_tokens: int
@@ -483,7 +532,7 @@ class AggregatedTotals(TypedDict):
 
 class TimeData(TypedDict):
     """Time-related data for session calculations."""
-    
+
     start_time: datetime | None
     reset_time: datetime | None
     minutes_to_reset: float
@@ -493,7 +542,7 @@ class TimeData(TypedDict):
 
 class CostPredictions(TypedDict):
     """Cost-related predictions for session calculations."""
-    
+
     cost_per_minute: float
     cost_limit: float
     cost_remaining: float
@@ -502,7 +551,7 @@ class CostPredictions(TypedDict):
 
 class LastUsedParamsDict(TypedDict, total=False):
     """Type-safe structure for last used parameters."""
-    
+
     plan: str
     view: str
     timezone: str
@@ -519,7 +568,7 @@ class LastUsedParamsDict(TypedDict, total=False):
 
 class SessionDataDict(TypedDict):
     """Type-safe structure for session data in UI components."""
-    
+
     tokens: int
     cost: float
     messages: int
@@ -527,7 +576,7 @@ class SessionDataDict(TypedDict):
 
 class SessionCollectionDict(TypedDict):
     """Type-safe structure for session collection results."""
-    
+
     all_sessions: list[SessionDataDict]
     limit_sessions: list[SessionDataDict]
     current_session: SessionDataDict | None
@@ -537,16 +586,16 @@ class SessionCollectionDict(TypedDict):
 
 class PercentileDict(TypedDict):
     """Type-safe structure for percentile calculations."""
-    
+
     p50: int | float
-    p75: int | float  
+    p75: int | float
     p90: int | float
     p95: int | float
 
 
 class SessionPercentilesDict(TypedDict):
     """Type-safe structure for session percentiles results."""
-    
+
     tokens: PercentileDict
     costs: PercentileDict
     messages: PercentileDict
@@ -556,7 +605,7 @@ class SessionPercentilesDict(TypedDict):
 
 class ExtractedSessionData(TypedDict):
     """Type-safe structure for extracted session data in display controller."""
-    
+
     tokens_used: int
     session_cost: float
     raw_per_model_stats: dict[str, JSONSerializable]
@@ -568,7 +617,7 @@ class ExtractedSessionData(TypedDict):
 
 class ProcessedDisplayData(TypedDict):
     """Type-safe structure for processed display data."""
-    
+
     plan: str
     timezone: str
     tokens_used: int
