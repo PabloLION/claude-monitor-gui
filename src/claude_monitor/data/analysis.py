@@ -13,9 +13,11 @@ from claude_monitor.core.models import (
     AnalysisResult,
     BlockDict,
     BlockEntry,
+    ClaudeJSONEntry,
     CostMode,
     FormattedLimitInfo,
     LimitDetectionInfo,
+    RawJSONEntry,
     SessionBlock,
     UsageEntry,
 )
@@ -81,7 +83,10 @@ def analyze_usage(
 
     limits_detected = 0
     if raw_entries:
-        limit_detections = analyzer.detect_limits(raw_entries)
+        # Type cast to handle backward compatibility during migration
+        from typing import cast
+        entries_for_limit_detection = cast(list[ClaudeJSONEntry | RawJSONEntry], raw_entries)
+        limit_detections = analyzer.detect_limits(entries_for_limit_detection)
         limits_detected = len(limit_detections)
 
         for block in blocks:

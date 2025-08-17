@@ -8,11 +8,14 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from claude_monitor.core.models import (
+    ClaudeJSONEntry,
     LimitDetectionInfo,
     LimitInfo,
     RawJSONEntry,
     SessionBlock,
+    SystemEntry,
     TokenCounts,
+    UserEntry,
     UsageEntry,
     normalize_model_name,
 )
@@ -80,19 +83,19 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, raw_entries: list[RawJSONEntry]) -> list[LimitDetectionInfo]:
-        """Detect token limit messages from raw JSONL entries.
+    def detect_limits(self, entries: list[ClaudeJSONEntry | RawJSONEntry]) -> list[LimitDetectionInfo]:
+        """Detect token limit messages from JSONL entries.
 
         Args:
-            raw_entries: List of raw JSONL entries
+            entries: List of typed JSONL entries or raw entries for backward compatibility
 
         Returns:
             List of detected limit information
         """
         limits: list[LimitDetectionInfo] = []
 
-        for raw_data in raw_entries:
-            limit_info = self._detect_single_limit(raw_data)
+        for entry in entries:
+            limit_info = self._detect_single_limit(entry)
             if limit_info:
                 limits.append(limit_info)
 
@@ -219,23 +222,23 @@ class SessionAnalyzer:
     # Limit detection methods
 
     def _detect_single_limit(
-        self, raw_data: RawJSONEntry
+        self, entry: ClaudeJSONEntry | RawJSONEntry
     ) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
-        entry_type = raw_data.get("type")
+        entry_type = entry.get("type")
 
         if entry_type == "system":
-            return self._process_system_message(raw_data)
+            return self._process_system_message(entry)
         if entry_type == "user":
-            return self._process_user_message(raw_data)
+            return self._process_user_message(entry)
 
         return None
 
     def _process_system_message(
-        self, raw_data: RawJSONEntry
+        self, entry: ClaudeJSONEntry | RawJSONEntry
     ) -> LimitDetectionInfo | None:
         """Process system messages for limit detection."""
-        content = raw_data.get("content", "")
+        content = entry.get("content", "")
         if not isinstance(content, str):
             return None
 
@@ -243,13 +246,13 @@ class SessionAnalyzer:
         if "limit" not in content_lower and "rate" not in content_lower:
             return None
 
-        timestamp_str = raw_data.get("timestamp")
-        if not timestamp_str:
+        timestamp_str = entry.get("timestamp")
+        if not isinstance(timestamp_str, str):
             return None
 
         try:
             timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
-            block_context = self._extract_block_context(raw_data)
+            block_context = self._extract_block_context(entry)
 
             # Check for Opus-specific limit
             if self._is_opus_limit(content_lower) and timestamp is not None:
@@ -260,7 +263,7 @@ class SessionAnalyzer:
                     "content": content,
                     "reset_time": reset_time,
                     "wait_minutes": wait_minutes,
-                    "raw_data": raw_data,
+                    "raw_data": entry,
                     "block_context": block_context,
                 }
 
@@ -269,7 +272,7 @@ class SessionAnalyzer:
                 "type": "system_limit",
                 "timestamp": timestamp,
                 "content": content,
-                "raw_data": raw_data,
+                "raw_data": entry,
                 "block_context": block_context,
             }
             return result  # type: ignore[return-value]
@@ -278,10 +281,12 @@ class SessionAnalyzer:
             return None
 
     def _process_user_message(
-        self, raw_data: RawJSONEntry
+        self, entry: ClaudeJSONEntry | RawJSONEntry
     ) -> LimitDetectionInfo | None:
         """Process user messages for tool result limit detection."""
-        message = raw_data.get("message", {})
+        message = entry.get("message", {})
+        if not isinstance(message, dict):
+            return None
         content_list = message.get("content", [])
 
         if not isinstance(content_list, list):
@@ -289,14 +294,14 @@ class SessionAnalyzer:
 
         for item in content_list:
             if isinstance(item, dict) and item.get("type") == "tool_result":
-                limit_info = self._process_tool_result(item, raw_data, message)  # type: ignore[arg-type]
+                limit_info = self._process_tool_result(item, entry, message)  # type: ignore[arg-type]
                 if limit_info:
                     return limit_info
 
         return None
 
     def _process_tool_result(
-        self, item: RawJSONEntry, raw_data: RawJSONEntry, message: dict[str, str | int]
+        self, item: RawJSONEntry, entry: ClaudeJSONEntry | RawJSONEntry, message: dict[str, str | int]
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -311,8 +316,8 @@ class SessionAnalyzer:
             if not isinstance(text, str) or "limit reached" not in text.lower():
                 continue
 
-            timestamp_str = raw_data.get("timestamp")
-            if not timestamp_str:
+            timestamp_str = entry.get("timestamp")
+            if not isinstance(timestamp_str, str):
                 continue
 
             try:
@@ -321,8 +326,8 @@ class SessionAnalyzer:
                     "type": "general_limit",
                     "timestamp": timestamp,
                     "content": text,
-                    "raw_data": raw_data,
-                    "block_context": self._extract_block_context(raw_data, message),
+                    "raw_data": entry,
+                    "block_context": self._extract_block_context(entry, message),
                 }
                 
                 reset_time = self._parse_reset_timestamp(text)
@@ -336,29 +341,29 @@ class SessionAnalyzer:
         return None
 
     def _extract_block_context(
-        self, raw_data: RawJSONEntry, message: dict[str, str | int] | None = None
+        self, entry: ClaudeJSONEntry | RawJSONEntry, message: dict[str, str | int] | None = None
     ) -> dict[str, str | int]:
-        """Extract block context from raw data."""
+        """Extract block context from entry data."""
         context: dict[str, str | int] = {}
         
         # Safe extraction with defaults
-        message_id = raw_data.get("messageId") or raw_data.get("message_id")
+        message_id = entry.get("messageId") or entry.get("message_id")
         if isinstance(message_id, (str, int)):
             context["message_id"] = message_id
             
-        request_id = raw_data.get("requestId") or raw_data.get("request_id")
+        request_id = entry.get("requestId") or entry.get("request_id")
         if isinstance(request_id, (str, int)):
             context["request_id"] = request_id
             
-        session_id = raw_data.get("sessionId") or raw_data.get("session_id")
+        session_id = entry.get("sessionId") or entry.get("session_id")
         if isinstance(session_id, (str, int)):
             context["session_id"] = session_id
             
-        version = raw_data.get("version")
+        version = entry.get("version")
         if isinstance(version, (str, int)):
             context["version"] = version
             
-        model = raw_data.get("model")
+        model = entry.get("model")
         if isinstance(model, (str, int)):
             context["model"] = model
 

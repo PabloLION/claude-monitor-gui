@@ -5,8 +5,9 @@ code duplication across different components.
 """
 
 from datetime import datetime
+from typing import cast
 
-from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage, RawJSONEntry
+from claude_monitor.core.models import ClaudeJSONEntry, JSONSerializable, RawJSONEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -15,7 +16,9 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
+        self.timezone_handler: TimezoneHandler = (
+            timezone_handler or TimezoneHandler()
+        )
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -66,11 +69,11 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: UsageData | RawJSONEntry) -> dict[str, int]:
+    def extract_tokens(data: ClaudeJSONEntry | RawJSONEntry) -> dict[str, int]:
         """Extract token counts from data in standardized format.
 
         Args:
-            data: Data dictionary with token information
+            data: Claude message entry with token information
 
         Returns:
             Dictionary with standardized token keys and counts
@@ -87,13 +90,13 @@ class TokenExtractor:
             "total_tokens": 0,
         }
 
-        # Define token extraction helper  
+        # Define token extraction helper
         def safe_get_int(value: JSONSerializable | None) -> int:
             """Safely convert value to int.
-            
+
             Args:
                 value: Value from API response (int, float, str, or None)
-                
+
             Returns:
                 int: Converted value or 0 if conversion fails
             """
@@ -107,70 +110,118 @@ class TokenExtractor:
                     return 0
             return 0
 
+        # Handle new specific types with type narrowing
+        if isinstance(data, dict) and "type" in data:
+            entry_type = data.get("type")
+            if entry_type == "system" or entry_type == "user":
+                # System and user messages don't have token usage
+                logger.debug(
+                    "TokenExtractor: System/user messages have no token usage"
+                )
+                return tokens
+            elif entry_type == "assistant":
+                # Assistant messages have token usage - proceed with extraction
+                pass
+
         # Build token sources - these are dicts that might contain token info
-        token_sources: list[dict[str, JSONSerializable] | TokenUsage | UsageData | RawJSONEntry] = []
+        token_sources: list[dict[str, JSONSerializable]] = []
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
-        
+
         if is_assistant:
             # Assistant message: check message.usage first, then usage, then top-level
             if message := data.get("message"):
-                if isinstance(message, dict) and (usage := message.get("usage")):
+                if isinstance(message, dict) and (
+                    usage := message.get("usage")
+                ):
                     if isinstance(usage, dict):
                         # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
                         token_sources.append(usage)  # type: ignore[arg-type]
-            
+
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
                     token_sources.append(usage)  # type: ignore[arg-type]
-            
-            # Top-level fields as fallback
-            token_sources.append(data)
+
+            # Top-level fields as fallback (cast for type compatibility)
+            token_sources.append(cast(dict[str, JSONSerializable], data))
         else:
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
                     token_sources.append(usage)  # type: ignore[arg-type]
-            
+
             if message := data.get("message"):
-                if isinstance(message, dict) and (usage := message.get("usage")):
+                if isinstance(message, dict) and (
+                    usage := message.get("usage")
+                ):
                     if isinstance(usage, dict):
                         # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
                         token_sources.append(usage)  # type: ignore[arg-type]
-            
-            # Top-level fields as fallback
-            token_sources.append(data)
 
-        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
+            # Top-level fields as fallback (cast for type compatibility)
+            token_sources.append(cast(dict[str, JSONSerializable], data))
+
+        logger.debug(
+            f"TokenExtractor: Checking {len(token_sources)} token sources"
+        )
 
         # Extract tokens from first valid source
         for source in token_sources:
             # Try multiple field name variations
             input_tokens = (
-                safe_get_int(source.get("input_tokens"))
-                or safe_get_int(source.get("inputTokens"))
-                or safe_get_int(source.get("prompt_tokens"))
+                safe_get_int(cast(JSONSerializable, source.get("input_tokens")))
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("inputTokens"))
+                )
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("prompt_tokens"))
+                )
             )
 
             output_tokens = (
-                safe_get_int(source.get("output_tokens"))
-                or safe_get_int(source.get("outputTokens"))
-                or safe_get_int(source.get("completion_tokens"))
+                safe_get_int(
+                    cast(JSONSerializable, source.get("output_tokens"))
+                )
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("outputTokens"))
+                )
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("completion_tokens"))
+                )
             )
 
             cache_creation = (
-                safe_get_int(source.get("cache_creation_tokens"))
-                or safe_get_int(source.get("cache_creation_input_tokens"))
-                or safe_get_int(source.get("cacheCreationInputTokens"))
+                safe_get_int(
+                    cast(JSONSerializable, source.get("cache_creation_tokens"))
+                )
+                or safe_get_int(
+                    cast(
+                        JSONSerializable,
+                        source.get("cache_creation_input_tokens"),
+                    )
+                )
+                or safe_get_int(
+                    cast(
+                        JSONSerializable, source.get("cacheCreationInputTokens")
+                    )
+                )
             )
 
             cache_read = (
-                safe_get_int(source.get("cache_read_input_tokens"))
-                or safe_get_int(source.get("cache_read_tokens"))
-                or safe_get_int(source.get("cacheReadInputTokens"))
+                safe_get_int(
+                    cast(
+                        JSONSerializable, source.get("cache_read_input_tokens")
+                    )
+                )
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("cache_read_tokens"))
+                )
+                or safe_get_int(
+                    cast(JSONSerializable, source.get("cacheReadInputTokens"))
+                )
             )
 
             if input_tokens > 0 or output_tokens > 0:
@@ -180,16 +231,19 @@ class TokenExtractor:
                         "output_tokens": output_tokens,
                         "cache_creation_tokens": cache_creation,
                         "cache_read_tokens": cache_read,
-                        "total_tokens": input_tokens + output_tokens + cache_creation + cache_read,
+                        "total_tokens": input_tokens
+                        + output_tokens
+                        + cache_creation
+                        + cache_read,
                     }
                 )
                 logger.debug(
                     f"TokenExtractor: Found tokens - input={input_tokens}, output={output_tokens}, cache_creation={cache_creation}, cache_read={cache_read}"
                 )
                 break
-            
+
             logger.debug(f"TokenExtractor: No valid tokens in source")
-        
+
         if tokens["total_tokens"] == 0:
             logger.debug("TokenExtractor: No tokens found in any source")
 
@@ -200,7 +254,9 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(data: dict[str, JSONSerializable], prefix: str = "") -> dict[str, JSONSerializable]:
+    def flatten_nested_dict(
+        data: dict[str, JSONSerializable], prefix: str = ""
+    ) -> dict[str, JSONSerializable]:
         """Flatten nested dictionary structure.
 
         Args:
@@ -224,12 +280,12 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: UsageData | RawJSONEntry, default: str = "claude-3-5-sonnet"
+        data: ClaudeJSONEntry | RawJSONEntry, default: str = "claude-3-5-sonnet"
     ) -> str:
         """Extract model name from various data sources.
 
         Args:
-            data: Data containing model information
+            data: Claude message entry containing model information
             default: Default model name if not found
 
         Returns:
@@ -237,17 +293,21 @@ class DataConverter:
         """
         # Check model in priority order with TypedDict fields
         model_candidates: list[str | None] = [
-            data.get("model"),  # Direct model field
+            (
+                cast(str, data.get("model"))
+                if isinstance(data.get("model"), str)
+                else None
+            ),  # Direct model field
             None,
         ]
-        
+
         # Check nested message.model
         if message := data.get("message"):
             if message and isinstance(message, dict):
                 model = message.get("model")
                 if isinstance(model, str):
                     model_candidates.insert(0, model)
-        
+
         # Check nested usage.model
         if usage := data.get("usage"):
             if usage and isinstance(usage, dict):

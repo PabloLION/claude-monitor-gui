@@ -14,7 +14,7 @@ from claude_monitor.core.data_processors import (
     TimestampProcessor,
     TokenExtractor,
 )
-from claude_monitor.core.models import CostMode, EntryData, RawJSONEntry, UsageEntry
+from claude_monitor.core.models import CostMode, EntryData, RawJSONEntry, UsageEntry, ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
 from claude_monitor.utils.time_utils import TimezoneHandler
@@ -25,6 +25,54 @@ TOKEN_INPUT = "input_tokens"
 TOKEN_OUTPUT = "output_tokens"
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_claude_entry(raw_data: RawJSONEntry) -> ClaudeJSONEntry | None:
+    """Parse raw JSON dict into specific ClaudeJSONEntry type by inferring from structure.
+    
+    Real Claude Code JSONL files don't have explicit 'type' fields, so we infer:
+    - Assistant entries: have 'usage' or token fields and 'model'
+    - User entries: have 'message' with content but no usage/model
+    - System entries: have 'content' field directly
+    
+    Args:
+        raw_data: Raw dictionary from JSON.loads()
+        
+    Returns:
+        Specific ClaudeJSONEntry type or None if invalid
+    """
+    from typing import cast
+    
+    # Check for explicit type field first (for future compatibility)
+    explicit_type = raw_data.get("type")
+    if explicit_type in ("system", "user", "assistant"):
+        if explicit_type == "system":
+            return cast(SystemEntry, raw_data)
+        elif explicit_type == "user":
+            return cast(UserEntry, raw_data)
+        elif explicit_type == "assistant":
+            return cast(AssistantEntry, raw_data)
+    
+    # Infer type from data structure (for real Claude Code data)
+    
+    # Assistant entries: have usage/token data and model
+    if (raw_data.get("model") or 
+        raw_data.get("usage") or 
+        any(key in raw_data for key in ["input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens"])):
+        return cast(AssistantEntry, raw_data)
+    
+    # System entries: have direct 'content' field
+    if "content" in raw_data and isinstance(raw_data.get("content"), str):
+        return cast(SystemEntry, raw_data)
+        
+    # User entries: have 'message' field (but no usage data)
+    if "message" in raw_data and isinstance(raw_data.get("message"), dict):
+        return cast(UserEntry, raw_data)
+    
+    # If we can't determine the type, treat as assistant (for backward compatibility)
+    # Most Claude Code entries are assistant responses with token usage
+    logger.debug(f"Could not determine entry type, treating as assistant: {list(raw_data.keys())}")
+    return cast(AssistantEntry, raw_data)
 
 
 def load_usage_entries(
@@ -226,23 +274,30 @@ def _update_processed_hashes(data: RawJSONEntry, processed_hashes: set[str]) -> 
 
 
 def _map_to_usage_entry(
-    data: RawJSONEntry,
+    raw_data: RawJSONEntry,
     mode: CostMode,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
 ) -> UsageEntry | None:
     """Map raw data to UsageEntry with proper cost calculation."""
     try:
+        # Parse raw data into specific ClaudeJSONEntry type
+        claude_entry = _parse_claude_entry(raw_data)
+        if not claude_entry:
+            return None
+        
+        # _parse_claude_entry now infers types and only returns AssistantEntry for entries with token usage
+        
         timestamp_processor = TimestampProcessor(timezone_handler)
-        timestamp = timestamp_processor.parse_timestamp(data.get("timestamp", ""))
+        timestamp = timestamp_processor.parse_timestamp(claude_entry.get("timestamp", ""))
         if not timestamp:
             return None
 
-        token_data = TokenExtractor.extract_tokens(data)
+        token_data = TokenExtractor.extract_tokens(claude_entry)
         if not any(v for k, v in token_data.items() if k != "total_tokens"):
             return None
 
-        model = DataConverter.extract_model_name(data, default="unknown")
+        model = DataConverter.extract_model_name(claude_entry, default="unknown")
 
         entry_data: EntryData = {
             FIELD_MODEL: model,
@@ -250,13 +305,20 @@ def _map_to_usage_entry(
             TOKEN_OUTPUT: token_data["output_tokens"],
             "cache_creation_tokens": token_data.get("cache_creation_tokens", 0),
             "cache_read_tokens": token_data.get("cache_read_tokens", 0),
-            FIELD_COST_USD: data.get("cost") or data.get(FIELD_COST_USD),
+            FIELD_COST_USD: claude_entry.get("cost") or claude_entry.get(FIELD_COST_USD),
         }
         cost_usd = pricing_calculator.calculate_cost_for_entry(entry_data, mode)
 
-        message = data.get("message", {})
-        message_id = data.get("message_id") or message.get("id") or ""
-        request_id = data.get("request_id") or data.get("requestId") or "unknown"
+        message = claude_entry.get("message", {})
+        
+        # Extract message_id with proper type handling
+        msg_id_raw = claude_entry.get("message_id")
+        msg_id_from_message = message.get("id") if isinstance(message, dict) else ""
+        message_id = (msg_id_raw if isinstance(msg_id_raw, str) else "") or (msg_id_from_message if isinstance(msg_id_from_message, str) else "") or ""
+        
+        # Extract request_id with proper type handling 
+        req_id_raw = claude_entry.get("request_id") or claude_entry.get("requestId")
+        request_id = req_id_raw if isinstance(req_id_raw, str) else "unknown"
 
         return UsageEntry(
             timestamp=timestamp,
