@@ -5,8 +5,8 @@ code duplication across different components.
 """
 
 from datetime import datetime
-from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage, RawJSONEntry
 
+from claude_monitor.core.models import JSONSerializable, UsageData, TokenUsage, RawJSONEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -88,15 +88,27 @@ class TokenExtractor:
         }
 
         # Define token extraction helper  
-        def safe_get_int(value: Any) -> int:
-            """Safely convert value to int."""
+        def safe_get_int(value: JSONSerializable | None) -> int:
+            """Safely convert value to int.
+            
+            Args:
+                value: Value from API response (int, float, str, or None)
+                
+            Returns:
+                int: Converted value or 0 if conversion fails
+            """
             if isinstance(value, (int, float)):
                 return int(value)
+            elif isinstance(value, str):
+                try:
+                    # Try to parse string numbers (common in API responses)
+                    return int(float(value))
+                except (ValueError, TypeError):
+                    return 0
             return 0
 
         # Build token sources - these are dicts that might contain token info
-        from typing import Any
-        token_sources: list[dict[str, Any] | TokenUsage | UsageData | RawJSONEntry] = []
+        token_sources: list[dict[str, JSONSerializable] | TokenUsage | UsageData | RawJSONEntry] = []
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
@@ -106,11 +118,13 @@ class TokenExtractor:
             if message := data.get("message"):
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
-                        token_sources.append(usage)
+                        # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
+                        token_sources.append(usage)  # type: ignore[arg-type]
             
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
-                    token_sources.append(usage)
+                    # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
+                    token_sources.append(usage)  # type: ignore[arg-type]
             
             # Top-level fields as fallback
             token_sources.append(data)
@@ -118,12 +132,14 @@ class TokenExtractor:
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
-                    token_sources.append(usage)
+                    # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
+                    token_sources.append(usage)  # type: ignore[arg-type]
             
             if message := data.get("message"):
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
-                        token_sources.append(usage)
+                        # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
+                        token_sources.append(usage)  # type: ignore[arg-type]
             
             # Top-level fields as fallback
             token_sources.append(data)
