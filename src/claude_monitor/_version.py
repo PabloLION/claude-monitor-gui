@@ -6,6 +6,7 @@ as the single source of truth, avoiding version duplication across the codebase.
 
 import importlib.metadata
 import sys
+
 from pathlib import Path
 
 
@@ -39,7 +40,7 @@ def _get_version_from_pyproject() -> str:
     except ImportError:
         try:
             # Python < 3.11 fallback
-            import tomli as tomllib  # type: ignore[import-untyped]
+            import tomli as tomllib
         except ImportError:
             # No TOML library available
             return "unknown"

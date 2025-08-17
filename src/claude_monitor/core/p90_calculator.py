@@ -1,9 +1,10 @@
 import time
+
+from collections.abc import Callable
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
-from collections.abc import Callable
 
 from claude_monitor.types import BlockData
 
@@ -38,7 +39,7 @@ def _calculate_p90_from_blocks(blocks: Sequence[BlockData], cfg: P90Config) -> i
             return False
         total_tokens = b.get("totalTokens", 0)
         return _did_hit_limit(total_tokens, cfg.common_limits, cfg.limit_threshold)
-    
+
     hits = _extract_sessions(blocks, hit_limit_filter)
     if not hits:
         hits = _extract_sessions(
@@ -53,11 +54,9 @@ def _calculate_p90_from_blocks(blocks: Sequence[BlockData], cfg: P90Config) -> i
 class P90Calculator:
     def __init__(self, config: P90Config | None = None) -> None:
         if config is None:
-            from claude_monitor.core.plans import (
-                COMMON_TOKEN_LIMITS,
-                DEFAULT_TOKEN_LIMIT,
-                LIMIT_DETECTION_THRESHOLD,
-            )
+            from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
+            from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
+            from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
 
             config = P90Config(
                 common_limits=COMMON_TOKEN_LIMITS,

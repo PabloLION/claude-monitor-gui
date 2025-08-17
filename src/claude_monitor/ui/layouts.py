@@ -7,8 +7,8 @@ This module consolidates layout management functionality including:
 
 from __future__ import annotations
 
-from typing import Final
 from collections.abc import Sequence
+from typing import Final
 
 
 class HeaderManager:

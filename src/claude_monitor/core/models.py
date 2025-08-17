@@ -4,7 +4,8 @@ Contains dataclasses, enums, and business logic models.
 TypedDicts have been moved to the types/ package for better organization.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
 
@@ -84,11 +85,15 @@ class SessionBlock:
     is_gap: bool = False
     burn_rate: BurnRate | None = None
     actual_end_time: datetime | None = None
-    per_model_stats: dict[str, dict[str, int | float]] = field(default_factory=dict[str, dict[str, int | float]])
+    per_model_stats: dict[str, dict[str, int | float]] = field(
+        default_factory=dict[str, dict[str, int | float]]
+    )
     models: list[str] = field(default_factory=list[str])
     sent_messages_count: int = 0
     cost_usd: float = 0.0
-    limit_messages: list[FormattedLimitInfo] = field(default_factory=list[FormattedLimitInfo])
+    limit_messages: list[FormattedLimitInfo] = field(
+        default_factory=list[FormattedLimitInfo]
+    )
     projection_data: dict[str, int | float] | None = None
     burn_rate_snapshot: BurnRate | None = None
 
@@ -106,9 +111,7 @@ class SessionBlock:
     def duration_minutes(self) -> float:
         """Get duration in minutes."""
         if self.actual_end_time:
-            duration = (
-                self.actual_end_time - self.start_time
-            ).total_seconds() / 60
+            duration = (self.actual_end_time - self.start_time).total_seconds() / 60
         else:
             duration = (self.end_time - self.start_time).total_seconds() / 60
         return max(duration, 1.0)

@@ -5,6 +5,7 @@ Allows running the package as a module: python -m claude_monitor
 """
 
 import sys
+
 from typing import NoReturn
 
 from .cli.main import main

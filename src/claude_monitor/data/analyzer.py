@@ -5,20 +5,20 @@ Combines session block creation and limit detection functionality.
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
 
-from claude_monitor.core.models import (
-    SessionBlock,
-    TokenCounts,
-    UsageEntry,
-    normalize_model_name,
-)
-from claude_monitor.types import (
-    ClaudeJSONEntry,
-    JSONSerializable,
-    LimitDetectionInfo,
-)
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import LimitDetectionInfo
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 logger = logging.getLogger(__name__)
 
@@ -220,9 +220,7 @@ class SessionAnalyzer:
 
     # Limit detection methods
 
-    def _detect_single_limit(
-        self, entry: ClaudeJSONEntry
-    ) -> LimitDetectionInfo | None:
+    def _detect_single_limit(self, entry: ClaudeJSONEntry) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = entry.get("type")
 
@@ -300,7 +298,10 @@ class SessionAnalyzer:
         return None
 
     def _process_tool_result(
-        self, item: dict[str, JSONSerializable], entry: ClaudeJSONEntry, message: dict[str, str | int]
+        self,
+        item: dict[str, JSONSerializable],
+        entry: ClaudeJSONEntry,
+        message: dict[str, str | int],
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -328,11 +329,11 @@ class SessionAnalyzer:
                     "raw_data": entry,
                     "block_context": self._extract_block_context(entry, message),
                 }
-                
+
                 reset_time = self._parse_reset_timestamp(text)
                 if reset_time is not None:
                     result["reset_time"] = reset_time
-                    
+
                 return result  # type: ignore[return-value]
             except (ValueError, TypeError):
                 continue
@@ -344,24 +345,24 @@ class SessionAnalyzer:
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}
-        
+
         # Safe extraction with defaults
         message_id = entry.get("messageId") or entry.get("message_id")
         if isinstance(message_id, (str, int)):
             context["message_id"] = message_id
-            
+
         request_id = entry.get("requestId") or entry.get("request_id")
         if isinstance(request_id, (str, int)):
             context["request_id"] = request_id
-            
+
         session_id = entry.get("sessionId") or entry.get("session_id")
         if isinstance(session_id, (str, int)):
             context["session_id"] = session_id
-            
+
         version = entry.get("version")
         if isinstance(version, (str, int)):
             context["version"] = version
-            
+
         model = entry.get("model")
         if isinstance(model, (str, int)):
             context["model"] = model
@@ -370,11 +371,11 @@ class SessionAnalyzer:
             msg_id = message.get("id")
             if isinstance(msg_id, (str, int)):
                 context["message_id"] = msg_id
-                
+
             msg_model = message.get("model")
             if isinstance(msg_model, (str, int)):
                 context["model"] = msg_model
-                
+
             stop_reason = message.get("stop_reason")
             if isinstance(stop_reason, (str, int)):
                 context["stop_reason"] = stop_reason

@@ -2,7 +2,7 @@
 
 This package contains all TypedDict definitions organized by domain:
 - api: Claude API message types
-- sessions: Session and block data types  
+- sessions: Session and block data types
 - display: UI and display-related types
 - config: Configuration and settings types
 - analysis: Data analysis and aggregation types
@@ -10,30 +10,29 @@ This package contains all TypedDict definitions organized by domain:
 """
 
 # Import all types for convenient access
-from .api import *
-from .sessions import *
-from .display import *
-from .config import *
 from .analysis import *
+from .api import *
 from .common import *
+from .config import *
+from .display import *
+from .sessions import *
+
 
 __all__ = [
     # API types
     "SystemEntry",
-    "UserEntry", 
+    "UserEntry",
     "AssistantEntry",
     "ClaudeJSONEntry",
     "TokenUsage",
-    
     # Session types
     "BlockDict",
-    "BlockData", 
+    "BlockData",
     "SessionData",
     "AnalysisResult",
     "BlockEntry",
     "FormattedLimitInfo",
     "LimitDetectionInfo",
-    
     # Display types
     "ExtractedSessionData",
     "ProcessedDisplayData",
@@ -45,11 +44,9 @@ __all__ = [
     "NotificationFlags",
     "DisplayTimes",
     "VelocityIndicator",
-    
     # Config types
     "LastUsedParamsDict",
     "PlanLimitsEntry",
-    
     # Analysis types
     "AnalysisMetadata",
     "AggregatedData",
@@ -60,13 +57,12 @@ __all__ = [
     "PercentileDict",
     "SessionPercentilesDict",
     "AggregatedStats",
-    
     # Common types
     "JSONSerializable",
     "ErrorContext",
     "EntryData",
     "TokenCountsDict",
-    "BurnRateDict", 
+    "BurnRateDict",
     "ProjectionDict",
     "ProjectionData",
     "LimitInfo",

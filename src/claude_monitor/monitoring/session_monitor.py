@@ -1,9 +1,12 @@
 """Unified session monitoring - combines tracking and validation."""
 
 import logging
+
 from collections.abc import Callable
 
-from claude_monitor.types import AnalysisResult, BlockDict
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import BlockDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +17,7 @@ class SessionMonitor:
     def __init__(self) -> None:
         """Initialize session monitor."""
         self._current_session_id: str | None = None
-        self._session_callbacks: list[
-            Callable[[str, str, BlockDict | None], None]
-        ] = []
+        self._session_callbacks: list[Callable[[str, str, BlockDict | None], None]] = []
         self._session_history: list[dict[str, str | int | float]] = []
 
     def update(self, data: AnalysisResult) -> tuple[bool, list[str]]:
@@ -48,7 +49,10 @@ class SessionMonitor:
 
         if active_session:
             session_id_raw = active_session.get("id")
-            if isinstance(session_id_raw, str) and session_id_raw != self._current_session_id:
+            if (
+                isinstance(session_id_raw, str)
+                and session_id_raw != self._current_session_id
+            ):
                 self._on_session_change(
                     self._current_session_id, session_id_raw, active_session
                 )

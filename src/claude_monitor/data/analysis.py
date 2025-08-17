@@ -4,25 +4,23 @@ Contains the main analyze_usage function and related analysis components.
 """
 
 import logging
-from datetime import datetime, timezone
-# TypedDict imports moved to models.py for centralization
+
+from datetime import datetime
+from datetime import timezone
 
 from claude_monitor.core.calculations import BurnRateCalculator
-from claude_monitor.types import (
-    AnalysisMetadata,
-    AnalysisResult,
-    BlockDict,
-    BlockEntry,
-    FormattedLimitInfo,
-    LimitDetectionInfo,
-)
-from claude_monitor.core.models import (
-    CostMode,
-    SessionBlock,
-    UsageEntry,
-)
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
 from claude_monitor.data.reader import load_usage_entries
+from claude_monitor.types import AnalysisMetadata
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import BlockDict
+from claude_monitor.types import BlockEntry
+from claude_monitor.types import FormattedLimitInfo
+from claude_monitor.types import LimitDetectionInfo
+
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +130,9 @@ def _process_burn_rates(
 
 
 def _create_result(
-    blocks: list[SessionBlock], entries: list[UsageEntry], metadata: AnalysisMetadata
+    blocks: list[SessionBlock],
+    entries: list[UsageEntry],
+    metadata: AnalysisMetadata,
 ) -> AnalysisResult:
     """Create the final result dictionary."""
     blocks_data = _convert_blocks_to_dict_format(blocks)
@@ -175,7 +175,9 @@ def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:
     }
 
 
-def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[BlockDict]:
+def _convert_blocks_to_dict_format(
+    blocks: list[SessionBlock],
+) -> list[BlockDict]:
     """Convert blocks to dictionary format for JSON output."""
     blocks_data: list[BlockDict] = []
 
@@ -189,7 +191,7 @@ def _convert_blocks_to_dict_format(blocks: list[SessionBlock]) -> list[BlockDict
 
 def _create_base_block_dict(block: SessionBlock) -> BlockDict:
     """Create base block dictionary with required fields."""
-    return {  # type: ignore[typeddict-item]
+    return {
         "id": block.id,
         "isActive": block.is_active,
         "isGap": block.is_gap,

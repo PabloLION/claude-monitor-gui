@@ -5,11 +5,15 @@ Provides token usage, time progress, and model usage progress bars.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Final, Protocol, TypedDict
+from abc import ABC
+from abc import abstractmethod
+from typing import Final
+from typing import Protocol
+from typing import TypedDict
 
-from claude_monitor.types import JSONSerializable
 from claude_monitor.utils.time_utils import percentage
+
+from ..types.sessions import ModelStats
 
 
 # Type definitions for progress bar components
@@ -265,7 +269,9 @@ class TimeProgressBar(BaseProgressBar):
         if total_minutes <= 0:
             progress_percentage = 0
         else:
-            progress_percentage = int(min(100, percentage(elapsed_minutes, total_minutes)))
+            progress_percentage = int(
+                min(100, percentage(elapsed_minutes, total_minutes))
+            )
 
         filled = self._calculate_filled_segments(progress_percentage)
         bar = self._render_bar(
@@ -279,7 +285,7 @@ class TimeProgressBar(BaseProgressBar):
 class ModelUsageBar(BaseProgressBar):
     """Model usage progress bar showing Sonnet vs Opus distribution."""
 
-    def render(self, per_model_stats: dict[str, JSONSerializable]) -> str:
+    def render(self, per_model_stats: dict[str, ModelStats]) -> str:
         """Render model usage progress bar.
 
         Args:
@@ -305,8 +311,16 @@ class ModelUsageBar(BaseProgressBar):
             if isinstance(stats, dict):
                 input_tokens_raw = stats.get("input_tokens", 0)
                 output_tokens_raw = stats.get("output_tokens", 0)
-                input_tokens = int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
-                output_tokens = int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
+                input_tokens = (
+                    int(input_tokens_raw)
+                    if isinstance(input_tokens_raw, (int, float))
+                    else 0
+                )
+                output_tokens = (
+                    int(output_tokens_raw)
+                    if isinstance(output_tokens_raw, (int, float))
+                    else 0
+                )
                 model_tokens = input_tokens + output_tokens
             else:
                 model_tokens = 0

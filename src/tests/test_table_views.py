@@ -1,6 +1,7 @@
 """Tests for table views module."""
 
 import pytest
+
 from rich.panel import Panel
 from rich.table import Table
 
@@ -251,7 +252,9 @@ class TestTableViewsController:
         assert table.row_count == 4
 
     def test_create_summary_panel(
-        self, controller: TableViewsController, sample_totals: dict[str, JSONSerializable]
+        self,
+        controller: TableViewsController,
+        sample_totals: dict[str, JSONSerializable],
     ) -> None:
         """Test creation of summary panel."""
         panel = controller.create_summary_panel("daily", sample_totals, "Last 30 days")
@@ -393,7 +396,9 @@ class TestTableViewsController:
         assert table.row_count in [3, 4]  # Allow for version differences
 
     def test_summary_panel_different_periods(
-        self, controller: TableViewsController, sample_totals: dict[str, JSONSerializable]
+        self,
+        controller: TableViewsController,
+        sample_totals: dict[str, JSONSerializable],
     ) -> None:
         """Test summary panel with different period descriptions."""
         periods = [

@@ -1,9 +1,20 @@
 """UI and display-related types for Claude Monitor."""
 
 from datetime import datetime
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import TypedDict
 
 from .common import JSONSerializable
+from .sessions import ModelStats
+
+
+class ModelStatsDisplay(TypedDict):
+    """Token statistics for display purposes - simplified version."""
+
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
 
 
 class TimeData(TypedDict):
@@ -50,7 +61,7 @@ class ProcessedDisplayData(TypedDict):
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, dict[str, int | float]]
+    per_model_stats: dict[str, ModelStats]
     model_distribution: dict[str, float]
     sent_messages: int
     entries: list[dict[str, JSONSerializable]]

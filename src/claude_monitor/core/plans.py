@@ -7,7 +7,9 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 from dataclasses import dataclass
 from enum import Enum
 
-from claude_monitor.types import BlockData, BlockDict, PlanLimitsEntry
+from claude_monitor.types import BlockData
+from claude_monitor.types import BlockDict
+from claude_monitor.types import PlanLimitsEntry
 
 
 class PlanType(Enum):
@@ -43,7 +45,6 @@ class PlanConfig:
         if self.token_limit >= 1_000:
             return f"{self.token_limit // 1_000}k"
         return str(self.token_limit)
-
 
 
 PLAN_LIMITS: dict[PlanType, PlanLimitsEntry] = {
@@ -145,7 +146,7 @@ class Plans:
                     block_data.append(block)  # type: ignore[arg-type]
                 else:
                     # This is already BlockData
-                    block_data.append(block)  # type: ignore[arg-type]
+                    block_data.append(block)
 
             p90_limit = P90Calculator().calculate_p90_limit(block_data)
             if p90_limit:

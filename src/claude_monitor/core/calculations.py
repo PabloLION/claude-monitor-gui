@@ -1,19 +1,20 @@
 """Burn rate and cost calculations for Claude Monitor."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from typing import Protocol
 
-from claude_monitor.types import BlockData
-
-from claude_monitor.core.models import (
-    BurnRate,
-    TokenCounts,
-    UsageProjection,
-)
+from claude_monitor.core.models import BurnRate
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageProjection
 from claude_monitor.core.p90_calculator import P90Calculator
 from claude_monitor.error_handling import report_error
+from claude_monitor.types import BlockData
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class BlockLike(Protocol):
     token_counts: TokenCounts
     cost_usd: float
     end_time: datetime
-    
+
     @property
     def duration_minutes(self) -> float:
         """Get duration in minutes."""
@@ -142,7 +143,7 @@ def _parse_block_start_time(block: BlockData) -> datetime | None:
     start_time_str = block.get("startTime")
     if not start_time_str:
         return None
-        
+
     tz_handler = TimezoneHandler()
     try:
         start_time = tz_handler.parse_timestamp(start_time_str)
@@ -156,9 +157,7 @@ def _parse_block_start_time(block: BlockData) -> datetime | None:
         return None
 
 
-def _determine_session_end_time(
-    block: BlockData, current_time: datetime
-) -> datetime:
+def _determine_session_end_time(block: BlockData, current_time: datetime) -> datetime:
     """Determine session end time based on block status."""
     if block.get("isActive", False):
         return current_time

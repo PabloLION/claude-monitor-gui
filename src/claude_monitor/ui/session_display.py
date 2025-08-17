@@ -3,24 +3,25 @@
 Handles formatting of active session screens and session data display.
 """
 
+import argparse
+
 from dataclasses import dataclass
 from datetime import datetime
-import argparse
+from typing import Any
 
 import pytz
 
-from claude_monitor.ui.components import CostIndicator, VelocityIndicator
+from claude_monitor.ui.components import CostIndicator
+from claude_monitor.ui.components import VelocityIndicator
 from claude_monitor.ui.layouts import HeaderManager
-from claude_monitor.ui.progress_bars import (
-    ModelUsageBar,
-    TimeProgressBar,
-    TokenProgressBar,
-)
-from claude_monitor.utils.time_utils import (
-    format_display_time,
-    get_time_format_preference,
-    percentage,
-)
+from claude_monitor.ui.progress_bars import ModelUsageBar
+from claude_monitor.ui.progress_bars import TimeProgressBar
+from claude_monitor.ui.progress_bars import TokenProgressBar
+from claude_monitor.utils.time_utils import format_display_time
+from claude_monitor.utils.time_utils import get_time_format_preference
+from claude_monitor.utils.time_utils import percentage
+
+from ..types.sessions import ModelStats
 
 
 @dataclass
@@ -40,9 +41,9 @@ class SessionDisplayData:
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, dict[str, int | float]]
+    per_model_stats: dict[str, ModelStats]
     sent_messages: int
-    entries: list[dict]
+    entries: list[dict[str, Any]]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
@@ -55,7 +56,7 @@ class SessionDisplayData:
 class SessionDisplayComponent:
     """Main component for displaying active session information."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize session display component with sub-components."""
         self.token_progress = TokenProgressBar()
         self.time_progress = TimeProgressBar()
@@ -134,9 +135,9 @@ class SessionDisplayComponent:
         total_session_minutes: float,
         burn_rate: float,
         session_cost: float,
-        per_model_stats: dict[str, dict[str, int | float]],
+        per_model_stats: dict[str, ModelStats],
         sent_messages: int,
-        entries: list[dict],
+        entries: list[dict[str, Any]],
         predicted_end_str: str,
         reset_time_str: str,
         current_time_str: str,
@@ -144,7 +145,7 @@ class SessionDisplayComponent:
         show_exceed_notification: bool = False,
         show_tokens_will_run_out: bool = False,
         original_limit: int = 0,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[str]:
         """Format complete active session screen.
 

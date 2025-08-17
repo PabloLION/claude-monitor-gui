@@ -6,19 +6,28 @@ into a single cohesive module.
 
 import json
 import logging
-from datetime import datetime, timedelta
+
+from datetime import datetime
+from datetime import timedelta
 from datetime import timezone as tz
 from pathlib import Path
-from claude_monitor.core.data_processors import (
-    DataConverter,
-    TimestampProcessor,
-    TokenExtractor,
-)
-from claude_monitor.types import ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable, EntryData, ExtractedMetadata
-from claude_monitor.core.models import CostMode, UsageEntry
+
+from claude_monitor.core.data_processors import DataConverter
+from claude_monitor.core.data_processors import TimestampProcessor
+from claude_monitor.core.data_processors import TokenExtractor
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
+from claude_monitor.types import AssistantEntry
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import EntryData
+from claude_monitor.types import ExtractedMetadata
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import SystemEntry
+from claude_monitor.types import UserEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 FIELD_COST_USD = "cost_usd"
 FIELD_MODEL = "model"
@@ -28,22 +37,24 @@ TOKEN_OUTPUT = "output_tokens"
 logger = logging.getLogger(__name__)
 
 
-def _parse_claude_entry(raw_data: dict[str, JSONSerializable]) -> ClaudeJSONEntry | None:
+def _parse_claude_entry(
+    raw_data: dict[str, JSONSerializable],
+) -> ClaudeJSONEntry | None:
     """Parse raw JSON dict into specific ClaudeJSONEntry type by inferring from structure.
-    
+
     Real Claude Code JSONL files don't have explicit 'type' fields, so we infer:
     - Assistant entries: have 'usage' or token fields and 'model'
     - User entries: have 'message' with content but no usage/model
     - System entries: have 'content' field directly
-    
+
     Args:
         raw_data: Raw dictionary from JSON.loads()
-        
+
     Returns:
         Specific ClaudeJSONEntry type or None if invalid
     """
     from typing import cast
-    
+
     # Check for explicit type field first (for future compatibility)
     explicit_type = raw_data.get("type")
     if explicit_type in ("system", "user", "assistant"):
@@ -53,26 +64,38 @@ def _parse_claude_entry(raw_data: dict[str, JSONSerializable]) -> ClaudeJSONEntr
             return cast(UserEntry, raw_data)
         elif explicit_type == "assistant":
             return cast(AssistantEntry, raw_data)
-    
+
     # Infer type from data structure (for real Claude Code data)
-    
+
     # Assistant entries: have usage/token data and model
-    if (raw_data.get("model") or 
-        raw_data.get("usage") or 
-        any(key in raw_data for key in ["input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens"])):
+    if (
+        raw_data.get("model")
+        or raw_data.get("usage")
+        or any(
+            key in raw_data
+            for key in [
+                "input_tokens",
+                "output_tokens",
+                "cache_creation_tokens",
+                "cache_read_tokens",
+            ]
+        )
+    ):
         return cast(AssistantEntry, raw_data)
-    
+
     # System entries: have direct 'content' field
     if "content" in raw_data and isinstance(raw_data.get("content"), str):
         return cast(SystemEntry, raw_data)
-        
+
     # User entries: have 'message' field (but no usage data)
     if "message" in raw_data and isinstance(raw_data.get("message"), dict):
         return cast(UserEntry, raw_data)
-    
+
     # If we can't determine the type, treat as assistant (for backward compatibility)
     # Most Claude Code entries are assistant responses with token usage
-    logger.debug(f"Could not determine entry type, treating as assistant: {list(raw_data.keys())}")
+    logger.debug(
+        f"Could not determine entry type, treating as assistant: {list(raw_data.keys())}"
+    )
     return cast(AssistantEntry, raw_data)
 
 
@@ -93,7 +116,9 @@ def load_usage_entries(
     Returns:
         Tuple of (usage_entries, raw_data) where raw_data is None unless include_raw=True
     """
-    data_path_resolved = Path(data_path if data_path else "~/.claude/projects").expanduser()
+    data_path_resolved = Path(
+        data_path if data_path else "~/.claude/projects"
+    ).expanduser()
     timezone_handler = TimezoneHandler()
     pricing_calculator = PricingCalculator()
 
@@ -107,7 +132,9 @@ def load_usage_entries(
         return [], None
 
     all_entries = list[UsageEntry]()
-    raw_entries: list[ClaudeJSONEntry] | None = list[ClaudeJSONEntry]() if include_raw else None
+    raw_entries: list[ClaudeJSONEntry] | None = (
+        list[ClaudeJSONEntry]() if include_raw else None
+    )
     processed_hashes = set[str]()
 
     for file_path in jsonl_files:
@@ -140,7 +167,9 @@ def load_all_raw_entries(data_path: str | None = None) -> list[ClaudeJSONEntry]:
     Returns:
         List of raw JSON dictionaries
     """
-    data_path_resolved = Path(data_path if data_path else "~/.claude/projects").expanduser()
+    data_path_resolved = Path(
+        data_path if data_path else "~/.claude/projects"
+    ).expanduser()
     jsonl_files = _find_jsonl_files(data_path_resolved)
 
     all_raw_entries = list[ClaudeJSONEntry]()
@@ -183,7 +212,9 @@ def _process_single_file(
 ) -> tuple[list[UsageEntry], list[ClaudeJSONEntry] | None]:
     """Process a single JSONL file."""
     entries = list[UsageEntry]()
-    raw_data: list[ClaudeJSONEntry] | None = list[ClaudeJSONEntry]() if include_raw else None
+    raw_data: list[ClaudeJSONEntry] | None = (
+        list[ClaudeJSONEntry]() if include_raw else None
+    )
 
     try:
         entries_read = 0
@@ -272,8 +303,8 @@ def _create_unique_hash(data: dict[str, JSONSerializable]) -> str | None:
             message_id = msg_id if isinstance(msg_id, str) else None
         else:
             message_id = None
-    
-    # Extract request_id with type checking  
+
+    # Extract request_id with type checking
     request_id = data.get("requestId") or data.get("request_id")
     if not isinstance(request_id, str):
         request_id = None
@@ -281,7 +312,9 @@ def _create_unique_hash(data: dict[str, JSONSerializable]) -> str | None:
     return f"{message_id}:{request_id}" if message_id and request_id else None
 
 
-def _update_processed_hashes(data: dict[str, JSONSerializable], processed_hashes: set[str]) -> None:
+def _update_processed_hashes(
+    data: dict[str, JSONSerializable], processed_hashes: set[str]
+) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
     if unique_hash:
@@ -300,11 +333,13 @@ def _map_to_usage_entry(
         claude_entry = _parse_claude_entry(raw_data)
         if not claude_entry:
             return None
-        
+
         # _parse_claude_entry now infers types and only returns AssistantEntry for entries with token usage
-        
+
         timestamp_processor = TimestampProcessor(timezone_handler)
-        timestamp = timestamp_processor.parse_timestamp(claude_entry.get("timestamp", ""))
+        timestamp = timestamp_processor.parse_timestamp(
+            claude_entry.get("timestamp", "")
+        )
         if not timestamp:
             return None
 
@@ -320,18 +355,23 @@ def _map_to_usage_entry(
             TOKEN_OUTPUT: token_data["output_tokens"],
             "cache_creation_tokens": token_data.get("cache_creation_tokens", 0),
             "cache_read_tokens": token_data.get("cache_read_tokens", 0),
-            FIELD_COST_USD: claude_entry.get("cost") or claude_entry.get(FIELD_COST_USD),
+            FIELD_COST_USD: claude_entry.get("cost")
+            or claude_entry.get(FIELD_COST_USD),
         }
         cost_usd = pricing_calculator.calculate_cost_for_entry(entry_data, mode)
 
         message = claude_entry.get("message", {})
-        
+
         # Extract message_id with proper type handling
         msg_id_raw = claude_entry.get("message_id")
         msg_id_from_message = message.get("id") if isinstance(message, dict) else ""
-        message_id = (msg_id_raw if isinstance(msg_id_raw, str) else "") or (msg_id_from_message if isinstance(msg_id_from_message, str) else "") or ""
-        
-        # Extract request_id with proper type handling 
+        message_id = (
+            (msg_id_raw if isinstance(msg_id_raw, str) else "")
+            or (msg_id_from_message if isinstance(msg_id_from_message, str) else "")
+            or ""
+        )
+
+        # Extract request_id with proper type handling
         req_id_raw = claude_entry.get("request_id") or claude_entry.get("requestId")
         request_id = req_id_raw if isinstance(req_id_raw, str) else "unknown"
 
@@ -367,7 +407,9 @@ class UsageEntryMapper:
         self.pricing_calculator = pricing_calculator
         self.timezone_handler = timezone_handler
 
-    def map(self, data: dict[str, JSONSerializable], mode: CostMode) -> UsageEntry | None:
+    def map(
+        self, data: dict[str, JSONSerializable], mode: CostMode
+    ) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
         return _map_to_usage_entry(
             data, mode, self.timezone_handler, self.pricing_calculator
@@ -396,7 +438,7 @@ class UsageEntryMapper:
     def _extract_metadata(self, data: dict[str, JSONSerializable]) -> ExtractedMetadata:
         """Extract metadata (for test compatibility)."""
         message = data.get("message", {})
-        
+
         # Extract message_id with type checking
         message_id = data.get("message_id")
         if not isinstance(message_id, str):
@@ -405,12 +447,12 @@ class UsageEntryMapper:
                 message_id = msg_id if isinstance(msg_id, str) else ""
             else:
                 message_id = ""
-        
+
         # Extract request_id with type checking
         request_id = data.get("request_id") or data.get("requestId")
         if not isinstance(request_id, str):
             request_id = "unknown"
-            
+
         return {
             "message_id": message_id,
             "request_id": request_id,

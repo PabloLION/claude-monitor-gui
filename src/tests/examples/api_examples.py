@@ -8,7 +8,8 @@ import json
 
 # Import functions directly from the analysis module
 from claude_monitor.data.analysis import analyze_usage
-from claude_monitor.utils.formatting import format_currency, format_time
+from claude_monitor.utils.formatting import format_currency
+from claude_monitor.utils.formatting import format_time
 
 
 # Create helper functions that replace the removed facade functions

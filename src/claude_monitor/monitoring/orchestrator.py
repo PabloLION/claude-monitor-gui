@@ -3,13 +3,17 @@
 import logging
 import threading
 import time
+
 from collections.abc import Callable
 
-from claude_monitor.types import AnalysisResult, MonitoringData
-from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT, get_token_limit
+from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
+from claude_monitor.core.plans import get_token_limit
 from claude_monitor.error_handling import report_error
 from claude_monitor.monitoring.data_manager import DataManager
 from claude_monitor.monitoring.session_monitor import SessionMonitor
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import MonitoringData
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +21,7 @@ logger = logging.getLogger(__name__)
 class MonitoringOrchestrator:
     """Orchestrates monitoring components following SRP."""
 
-    def __init__(
-        self, update_interval: int = 10, data_path: str | None = None
-    ) -> None:
+    def __init__(self, update_interval: int = 10, data_path: str | None = None) -> None:
         """Initialize orchestrator with components.
 
         Args:

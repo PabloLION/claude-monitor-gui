@@ -5,16 +5,19 @@ in table format using Rich library.
 """
 
 import logging
-from rich.align import Align
 
-from claude_monitor.types import JSONSerializable
+from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from claude_monitor.types import JSONSerializable
+
 # Removed theme import - using direct styles
-from claude_monitor.utils.formatting import format_currency, format_number
+from claude_monitor.utils.formatting import format_currency
+from claude_monitor.utils.formatting import format_number
+
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +88,10 @@ class TableViewsController:
         return table
 
     def _add_data_rows(
-        self, table: Table, data_list: list[dict[str, JSONSerializable]], period_key: str
+        self,
+        table: Table,
+        data_list: list[dict[str, JSONSerializable]],
+        period_key: str,
     ) -> None:
         """Add data rows to the table.
 
@@ -102,13 +108,13 @@ class TableViewsController:
             else:
                 models_list = []
             models_text = self._format_models(models_list)
-            
+
             # Safely extract numeric values
             def safe_int(value: JSONSerializable) -> int:
                 if isinstance(value, (int, float)):
                     return int(value)
                 return 0
-            
+
             total_tokens = (
                 safe_int(data.get("input_tokens", 0))
                 + safe_int(data.get("output_tokens", 0))
@@ -119,13 +125,13 @@ class TableViewsController:
             # Safely extract period key value
             period_value = data.get(period_key, "")
             period_str = str(period_value) if period_value is not None else ""
-            
+
             # Safely extract cost
             def safe_float(value: JSONSerializable) -> float:
                 if isinstance(value, (int, float)):
                     return float(value)
                 return 0.0
-            
+
             table.add_row(
                 period_str,
                 models_text,
@@ -137,13 +143,16 @@ class TableViewsController:
                 format_currency(safe_float(data.get("total_cost", 0.0))),
             )
 
-    def _add_totals_row(self, table: Table, totals: dict[str, JSONSerializable]) -> None:
+    def _add_totals_row(
+        self, table: Table, totals: dict[str, JSONSerializable]
+    ) -> None:
         """Add totals row to the table.
 
         Args:
             table: Table to add totals to
             totals: Dictionary with total statistics
         """
+
         # Helper functions for safe type conversion
         def safe_int(value: JSONSerializable) -> int:
             if isinstance(value, (int, float)):
@@ -154,7 +163,7 @@ class TableViewsController:
             if isinstance(value, (int, float)):
                 return float(value)
             return 0.0
-            
+
         # Add separator
         table.add_row("", "", "", "", "", "", "", "")
 
@@ -162,14 +171,30 @@ class TableViewsController:
         table.add_row(
             Text("Total", style=self.accent_style),
             "",
-            Text(format_number(safe_int(totals.get("input_tokens", 0))), style=self.accent_style),
-            Text(format_number(safe_int(totals.get("output_tokens", 0))), style=self.accent_style),
             Text(
-                format_number(safe_int(totals.get("cache_creation_tokens", 0))), style=self.accent_style
+                format_number(safe_int(totals.get("input_tokens", 0))),
+                style=self.accent_style,
             ),
-            Text(format_number(safe_int(totals.get("cache_read_tokens", 0))), style=self.accent_style),
-            Text(format_number(safe_int(totals.get("total_tokens", 0))), style=self.accent_style),
-            Text(format_currency(safe_float(totals.get("total_cost", 0.0))), style=self.success_style),
+            Text(
+                format_number(safe_int(totals.get("output_tokens", 0))),
+                style=self.accent_style,
+            ),
+            Text(
+                format_number(safe_int(totals.get("cache_creation_tokens", 0))),
+                style=self.accent_style,
+            ),
+            Text(
+                format_number(safe_int(totals.get("cache_read_tokens", 0))),
+                style=self.accent_style,
+            ),
+            Text(
+                format_number(safe_int(totals.get("total_tokens", 0))),
+                style=self.accent_style,
+            ),
+            Text(
+                format_currency(safe_float(totals.get("total_cost", 0.0))),
+                style=self.success_style,
+            ),
         )
 
     def create_daily_table(
@@ -247,6 +272,7 @@ class TableViewsController:
         Returns:
             Rich Panel object
         """
+
         # Helper functions for safe type conversion
         def safe_int(value: JSONSerializable) -> int:
             if isinstance(value, (int, float)):
@@ -257,7 +283,7 @@ class TableViewsController:
             if isinstance(value, (int, float)):
                 return float(value)
             return 0.0
-            
+
         # Create summary text
         summary_lines = [
             f"📊 {view_type.capitalize()} Usage Summary - {period}",
@@ -392,13 +418,17 @@ class TableViewsController:
             if isinstance(value, (int, float)):
                 return float(value)
             return 0.0
-        
+
         # Calculate totals with safe type conversion
         totals = {
             "input_tokens": sum(safe_numeric(d.get("input_tokens", 0)) for d in data),
             "output_tokens": sum(safe_numeric(d.get("output_tokens", 0)) for d in data),
-            "cache_creation_tokens": sum(safe_numeric(d.get("cache_creation_tokens", 0)) for d in data),
-            "cache_read_tokens": sum(safe_numeric(d.get("cache_read_tokens", 0)) for d in data),
+            "cache_creation_tokens": sum(
+                safe_numeric(d.get("cache_creation_tokens", 0)) for d in data
+            ),
+            "cache_read_tokens": sum(
+                safe_numeric(d.get("cache_read_tokens", 0)) for d in data
+            ),
             "total_tokens": sum(
                 safe_numeric(d.get("input_tokens", 0))
                 + safe_numeric(d.get("output_tokens", 0))
@@ -413,20 +443,20 @@ class TableViewsController:
         # Determine period for summary
         if view_mode == "daily":
             if data:
-                start_date = str(data[0].get('date', 'Unknown'))
-                end_date = str(data[-1].get('date', 'Unknown'))
+                start_date = str(data[0].get("date", "Unknown"))
+                end_date = str(data[-1].get("date", "Unknown"))
                 period = f"{start_date} to {end_date}"
             else:
                 period = "No data"
         else:  # monthly
             if data:
-                start_month = str(data[0].get('month', 'Unknown'))
-                end_month = str(data[-1].get('month', 'Unknown'))
+                start_month = str(data[0].get("month", "Unknown"))
+                end_month = str(data[-1].get("month", "Unknown"))
                 period = f"{start_month} to {end_month}"
             else:
                 period = "No data"
 
-        # Create and display summary panel  
+        # Create and display summary panel
         # Cast totals to JSONSerializable since float/int are part of JSONSerializable
         json_totals: dict[str, JSONSerializable] = dict(totals)
         summary_panel = self.create_summary_panel(view_mode, json_totals, period)

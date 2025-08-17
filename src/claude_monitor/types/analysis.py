@@ -1,6 +1,7 @@
 """Data analysis and aggregation types for Claude Monitor."""
 
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import TypedDict
 
 
 class AggregatedData(TypedDict, total=False):

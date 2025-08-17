@@ -1,17 +1,18 @@
 """Tests for DisplayController class."""
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 from claude_monitor.types import JSONSerializable
-from claude_monitor.ui.display_controller import (
-    DisplayController,
-    LiveDisplayManager,
-    ScreenBufferManager,
-    SessionCalculator,
-)
+from claude_monitor.ui.display_controller import DisplayController
+from claude_monitor.ui.display_controller import LiveDisplayManager
+from claude_monitor.ui.display_controller import ScreenBufferManager
+from claude_monitor.ui.display_controller import SessionCalculator
 
 
 class TestDisplayController:
@@ -62,7 +63,9 @@ class TestDisplayController:
         assert controller.notification_manager is not None
 
     def test_extract_session_data(
-        self, controller: DisplayController, sample_active_block: dict[str, JSONSerializable]
+        self,
+        controller: DisplayController,
+        sample_active_block: dict[str, JSONSerializable],
     ) -> None:
         """Test session data extraction."""
         result = controller._extract_session_data(sample_active_block)  # type: ignore[misc]

@@ -7,7 +7,9 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import ClaudeJSONEntry, JSONSerializable, ExtractedTokens
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import ExtractedTokens
+from claude_monitor.types import JSONSerializable
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -16,9 +18,7 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = (
-            timezone_handler or TimezoneHandler()
-        )
+        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -115,9 +115,7 @@ class TokenExtractor:
             entry_type = data.get("type")
             if entry_type == "system" or entry_type == "user":
                 # System and user messages don't have token usage
-                logger.debug(
-                    "TokenExtractor: System/user messages have no token usage"
-                )
+                logger.debug("TokenExtractor: System/user messages have no token usage")
                 return {
                     "input_tokens": 0,
                     "output_tokens": 0,
@@ -137,17 +135,15 @@ class TokenExtractor:
         if is_assistant:
             # Assistant message: check message.usage first, then usage, then top-level
             if message := data.get("message"):
-                if isinstance(message, dict) and (
-                    usage := message.get("usage")
-                ):
+                if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
                         # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                        token_sources.append(usage)  # type: ignore[arg-type]
+                        token_sources.append(usage)
 
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                    token_sources.append(usage)  # type: ignore[arg-type]
+                    token_sources.append(usage)
 
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(dict[str, JSONSerializable], data))
@@ -156,77 +152,44 @@ class TokenExtractor:
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                    token_sources.append(usage)  # type: ignore[arg-type]
+                    token_sources.append(usage)
 
             if message := data.get("message"):
-                if isinstance(message, dict) and (
-                    usage := message.get("usage")
-                ):
+                if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
                         # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                        token_sources.append(usage)  # type: ignore[arg-type]
+                        token_sources.append(usage)
 
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(dict[str, JSONSerializable], data))
 
-        logger.debug(
-            f"TokenExtractor: Checking {len(token_sources)} token sources"
-        )
+        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
 
         # Extract tokens from first valid source
         for source in token_sources:
             # Try multiple field name variations
             input_tokens = (
-                safe_get_int(cast(JSONSerializable, source.get("input_tokens")))
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("inputTokens"))
-                )
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("prompt_tokens"))
-                )
+                safe_get_int(source.get("input_tokens"))
+                or safe_get_int(source.get("inputTokens"))
+                or safe_get_int(source.get("prompt_tokens"))
             )
 
             output_tokens = (
-                safe_get_int(
-                    cast(JSONSerializable, source.get("output_tokens"))
-                )
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("outputTokens"))
-                )
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("completion_tokens"))
-                )
+                safe_get_int(source.get("output_tokens"))
+                or safe_get_int(source.get("outputTokens"))
+                or safe_get_int(source.get("completion_tokens"))
             )
 
             cache_creation = (
-                safe_get_int(
-                    cast(JSONSerializable, source.get("cache_creation_tokens"))
-                )
-                or safe_get_int(
-                    cast(
-                        JSONSerializable,
-                        source.get("cache_creation_input_tokens"),
-                    )
-                )
-                or safe_get_int(
-                    cast(
-                        JSONSerializable, source.get("cacheCreationInputTokens")
-                    )
-                )
+                safe_get_int(source.get("cache_creation_tokens"))
+                or safe_get_int(source.get("cache_creation_input_tokens"))
+                or safe_get_int(source.get("cacheCreationInputTokens"))
             )
 
             cache_read = (
-                safe_get_int(
-                    cast(
-                        JSONSerializable, source.get("cache_read_input_tokens")
-                    )
-                )
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("cache_read_tokens"))
-                )
-                or safe_get_int(
-                    cast(JSONSerializable, source.get("cacheReadInputTokens"))
-                )
+                safe_get_int(source.get("cache_read_input_tokens"))
+                or safe_get_int(source.get("cache_read_tokens"))
+                or safe_get_int(source.get("cacheReadInputTokens"))
             )
 
             if input_tokens > 0 or output_tokens > 0:
@@ -247,14 +210,14 @@ class TokenExtractor:
                 )
                 break
 
-            logger.debug(f"TokenExtractor: No valid tokens in source")
+            logger.debug("TokenExtractor: No valid tokens in source")
 
         if tokens["total_tokens"] == 0:
             logger.debug("TokenExtractor: No tokens found in any source")
 
         return {
             "input_tokens": tokens["input_tokens"],
-            "output_tokens": tokens["output_tokens"], 
+            "output_tokens": tokens["output_tokens"],
             "cache_creation_tokens": tokens["cache_creation_tokens"],
             "cache_read_tokens": tokens["cache_read_tokens"],
         }

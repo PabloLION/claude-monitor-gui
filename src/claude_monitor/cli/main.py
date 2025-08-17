@@ -19,7 +19,6 @@ from claude_monitor.cli.bootstrap import ensure_directories
 from claude_monitor.cli.bootstrap import init_timezone
 from claude_monitor.cli.bootstrap import setup_environment
 from claude_monitor.cli.bootstrap import setup_logging
-from claude_monitor.types import BlockData, JSONSerializable, MonitoringData
 from claude_monitor.core.plans import Plans
 from claude_monitor.core.plans import PlanType
 from claude_monitor.core.plans import get_token_limit
@@ -35,6 +34,9 @@ from claude_monitor.terminal.manager import restore_terminal
 from claude_monitor.terminal.manager import setup_terminal
 from claude_monitor.terminal.themes import get_themed_console
 from claude_monitor.terminal.themes import print_themed
+from claude_monitor.types import BlockData
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import MonitoringData
 from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
 
@@ -61,9 +63,7 @@ def discover_claude_data_paths(
         List of Path objects for existing Claude data directories
     """
     paths_to_check: list[str] = (
-        [str(p) for p in custom_paths]
-        if custom_paths
-        else get_standard_claude_paths()
+        [str(p) for p in custom_paths] if custom_paths else get_standard_claude_paths()
     )
 
     discovered_paths: list[Path] = list[Path]()
@@ -92,9 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         ensure_directories()
 
         if settings.log_file:
-            setup_logging(
-                settings.log_level, settings.log_file, disable_console=True
-            )
+            setup_logging(settings.log_level, settings.log_file, disable_console=True)
         else:
             setup_logging(settings.log_level, disable_console=True)
 
@@ -203,9 +201,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                         ]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
                         if active_blocks:
-                            total_tokens_raw = active_blocks[0].get(
-                                "totalTokens", 0
-                            )
+                            total_tokens_raw = active_blocks[0].get("totalTokens", 0)
                             total_tokens: int = (
                                 int(total_tokens_raw)
                                 if isinstance(total_tokens_raw, (int, float))
@@ -217,7 +213,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
                     # Create display renderable (AnalysisResult is a dict-like TypedDict)
                     renderable = display_controller.create_data_display(
-                        data, args, token_limit_val  # type: ignore[arg-type]
+                        data, args, token_limit_val
                     )
 
                     if live_display:
@@ -290,9 +286,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         restore_terminal(old_terminal_settings)
 
 
-def _get_initial_token_limit(
-    args: argparse.Namespace, data_path: str | Path
-) -> int:
+def _get_initial_token_limit(args: argparse.Namespace, data_path: str | Path) -> int:
     """Get initial token limit for the plan."""
     logger = logging.getLogger(__name__)
     plan: str = getattr(args, "plan", PlanType.PRO.value)
@@ -309,9 +303,7 @@ def _get_initial_token_limit(
             return custom_limit
 
         # Otherwise, analyze usage data to calculate P90
-        print_themed(
-            "Analyzing usage data to determine cost limits...", style="info"
-        )
+        print_themed("Analyzing usage data to determine cost limits...", style="info")
 
         try:
             # Use quick start mode for faster initial load
@@ -330,7 +322,7 @@ def _get_initial_token_limit(
                     if isinstance(blocks_raw, list):
                         for block in blocks_raw:
                             if isinstance(block, dict):
-                                blocks.append(block)  # type: ignore[arg-type]
+                                blocks.append(block)
                 else:
                     blocks = []
                 token_limit: int = get_token_limit(plan, blocks)
@@ -368,9 +360,7 @@ def handle_application_error(
     logger = logging.getLogger(__name__)
 
     # Log the error with traceback
-    logger.error(
-        f"Application error in {component}: {exception}", exc_info=True
-    )
+    logger.error(f"Application error in {component}: {exception}", exc_info=True)
 
     # Report to error handling system
     from claude_monitor.error_handling import report_application_startup_error
@@ -443,9 +433,7 @@ def _run_table_view(
         aggregated_data = aggregator.aggregate()
 
         if not aggregated_data:
-            print_themed(
-                f"No usage data found for {view_mode} view", style="warning"
-            )
+            print_themed(f"No usage data found for {view_mode} view", style="warning")
             return
 
         # Display the table with type validation

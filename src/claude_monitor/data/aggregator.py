@@ -5,14 +5,21 @@ by day and month, similar to ccusage's functionality.
 """
 
 import logging
-from collections import defaultdict
-from dataclasses import dataclass, field
-from datetime import datetime
-from collections.abc import Callable
 
-from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
-from claude_monitor.types import AggregatedData, AggregatedTotals, AggregatedStats
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field
+from datetime import datetime
+
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import AggregatedData
+from claude_monitor.types import AggregatedStats
+from claude_monitor.types import AggregatedTotals
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +47,18 @@ class AggregatedStatsData:
     def to_dict(self) -> AggregatedStats:
         """Convert to dictionary format."""
         from typing import cast
-        return cast(AggregatedStats, {
-            "input_tokens": self.input_tokens,
-            "output_tokens": self.output_tokens,
-            "cache_creation_tokens": self.cache_creation_tokens,
-            "cache_read_tokens": self.cache_read_tokens,
-            "cost": self.cost,
-            "count": self.count,
-        })
+
+        return cast(
+            AggregatedStats,
+            {
+                "input_tokens": self.input_tokens,
+                "output_tokens": self.output_tokens,
+                "cache_creation_tokens": self.cache_creation_tokens,
+                "cache_read_tokens": self.cache_read_tokens,
+                "cost": self.cost,
+                "count": self.count,
+            },
+        )
 
 
 @dataclass
@@ -56,7 +67,7 @@ class AggregatedPeriod:
 
     period_key: str
     stats: AggregatedStatsData = field(default_factory=AggregatedStatsData)
-    models_used: set = field(default_factory=set)
+    models_used: set[str] = field(default_factory=set[str])
     model_breakdowns: dict[str, AggregatedStatsData] = field(
         default_factory=lambda: defaultdict(AggregatedStatsData)
     )
@@ -87,13 +98,13 @@ class AggregatedPeriod:
             },
             "entries_count": self.stats.count,
         }
-        
+
         # Add the period-specific key
         if period_type == "date":
             result["date"] = self.period_key
         elif period_type == "month":
             result["month"] = self.period_key
-            
+
         return result
 
 
@@ -101,7 +112,10 @@ class UsageAggregator:
     """Aggregates usage data for daily and monthly reports."""
 
     def __init__(
-        self, data_path: str, aggregation_mode: str = "daily", timezone: str = "UTC"
+        self,
+        data_path: str,
+        aggregation_mode: str = "daily",
+        timezone: str = "UTC",
     ):
         """Initialize the aggregator.
 
@@ -240,7 +254,9 @@ class UsageAggregator:
         else:
             return self.aggregate_monthly(all_entries)
 
-    def calculate_totals(self, aggregated_data: list[AggregatedData]) -> AggregatedTotals:
+    def calculate_totals(
+        self, aggregated_data: list[AggregatedData]
+    ) -> AggregatedTotals:
         """Calculate totals from aggregated data.
 
         Args:

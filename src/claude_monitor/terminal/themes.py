@@ -5,9 +5,11 @@ import os
 import re
 import sys
 import threading
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+
 
 # Windows-compatible imports with graceful fallbacks
 try:
@@ -499,9 +501,7 @@ class ThemeManager:
 
         return themes
 
-    def _get_symbols_for_theme(
-        self, theme_name: str
-    ) -> dict[str, str | list[str]]:
+    def _get_symbols_for_theme(self, theme_name: str) -> dict[str, str | list[str]]:
         """Get symbols based on theme.
 
         Args:

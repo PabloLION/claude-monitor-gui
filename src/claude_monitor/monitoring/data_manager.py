@@ -3,9 +3,10 @@
 import logging
 import time
 
-from claude_monitor.types import AnalysisResult
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
+from claude_monitor.types import AnalysisResult
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class DataManager:
             Usage data dictionary or None if fetch fails
         """
         if not force_refresh and self._is_cache_valid():
-            cache_age: float = time.time() - self._cache_timestamp  # type: ignore
+            cache_age: float = time.time() - self._cache_timestamp
             logger.debug(f"Using cached data (age: {cache_age:.1f}s)")
             return self._cache
 
@@ -75,7 +76,9 @@ class DataManager:
                 logger.exception(f"Data access error (attempt {attempt + 1}): {e}")
                 self._last_error = str(e)
                 report_error(
-                    exception=e, component="data_manager", context_name="access_error"
+                    exception=e,
+                    component="data_manager",
+                    context_name="access_error",
                 )
                 if attempt < max_retries - 1:
                     time.sleep(0.1 * (2**attempt))
@@ -85,7 +88,9 @@ class DataManager:
                 logger.exception(f"Data format error: {e}")
                 self._last_error = str(e)
                 report_error(
-                    exception=e, component="data_manager", context_name="format_error"
+                    exception=e,
+                    component="data_manager",
+                    context_name="format_error",
                 )
                 break
 

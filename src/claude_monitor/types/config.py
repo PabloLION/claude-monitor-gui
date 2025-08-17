@@ -22,7 +22,7 @@ class LastUsedParamsDict(TypedDict, total=False):
 
 class PlanLimitsEntry(TypedDict):
     """Typed structure for plan limit definitions."""
-    
+
     token_limit: int
     cost_limit: float
     message_limit: int

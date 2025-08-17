@@ -1,7 +1,8 @@
 """Simplified tests for CLI main module."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 from claude_monitor.cli.main import main
 

@@ -3,16 +3,23 @@
 import argparse
 import json
 import logging
+
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 import pytz
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+
+from pydantic import Field
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+from pydantic_settings import PydanticBaseSettingsSource
+from pydantic_settings import SettingsConfigDict
 
 from claude_monitor import __version__
 from claude_monitor.types import LastUsedParamsDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +162,10 @@ class Settings(BaseSettings):
     )
 
     reset_hour: int | None = Field(
-        default=None, ge=0, le=23, description="Reset hour for daily limits (0-23)"
+        default=None,
+        ge=0,
+        le=23,
+        description="Reset hour for daily limits (0-23)",
     )
 
     log_level: str = Field(default="INFO", description="Logging level")
@@ -173,14 +183,14 @@ class Settings(BaseSettings):
 
     def __init__(self, _cli_parse_args: list[str] | None = None, **data: Any) -> None:
         """Initialize Settings with optional CLI arguments parsing.
-        
+
         Args:
             _cli_parse_args: List of CLI arguments to parse. If None, no CLI parsing.
             **data: Additional field values to set.
         """
         # Handle the special _cli_parse_args parameter for Pydantic
         if _cli_parse_args is not None:
-            data['_cli_parse_args'] = _cli_parse_args
+            data["_cli_parse_args"] = _cli_parse_args
         super().__init__(**data)
 
     @field_validator("plan", mode="before")
@@ -285,12 +295,12 @@ class Settings(BaseSettings):
         if clear_config:
             last_used = LastUsedParams()
             last_used.clear()
-            settings = cls(_cli_parse_args=argv)  # type: ignore[call-arg]
+            settings = cls(_cli_parse_args=argv)
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()
 
-            settings = cls(_cli_parse_args=argv)  # type: ignore[call-arg]
+            settings = cls(_cli_parse_args=argv)
 
             cli_provided_fields: set[str] = set()
             if argv:
@@ -326,10 +336,8 @@ class Settings(BaseSettings):
         if settings.theme == "auto" or (
             "theme" not in cli_provided_fields and not clear_config
         ):
-            from claude_monitor.terminal.themes import (
-                BackgroundDetector,
-                BackgroundType,
-            )
+            from claude_monitor.terminal.themes import BackgroundDetector
+            from claude_monitor.terminal.themes import BackgroundType
 
             detector = BackgroundDetector()
             detected_bg = detector.detect_background()

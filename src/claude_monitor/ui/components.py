@@ -3,11 +3,15 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from rich.console import Console, RenderableType
+from rich.console import Console
+from rich.console import RenderableType
 
-from claude_monitor.types import SessionDataDict, SessionCollectionDict, SessionPercentilesDict, BlockDict
-
-from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
+from claude_monitor.terminal.themes import get_cost_style
+from claude_monitor.terminal.themes import get_velocity_indicator
+from claude_monitor.types import BlockDict
+from claude_monitor.types import SessionCollectionDict
+from claude_monitor.types import SessionDataDict
+from claude_monitor.types import SessionPercentilesDict
 from claude_monitor.ui.layouts import HeaderManager
 
 
@@ -214,11 +218,13 @@ class AdvancedCustomLimitDisplay:
             tokens_raw = block.get("totalTokens", 0)
             cost_raw = block.get("costUSD", 0.0)
             messages_raw = block.get("sentMessagesCount", 0)
-            
+
             # Ensure proper types
             tokens = int(tokens_raw) if isinstance(tokens_raw, (int, float)) else 0
             cost = float(cost_raw) if isinstance(cost_raw, (int, float)) else 0.0
-            messages = int(messages_raw) if isinstance(messages_raw, (int, float)) else 0
+            messages = (
+                int(messages_raw) if isinstance(messages_raw, (int, float)) else 0
+            )
 
             session: SessionDataDict = {
                 "tokens": tokens,
@@ -247,10 +253,8 @@ class AdvancedCustomLimitDisplay:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
-        from claude_monitor.core.plans import (
-            COMMON_TOKEN_LIMITS,
-            LIMIT_DETECTION_THRESHOLD,
-        )
+        from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
+        from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
 
         for limit in COMMON_TOKEN_LIMITS:
             if tokens >= limit * LIMIT_DETECTION_THRESHOLD:

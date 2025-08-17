@@ -6,8 +6,11 @@ based on token usage and model pricing. It supports all Claude model types
 with caching.
 """
 
-from claude_monitor.core.models import CostMode, TokenCounts, normalize_model_name
-from claude_monitor.types import JSONSerializable, EntryData
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import EntryData
+from claude_monitor.types import JSONSerializable
 
 
 class PricingCalculator:
@@ -219,12 +222,22 @@ class PricingCalculator:
             or entry_data.get("cache_read_input_tokens", 0)
             or entry_data.get("cache_read_tokens", 0)
         )
-        
+
         # Ensure all token values are integers
-        input_tokens = int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
-        output_tokens = int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
-        cache_creation = int(cache_creation_raw) if isinstance(cache_creation_raw, (int, float)) else 0
-        cache_read = int(cache_read_raw) if isinstance(cache_read_raw, (int, float)) else 0
+        input_tokens = (
+            int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
+        )
+        output_tokens = (
+            int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
+        )
+        cache_creation = (
+            int(cache_creation_raw)
+            if isinstance(cache_creation_raw, (int, float))
+            else 0
+        )
+        cache_read = (
+            int(cache_read_raw) if isinstance(cache_read_raw, (int, float)) else 0
+        )
 
         return self.calculate_cost(
             model=model,

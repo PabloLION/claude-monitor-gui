@@ -3,12 +3,15 @@
 import argparse
 import json
 import tempfile
+
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
-from claude_monitor.core.settings import LastUsedParams, Settings
+from claude_monitor.core.settings import LastUsedParams
+from claude_monitor.core.settings import Settings
 
 
 class TestLastUsedParams:
@@ -656,12 +659,12 @@ class TestSettingsIntegration:
     def test_settings_customise_sources(self) -> None:
         """Test settings source customization."""
         from unittest.mock import Mock
-        
+
         mock_init = Mock()
         mock_env = Mock()
         mock_dotenv = Mock()
         mock_secret = Mock()
-        
+
         sources = Settings.settings_customise_sources(
             Settings,
             mock_init,

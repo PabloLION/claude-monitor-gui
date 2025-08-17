@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+
 from logging import Handler
 from pathlib import Path
 
@@ -40,8 +41,10 @@ def setup_logging(
 def setup_environment() -> None:
     """Initialize environment variables and system settings."""
     if sys.stdout.encoding != "utf-8":
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+        if hasattr(sys.stdout, "reconfigure") and callable(
+            getattr(sys.stdout, "reconfigure", None)
+        ):
+            getattr(sys.stdout, "reconfigure")(encoding="utf-8")
 
     os.environ.setdefault(
         "CLAUDE_MONITOR_CONFIG", str(Path.home() / ".claude-monitor" / "config.yaml")

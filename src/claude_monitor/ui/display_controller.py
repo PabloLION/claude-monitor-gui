@@ -3,36 +3,49 @@
 Orchestrates UI components and coordinates display updates.
 """
 
-import logging
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 import argparse
-from typing import cast, Any
+import logging
+
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from pathlib import Path
+from typing import Any
+from typing import cast
 
 import pytz
-from rich.console import Console, Group, RenderableType
 
-from claude_monitor.types import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData, NotificationFlags, DisplayTimes
+from rich.console import Console
+from rich.console import Group
+from rich.console import RenderableType
 from rich.live import Live
 from rich.text import Text
 
 from claude_monitor.core.calculations import calculate_hourly_burn_rate
 from claude_monitor.core.models import normalize_model_name
 from claude_monitor.core.plans import Plans
-from claude_monitor.ui.components import (
-    AdvancedCustomLimitDisplay,
-    ErrorDisplayComponent,
-    LoadingScreenComponent,
-)
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import BlockData
+from claude_monitor.types import BlockDict
+from claude_monitor.types import CostPredictions
+from claude_monitor.types import DisplayTimes
+from claude_monitor.types import ExtractedSessionData
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import NotificationFlags
+from claude_monitor.types import ProcessedDisplayData
+from claude_monitor.types import TimeData
+from claude_monitor.ui.components import AdvancedCustomLimitDisplay
+from claude_monitor.ui.components import ErrorDisplayComponent
+from claude_monitor.ui.components import LoadingScreenComponent
 from claude_monitor.ui.layouts import ScreenManager
 from claude_monitor.ui.session_display import SessionDisplayComponent
 from claude_monitor.utils.notifications import NotificationManager
-from claude_monitor.utils.time_utils import (
-    TimezoneHandler,
-    format_display_time,
-    get_time_format_preference,
-    percentage,
-)
+from claude_monitor.utils.time_utils import TimezoneHandler
+from claude_monitor.utils.time_utils import format_display_time
+from claude_monitor.utils.time_utils import get_time_format_preference
+from claude_monitor.utils.time_utils import percentage
+
+from ..types.sessions import ModelStats
 
 
 class DisplayController:
@@ -58,14 +71,18 @@ class DisplayController:
         return {
             "tokens_used": active_block["totalTokens"],
             "session_cost": active_block["costUSD"],
-            "raw_per_model_stats": cast(dict[str, JSONSerializable], active_block["perModelStats"]),
+            "raw_per_model_stats": cast(
+                dict[str, JSONSerializable], active_block["perModelStats"]
+            ),
             "sent_messages": active_block["sentMessagesCount"],
             "entries": cast(list[JSONSerializable], active_block["entries"]),
             "start_time_str": active_block["startTime"],
             "end_time_str": active_block["endTime"],
         }
 
-    def _calculate_token_limits(self, args: argparse.Namespace, token_limit: int) -> tuple[int, int]:
+    def _calculate_token_limits(
+        self, args: argparse.Namespace, token_limit: int
+    ) -> tuple[int, int]:
         """Calculate token limits based on plan and arguments."""
         if (
             args.plan == "custom"
@@ -350,7 +367,9 @@ class DisplayController:
         time_data = self._calculate_time_data(session_data, current_time)
 
         # Calculate burn rate
-        burn_rate = calculate_hourly_burn_rate(cast(list[BlockData], data["blocks"]), current_time)
+        burn_rate = calculate_hourly_burn_rate(
+            cast(list[BlockData], data["blocks"]), current_time
+        )
 
         # Calculate cost predictions
         cost_data = self._calculate_cost_predictions(
@@ -362,7 +381,7 @@ class DisplayController:
         if reset_time is None:
             # Use a default reset time if none available
             reset_time = current_time + timedelta(hours=5)
-        
+
         notifications = self._check_notifications(
             token_limit,
             original_limit,
@@ -389,7 +408,9 @@ class DisplayController:
             "total_session_minutes": time_data["total_session_minutes"],
             "burn_rate": burn_rate,
             "session_cost": session_data["session_cost"],
-            "per_model_stats": cast(dict[str, dict[str, int | float]], session_data["raw_per_model_stats"]),
+            "per_model_stats": cast(
+                dict[str, ModelStats], session_data["raw_per_model_stats"]
+            ),
             "model_distribution": model_distribution,
             "sent_messages": session_data["sent_messages"],
             "entries": cast(list[dict[str, JSONSerializable]], session_data["entries"]),
@@ -426,9 +447,11 @@ class DisplayController:
                     # Sum all token types for this model in current session
                     input_tokens = stats.get("input_tokens", 0)
                     output_tokens = stats.get("output_tokens", 0)
-                    
+
                     # Ensure we have numeric values for arithmetic
-                    if isinstance(input_tokens, (int, float)) and isinstance(output_tokens, (int, float)):
+                    if isinstance(input_tokens, (int, float)) and isinstance(
+                        output_tokens, (int, float)
+                    ):
                         total_tokens = int(input_tokens) + int(output_tokens)
                     else:
                         continue
@@ -679,9 +702,13 @@ class SessionCalculator:
         current_time = datetime.now(timezone.utc)
 
         # Calculate cost per minute
-        if isinstance(session_cost, (int, float)) and isinstance(elapsed_minutes, (int, float)):
+        if isinstance(session_cost, (int, float)) and isinstance(
+            elapsed_minutes, (int, float)
+        ):
             cost_per_minute = (
-                float(session_cost) / max(1, float(elapsed_minutes)) if elapsed_minutes > 0 else 0
+                float(session_cost) / max(1, float(elapsed_minutes))
+                if elapsed_minutes > 0
+                else 0
             )
         else:
             cost_per_minute = 0.0
@@ -703,8 +730,11 @@ class SessionCalculator:
             )
         else:
             from datetime import datetime as dt_type
+
             reset_time = time_data["reset_time"]
-            predicted_end_time = reset_time if isinstance(reset_time, dt_type) else current_time
+            predicted_end_time = (
+                reset_time if isinstance(reset_time, dt_type) else current_time
+            )
 
         return {
             "cost_per_minute": cost_per_minute,
