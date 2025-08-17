@@ -3,7 +3,7 @@
 import logging
 import time
 
-from claude_monitor.core.models import AnalysisResult
+from claude_monitor.types import AnalysisResult
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
 

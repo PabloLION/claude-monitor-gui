@@ -19,7 +19,7 @@ from claude_monitor.cli.bootstrap import ensure_directories
 from claude_monitor.cli.bootstrap import init_timezone
 from claude_monitor.cli.bootstrap import setup_environment
 from claude_monitor.cli.bootstrap import setup_logging
-from claude_monitor.core.models import BlockData, JSONSerializable, MonitoringData
+from claude_monitor.types import BlockData, JSONSerializable, MonitoringData
 from claude_monitor.core.plans import Plans
 from claude_monitor.core.plans import PlanType
 from claude_monitor.core.plans import get_token_limit

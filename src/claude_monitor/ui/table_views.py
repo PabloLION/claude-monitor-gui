@@ -7,7 +7,7 @@ in table format using Rich library.
 import logging
 from rich.align import Align
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table

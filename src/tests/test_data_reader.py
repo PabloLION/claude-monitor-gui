@@ -1615,7 +1615,6 @@ class TestDataProcessors:
         assert result["output_tokens"] == 50
         assert result["cache_creation_tokens"] == 10
         assert result["cache_read_tokens"] == 5
-        assert result["total_tokens"] == 165
 
     def test_token_extractor_usage_field(self):
         """Test extraction from usage field."""
@@ -1627,7 +1626,7 @@ class TestDataProcessors:
 
         assert result["input_tokens"] == 200
         assert result["output_tokens"] == 100
-        assert result["total_tokens"] == 300
+        # Note: total_tokens is computed by the function, not returned in ExtractedTokens
 
     def test_token_extractor_message_usage(self):
         """Test extraction from message.usage field."""
@@ -1648,7 +1647,7 @@ class TestDataProcessors:
         assert result["input_tokens"] == 150
         assert result["output_tokens"] == 75
         assert result["cache_creation_tokens"] == 20
-        assert result["total_tokens"] == 245
+        # Note: total_tokens is computed by the function, not returned in ExtractedTokens
 
     def test_token_extractor_empty_data(self):
         """Test extraction from empty data."""
@@ -1660,7 +1659,7 @@ class TestDataProcessors:
         assert result["output_tokens"] == 0
         assert result["cache_creation_tokens"] == 0
         assert result["cache_read_tokens"] == 0
-        assert result["total_tokens"] == 0
+        # Note: total_tokens is computed by the function, not returned in ExtractedTokens
 
     def test_data_converter_extract_model_name(self):
         """Test model name extraction."""

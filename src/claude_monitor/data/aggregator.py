@@ -10,14 +10,15 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from collections.abc import Callable
 
-from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name, AggregatedData, AggregatedTotals
+from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
+from claude_monitor.types import AggregatedData, AggregatedTotals, AggregatedStats
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AggregatedStats:
+class AggregatedStatsData:
     """Statistics for aggregated usage data."""
 
     input_tokens: int = 0
@@ -36,16 +37,17 @@ class AggregatedStats:
         self.cost += entry.cost_usd
         self.count += 1
 
-    def to_dict(self) -> dict[str, str | int | float]:
+    def to_dict(self) -> AggregatedStats:
         """Convert to dictionary format."""
-        return {
+        from typing import cast
+        return cast(AggregatedStats, {
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "cache_creation_tokens": self.cache_creation_tokens,
             "cache_read_tokens": self.cache_read_tokens,
             "cost": self.cost,
             "count": self.count,
-        }
+        })
 
 
 @dataclass
@@ -53,10 +55,10 @@ class AggregatedPeriod:
     """Aggregated data for a time period (day or month)."""
 
     period_key: str
-    stats: AggregatedStats = field(default_factory=AggregatedStats)
+    stats: AggregatedStatsData = field(default_factory=AggregatedStatsData)
     models_used: set = field(default_factory=set)
-    model_breakdowns: dict[str, AggregatedStats] = field(
-        default_factory=lambda: defaultdict(AggregatedStats)
+    model_breakdowns: dict[str, AggregatedStatsData] = field(
+        default_factory=lambda: defaultdict(AggregatedStatsData)
     )
 
     def add_entry(self, entry: UsageEntry) -> None:
@@ -247,7 +249,7 @@ class UsageAggregator:
         Returns:
             Dictionary with total statistics
         """
-        total_stats = AggregatedStats()
+        total_stats = AggregatedStatsData()
 
         for data in aggregated_data:
             total_stats.input_tokens += data["input_tokens"]

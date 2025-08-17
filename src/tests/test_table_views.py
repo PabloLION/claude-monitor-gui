@@ -4,7 +4,7 @@ import pytest
 from rich.panel import Panel
 from rich.table import Table
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 from claude_monitor.ui.table_views import TableViewsController
 
 

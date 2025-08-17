@@ -5,7 +5,7 @@ import threading
 import time
 from collections.abc import Callable
 
-from claude_monitor.core.models import AnalysisResult, MonitoringData
+from claude_monitor.types import AnalysisResult, MonitoringData
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT, get_token_limit
 from claude_monitor.error_handling import report_error
 from claude_monitor.monitoring.data_manager import DataManager

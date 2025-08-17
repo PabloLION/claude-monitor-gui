@@ -22,6 +22,8 @@ except ImportError:
 from rich.console import Console
 from rich.theme import Theme
 
+from claude_monitor.types import VelocityIndicator
+
 
 class BackgroundType(Enum):
     """Background detection types."""
@@ -641,7 +643,7 @@ def get_cost_style(cost: float) -> str:
     return COST_STYLES["low"]
 
 
-def get_velocity_indicator(burn_rate: float) -> dict[str, str]:
+def get_velocity_indicator(burn_rate: float) -> VelocityIndicator:
     """Get velocity indicator based on burn rate.
 
     Args:

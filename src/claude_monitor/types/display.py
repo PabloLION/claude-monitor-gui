@@ -110,3 +110,10 @@ class DisplayTimes(TypedDict):
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
+
+
+class VelocityIndicator(TypedDict):
+    """Velocity indicator for burn rate visualization."""
+
+    emoji: str
+    label: str

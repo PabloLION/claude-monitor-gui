@@ -72,3 +72,14 @@ class SessionPercentilesDict(TypedDict):
     messages: PercentileDict
     averages: dict[str, int | float]
     count: int
+
+
+class AggregatedStats(TypedDict):
+    """Aggregated statistics from data aggregator to_dict method."""
+
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    cost: float
+    count: int

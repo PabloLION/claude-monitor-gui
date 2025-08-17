@@ -3,7 +3,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 
 
 class NotificationManager:

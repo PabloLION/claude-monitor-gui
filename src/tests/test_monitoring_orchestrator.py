@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
 

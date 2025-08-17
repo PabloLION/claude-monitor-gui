@@ -7,17 +7,17 @@ import pytest
 from claude_monitor.core.models import UsageEntry
 from claude_monitor.data.aggregator import (
     AggregatedPeriod,
-    AggregatedStats,
+    AggregatedStatsData,
     UsageAggregator,
 )
 
 
 class TestAggregatedStats:
-    """Test cases for AggregatedStats dataclass."""
+    """Test cases for AggregatedStatsData dataclass."""
 
     def test_init_default_values(self) -> None:
-        """Test default initialization of AggregatedStats."""
-        stats = AggregatedStats()
+        """Test default initialization of AggregatedStatsData."""
+        stats = AggregatedStatsData()
         assert stats.input_tokens == 0
         assert stats.output_tokens == 0
         assert stats.cache_creation_tokens == 0
@@ -27,7 +27,7 @@ class TestAggregatedStats:
 
     def test_add_entry_single(self, sample_usage_entry: UsageEntry) -> None:
         """Test adding a single entry to stats."""
-        stats = AggregatedStats()
+        stats = AggregatedStatsData()
         stats.add_entry(sample_usage_entry)
 
         assert stats.input_tokens == 100
@@ -39,7 +39,7 @@ class TestAggregatedStats:
 
     def test_add_entry_multiple(self) -> None:
         """Test adding multiple entries to stats."""
-        stats = AggregatedStats()
+        stats = AggregatedStatsData()
 
         # Create multiple entries
         entry1 = UsageEntry(
@@ -77,8 +77,8 @@ class TestAggregatedStats:
         assert stats.count == 2
 
     def test_to_dict(self) -> None:
-        """Test converting AggregatedStats to dictionary."""
-        stats = AggregatedStats(
+        """Test converting AggregatedStatsData to dictionary."""
+        stats = AggregatedStatsData(
             input_tokens=1000,
             output_tokens=500,
             cache_creation_tokens=100,
@@ -107,7 +107,7 @@ class TestAggregatedPeriod:
         period = AggregatedPeriod(period_key="2024-01-01")
 
         assert period.period_key == "2024-01-01"
-        assert isinstance(period.stats, AggregatedStats)
+        assert isinstance(period.stats, AggregatedStatsData)
         assert period.stats.count == 0
         assert len(period.models_used) == 0
         assert len(period.model_breakdowns) == 0
@@ -219,7 +219,7 @@ class TestAggregatedPeriod:
     def test_to_dict_daily(self) -> None:
         """Test converting AggregatedPeriod to dictionary for daily view."""
         period = AggregatedPeriod(period_key="2024-01-01")
-        period.stats = AggregatedStats(
+        period.stats = AggregatedStatsData(
             input_tokens=1000,
             output_tokens=500,
             cache_creation_tokens=100,
@@ -228,7 +228,7 @@ class TestAggregatedPeriod:
             count=10,
         )
         period.models_used = {"claude-3-haiku", "claude-3-sonnet"}
-        period.model_breakdowns["claude-3-haiku"] = AggregatedStats(
+        period.model_breakdowns["claude-3-haiku"] = AggregatedStatsData(
             input_tokens=600,
             output_tokens=300,
             cache_creation_tokens=60,
@@ -236,7 +236,7 @@ class TestAggregatedPeriod:
             cost=0.03,
             count=6,
         )
-        period.model_breakdowns["claude-3-sonnet"] = AggregatedStats(
+        period.model_breakdowns["claude-3-sonnet"] = AggregatedStatsData(
             input_tokens=400,
             output_tokens=200,
             cache_creation_tokens=40,
@@ -261,7 +261,7 @@ class TestAggregatedPeriod:
     def test_to_dict_monthly(self) -> None:
         """Test converting AggregatedPeriod to dictionary for monthly view."""
         period = AggregatedPeriod(period_key="2024-01")
-        period.stats = AggregatedStats(
+        period.stats = AggregatedStatsData(
             input_tokens=10000,
             output_tokens=5000,
             cache_creation_tokens=1000,

@@ -8,16 +8,18 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from claude_monitor.core.models import (
+    SessionBlock,
+    TokenCounts,
+    UsageEntry,
+    normalize_model_name,
+)
+from claude_monitor.types import (
     ClaudeJSONEntry,
     JSONSerializable,
     LimitDetectionInfo,
     LimitInfo,
-    SessionBlock,
     SystemEntry,
-    TokenCounts,
     UserEntry,
-    UsageEntry,
-    normalize_model_name,
 )
 from claude_monitor.utils.time_utils import TimezoneHandler
 

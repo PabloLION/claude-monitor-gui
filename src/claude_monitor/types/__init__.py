@@ -44,6 +44,7 @@ __all__ = [
     "ThresholdConfig",
     "NotificationFlags",
     "DisplayTimes",
+    "VelocityIndicator",
     
     # Config types
     "LastUsedParamsDict",
@@ -58,6 +59,7 @@ __all__ = [
     "SessionCollectionDict",
     "PercentileDict",
     "SessionPercentilesDict",
+    "AggregatedStats",
     
     # Common types
     "JSONSerializable",

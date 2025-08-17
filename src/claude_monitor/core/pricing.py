@@ -6,7 +6,8 @@ based on token usage and model pricing. It supports all Claude model types
 with caching.
 """
 
-from claude_monitor.core.models import CostMode, JSONSerializable, TokenCounts, EntryData, normalize_model_name
+from claude_monitor.core.models import CostMode, TokenCounts, normalize_model_name
+from claude_monitor.types import JSONSerializable, EntryData
 
 
 class PricingCalculator:
