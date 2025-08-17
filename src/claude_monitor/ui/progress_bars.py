@@ -8,7 +8,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Final, Protocol, TypedDict
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 from claude_monitor.utils.time_utils import percentage
 
 

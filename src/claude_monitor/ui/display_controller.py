@@ -12,7 +12,7 @@ from typing import cast, Any
 import pytz
 from rich.console import Console, Group, RenderableType
 
-from claude_monitor.types import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData
+from claude_monitor.types import JSONSerializable, TimeData, CostPredictions, ExtractedSessionData, ProcessedDisplayData, BlockDict, AnalysisResult, BlockData, NotificationFlags, DisplayTimes
 from rich.live import Live
 from rich.text import Text
 
@@ -107,7 +107,7 @@ class DisplayController:
         cost_limit: float,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> dict[str, bool]:
+    ) -> NotificationFlags:
         """Check and update notification states."""
         notifications = {}
 
@@ -150,7 +150,7 @@ class DisplayController:
                 and self.notification_manager.is_notification_active("cost_will_exceed")
             )
 
-        return notifications
+        return cast(NotificationFlags, notifications)
 
     def _format_display_times(
         self,
@@ -158,7 +158,7 @@ class DisplayController:
         current_time: datetime,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> dict[str, str]:
+    ) -> DisplayTimes:
         """Format times for display."""
         tz_handler = TimezoneHandler(default_tz="Europe/Warsaw")
         timezone_to_use = (

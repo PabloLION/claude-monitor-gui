@@ -7,7 +7,7 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import ClaudeJSONEntry, JSONSerializable
+from claude_monitor.types import ClaudeJSONEntry, JSONSerializable, ExtractedTokens
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -69,7 +69,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: ClaudeJSONEntry) -> dict[str, int]:
+    def extract_tokens(data: ClaudeJSONEntry) -> ExtractedTokens:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -118,7 +118,12 @@ class TokenExtractor:
                 logger.debug(
                     "TokenExtractor: System/user messages have no token usage"
                 )
-                return tokens
+                return {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_tokens": 0,
+                    "cache_read_tokens": 0,
+                }
             elif entry_type == "assistant":
                 # Assistant messages have token usage - proceed with extraction
                 pass
@@ -247,7 +252,12 @@ class TokenExtractor:
         if tokens["total_tokens"] == 0:
             logger.debug("TokenExtractor: No tokens found in any source")
 
-        return tokens
+        return {
+            "input_tokens": tokens["input_tokens"],
+            "output_tokens": tokens["output_tokens"], 
+            "cache_creation_tokens": tokens["cache_creation_tokens"],
+            "cache_read_tokens": tokens["cache_read_tokens"],
+        }
 
 
 class DataConverter:

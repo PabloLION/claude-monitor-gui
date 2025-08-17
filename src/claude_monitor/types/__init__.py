@@ -42,6 +42,8 @@ __all__ = [
     "ModelStatsDict",
     "ProgressBarStyleConfig",
     "ThresholdConfig",
+    "NotificationFlags",
+    "DisplayTimes",
     
     # Config types
     "LastUsedParamsDict",
@@ -67,4 +69,6 @@ __all__ = [
     "ProjectionData",
     "LimitInfo",
     "MonitoringData",
+    "ExtractedTokens",
+    "ExtractedMetadata",
 ]

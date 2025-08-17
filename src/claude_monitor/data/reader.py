@@ -14,7 +14,7 @@ from claude_monitor.core.data_processors import (
     TimestampProcessor,
     TokenExtractor,
 )
-from claude_monitor.types import ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable, EntryData
+from claude_monitor.types import ClaudeJSONEntry, SystemEntry, UserEntry, AssistantEntry, JSONSerializable, EntryData, ExtractedMetadata
 from claude_monitor.core.models import CostMode, UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
@@ -393,7 +393,7 @@ class UsageEntryMapper:
             return DataConverter.extract_model_name(parsed_data, default="unknown")
         return "unknown"
 
-    def _extract_metadata(self, data: dict[str, JSONSerializable]) -> dict[str, str]:
+    def _extract_metadata(self, data: dict[str, JSONSerializable]) -> ExtractedMetadata:
         """Extract metadata (for test compatibility)."""
         message = data.get("message", {})
         

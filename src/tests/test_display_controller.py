@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.core.models import JSONSerializable
+from claude_monitor.types import JSONSerializable
 from claude_monitor.ui.display_controller import (
     DisplayController,
     LiveDisplayManager,

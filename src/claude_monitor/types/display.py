@@ -94,3 +94,19 @@ class ThresholdConfig(TypedDict):
     low: float
     medium: float
     high: float
+
+
+class NotificationFlags(TypedDict):
+    """Notification flags for display controller."""
+
+    show_switch_notification: bool
+    show_exceed_notification: bool
+    show_cost_will_exceed: bool
+
+
+class DisplayTimes(TypedDict):
+    """Formatted display times for UI."""
+
+    predicted_end_str: str
+    reset_time_str: str
+    current_time_str: str

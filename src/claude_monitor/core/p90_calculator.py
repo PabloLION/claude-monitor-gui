@@ -5,7 +5,7 @@ from functools import lru_cache
 from statistics import quantiles
 from collections.abc import Callable
 
-from claude_monitor.core.models import BlockData
+from claude_monitor.types import BlockData
 
 
 @dataclass(frozen=True)

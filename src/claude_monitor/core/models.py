@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
+from claude_monitor.types import FormattedLimitInfo
+
 
 class CostMode(Enum):
     """Cost calculation modes for token usage analysis."""
@@ -86,7 +88,7 @@ class SessionBlock:
     models: list[str] = field(default_factory=list[str])
     sent_messages_count: int = 0
     cost_usd: float = 0.0
-    limit_messages: list[dict[str, str]] = field(default_factory=list[dict[str, str]])
+    limit_messages: list[FormattedLimitInfo] = field(default_factory=list[FormattedLimitInfo])
     projection_data: dict[str, int | float] | None = None
     burn_rate_snapshot: BurnRate | None = None
 
