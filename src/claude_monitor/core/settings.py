@@ -273,12 +273,12 @@ class Settings(BaseSettings):
         if clear_config:
             last_used = LastUsedParams()
             last_used.clear()
-            settings = cls()
+            settings = cls(_cli_parse_args=argv)
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()
 
-            settings = cls()
+            settings = cls(_cli_parse_args=argv)
 
             cli_provided_fields = set()
             if argv:
