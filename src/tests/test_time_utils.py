@@ -50,7 +50,7 @@ class TestTimeFormatDetector:
 
     def test_detect_from_cli_no_args(self) -> None:
         """Test CLI detection with no args."""
-        result = TimeFormatDetector.detect_from_cli(None)
+        result = TimeFormatDetector.detect_from_cli(None)  # type: ignore[arg-type]
         assert result is None
 
     def test_detect_from_cli_no_attribute(self) -> None:
@@ -451,7 +451,8 @@ class TestTimezoneHandler:
         result = handler.parse_timestamp("2024-01-01T12:00:00")
 
         assert result is not None
-        assert result.tzinfo.zone == "America/New_York"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "America/New_York"  # type: ignore[attr-defined]
 
     def test_parse_timestamp_invalid_iso(self) -> None:
         """Test parsing invalid ISO timestamp."""
@@ -486,7 +487,7 @@ class TestTimezoneHandler:
     def test_parse_timestamp_none(self) -> None:
         """Test parsing None timestamp."""
         handler = TimezoneHandler()
-        result = handler.parse_timestamp(None)
+        result = handler.parse_timestamp(None)  # type: ignore[arg-type]
         assert result is None
 
     def test_parse_timestamp_invalid_format(self) -> None:
@@ -517,7 +518,8 @@ class TestTimezoneHandler:
         dt = datetime(2024, 1, 1, 12, 0, 0)
 
         result = handler.ensure_timezone(dt)
-        assert result.tzinfo.zone == "Europe/Berlin"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "Europe/Berlin"  # type: ignore[attr-defined]
 
     def test_ensure_timezone_aware(self) -> None:
         """Test ensure_timezone with timezone-aware datetime."""
@@ -525,7 +527,8 @@ class TestTimezoneHandler:
         dt = pytz.timezone("America/New_York").localize(datetime(2024, 1, 1, 12, 0, 0))
 
         result = handler.ensure_timezone(dt)
-        assert result.tzinfo.zone == "America/New_York"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "America/New_York"  # type: ignore[attr-defined]
 
     def test_validate_timezone_valid(self) -> None:
         """Test validate_timezone with valid timezone."""
@@ -544,7 +547,8 @@ class TestTimezoneHandler:
         dt = datetime(2024, 1, 1, 12, 0, 0)
 
         result = handler.convert_to_timezone(dt, "America/New_York")
-        assert result.tzinfo.zone == "America/New_York"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "America/New_York"  # type: ignore[attr-defined]
 
     def test_convert_to_timezone_aware(self) -> None:
         """Test convert_to_timezone with timezone-aware datetime."""
@@ -552,7 +556,8 @@ class TestTimezoneHandler:
         dt = pytz.UTC.localize(datetime(2024, 1, 1, 12, 0, 0))
 
         result = handler.convert_to_timezone(dt, "Europe/London")
-        assert result.tzinfo.zone == "Europe/London"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "Europe/London"  # type: ignore[attr-defined]
 
     def test_set_timezone(self) -> None:
         """Test set_timezone method."""
@@ -574,7 +579,8 @@ class TestTimezoneHandler:
         dt = pytz.UTC.localize(datetime(2024, 1, 1, 12, 0, 0))
 
         result = handler.to_timezone(dt)
-        assert result.tzinfo.zone == "Australia/Sydney"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "Australia/Sydney"  # type: ignore[attr-defined]
 
     def test_to_timezone_specific(self) -> None:
         """Test to_timezone with specific timezone."""
@@ -582,7 +588,8 @@ class TestTimezoneHandler:
         dt = pytz.UTC.localize(datetime(2024, 1, 1, 12, 0, 0))
 
         result = handler.to_timezone(dt, "America/Los_Angeles")
-        assert result.tzinfo.zone == "America/Los_Angeles"
+        assert result.tzinfo is not None
+        assert result.tzinfo.zone == "America/Los_Angeles"  # type: ignore[attr-defined]
 
     def test_format_datetime_default(self) -> None:
         """Test format_datetime with default settings."""

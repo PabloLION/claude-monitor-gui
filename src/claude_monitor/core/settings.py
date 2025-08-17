@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import pytz
 from pydantic import Field, field_validator
@@ -170,6 +170,18 @@ class Settings(BaseSettings):
     version: bool = Field(default=False, description="Show version information")
 
     clear: bool = Field(default=False, description="Clear saved configuration")
+
+    def __init__(self, _cli_parse_args: list[str] | None = None, **data: Any) -> None:
+        """Initialize Settings with optional CLI arguments parsing.
+        
+        Args:
+            _cli_parse_args: List of CLI arguments to parse. If None, no CLI parsing.
+            **data: Additional field values to set.
+        """
+        # Handle the special _cli_parse_args parameter for Pydantic
+        if _cli_parse_args is not None:
+            data['_cli_parse_args'] = _cli_parse_args
+        super().__init__(**data)
 
     @field_validator("plan", mode="before")
     @classmethod

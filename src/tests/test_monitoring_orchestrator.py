@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import JSONSerializable, AnalysisResult, MonitoringData
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
 
@@ -279,7 +279,7 @@ class TestMonitoringOrchestratorMonitoringLoop:
             time.sleep(0.3)  # Let it run for multiple intervals
             orchestrator.stop()
 
-            # Should have called fetch multiple times
+            # Should have called fetch multiple times (initial + at least 1 periodic)
             assert mock_fetch.call_count >= 2
 
     def test_monitoring_loop_stop_event(

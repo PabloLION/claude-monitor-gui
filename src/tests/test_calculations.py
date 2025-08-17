@@ -12,7 +12,7 @@ from claude_monitor.core.calculations import (
     calculate_hourly_burn_rate,
 )
 from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import JSONSerializable, BlockData
 
 
 class TestBurnRateCalculator:
@@ -159,27 +159,41 @@ class TestHourlyBurnRateCalculation:
         return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     @pytest.fixture
-    def mock_blocks(self) -> list[dict[str, JSONSerializable]]:
+    def mock_blocks(self) -> list[BlockData]:
         """Create mock blocks for testing."""
-        block1 = {
-            "start_time": "2024-01-01T11:30:00Z",
-            "actual_end_time": None,
-            "token_counts": {"input_tokens": 100, "output_tokens": 50},
+        block1: BlockData = {
+            "id": "block1",
+            "isActive": False,
             "isGap": False,
+            "totalTokens": 150,
+            "startTime": "2024-01-01T11:30:00Z",
+            "endTime": "2024-01-01T12:00:00Z",
+            "costUSD": 0.05,
+            "actualEndTime": "2024-01-01T12:00:00Z",
+            "tokenCounts": {"input_tokens": 100, "output_tokens": 50},
         }
 
-        block2 = {
-            "start_time": "2024-01-01T10:00:00Z",
-            "actual_end_time": "2024-01-01T10:30:00Z",
-            "token_counts": {"input_tokens": 200, "output_tokens": 100},
+        block2: BlockData = {
+            "id": "block2",
+            "isActive": False,
             "isGap": False,
+            "totalTokens": 300,
+            "startTime": "2024-01-01T10:00:00Z",
+            "endTime": "2024-01-01T10:30:00Z",
+            "costUSD": 0.10,
+            "actualEndTime": "2024-01-01T10:30:00Z",
+            "tokenCounts": {"input_tokens": 200, "output_tokens": 100},
         }
 
-        block3 = {
-            "start_time": "2024-01-01T11:45:00Z",
-            "actual_end_time": None,
-            "token_counts": {"input_tokens": 50, "output_tokens": 25},
+        block3: BlockData = {
+            "id": "block3",
+            "isActive": False,
             "isGap": True,
+            "totalTokens": 75,
+            "startTime": "2024-01-01T11:45:00Z",
+            "endTime": "2024-01-01T12:15:00Z",
+            "costUSD": 0.03,
+            "tokenCounts": {"input_tokens": 50, "output_tokens": 25},
         }
 
         return [block1, block2, block3]
@@ -194,8 +208,9 @@ class TestHourlyBurnRateCalculation:
     def test_calculate_hourly_burn_rate_none_blocks(
         self, current_time: datetime
     ) -> None:
-        """Test hourly burn rate with None blocks."""
-        burn_rate = calculate_hourly_burn_rate(None, current_time)
+        """Test hourly burn rate with empty blocks list."""
+        empty_blocks: list[BlockData] = []
+        burn_rate = calculate_hourly_burn_rate(empty_blocks, current_time)
         assert burn_rate == 0.0
 
     @patch("claude_monitor.core.calculations._calculate_total_tokens_in_hour")
@@ -205,7 +220,16 @@ class TestHourlyBurnRateCalculation:
         """Test successful hourly burn rate calculation."""
         mock_calc_tokens.return_value = 180.0  # Total tokens in hour
 
-        blocks = [Mock()]
+        simple_block: BlockData = {
+            "id": "test",
+            "isActive": False,
+            "isGap": False,
+            "totalTokens": 100,
+            "startTime": "2024-01-01T11:00:00Z",
+            "endTime": "2024-01-01T12:00:00Z",
+            "costUSD": 0.05,
+        }
+        blocks = [simple_block]
         burn_rate = calculate_hourly_burn_rate(blocks, current_time)
 
         assert burn_rate == 3.0

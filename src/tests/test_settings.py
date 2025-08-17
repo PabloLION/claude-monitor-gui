@@ -655,13 +655,20 @@ class TestSettingsIntegration:
 
     def test_settings_customise_sources(self) -> None:
         """Test settings source customization."""
+        from unittest.mock import Mock
+        
+        mock_init = Mock()
+        mock_env = Mock()
+        mock_dotenv = Mock()
+        mock_secret = Mock()
+        
         sources = Settings.settings_customise_sources(
             Settings,
-            "init_settings",
-            "env_settings",
-            "dotenv_settings",
-            "file_secret_settings",
+            mock_init,
+            mock_env,
+            mock_dotenv,
+            mock_secret,
         )
 
         # Should only return init_settings
-        assert sources == ("init_settings",)
+        assert sources == (mock_init,)
