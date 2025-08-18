@@ -49,6 +49,7 @@ __all__ = [
     # Analysis types
     "AnalysisMetadata",
     "AggregatedData",
+    "TotalAggregatedData",
     "AggregatedTotals",
     "ModelStats",
     "SessionDataDict",

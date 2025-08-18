@@ -1,10 +1,11 @@
 """Tests for table views module."""
 
 import pytest
+from typing import cast
 from rich.panel import Panel
 from rich.table import Table
 
-from claude_monitor.types import AggregatedData, AggregatedTotals
+from claude_monitor.types import TotalAggregatedData, AggregatedTotals
 from claude_monitor.ui.table_views import TableViewsController
 
 
@@ -17,9 +18,9 @@ class TestTableViewsController:
         return TableViewsController()
 
     @pytest.fixture
-    def sample_daily_data(self) -> list[AggregatedData]:
+    def sample_daily_data(self) -> list[TotalAggregatedData]:
         """Create sample daily aggregated data."""
-        return [
+        return cast(list[TotalAggregatedData], [
             {
                 "date": "2024-01-01",
                 "input_tokens": 1000,
@@ -68,12 +69,12 @@ class TestTableViewsController:
                 },
                 "entries_count": 20,
             },
-        ]
+        ])
 
     @pytest.fixture
-    def sample_monthly_data(self) -> list[AggregatedData]:
+    def sample_monthly_data(self) -> list[TotalAggregatedData]:
         """Create sample monthly aggregated data."""
-        return [
+        return cast(list[TotalAggregatedData], [
             {
                 "month": "2024-01",
                 "input_tokens": 30000,
@@ -130,12 +131,12 @@ class TestTableViewsController:
                 },
                 "entries_count": 200,
             },
-        ]
+        ])
 
     @pytest.fixture
     def sample_totals(self) -> AggregatedTotals:
         """Create sample totals data."""
-        return {
+        return cast(AggregatedTotals, {
             "input_tokens": 50000,
             "output_tokens": 25000,
             "cache_creation_tokens": 5000,
@@ -143,7 +144,7 @@ class TestTableViewsController:
             "total_tokens": 82500,
             "total_cost": 2.50,
             "entries_count": 500,
-        }
+        })
 
     def test_init_styles(self, controller: TableViewsController) -> None:
         """Test controller initialization with styles."""
@@ -159,7 +160,7 @@ class TestTableViewsController:
     def test_create_daily_table_structure(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test creation of daily table structure."""
@@ -188,7 +189,7 @@ class TestTableViewsController:
     def test_create_daily_table_data(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test daily table data population."""
@@ -204,7 +205,7 @@ class TestTableViewsController:
     def test_create_monthly_table_structure(
         self,
         controller: TableViewsController,
-        sample_monthly_data: list[AggregatedData],
+        sample_monthly_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test creation of monthly table structure."""
@@ -235,7 +236,7 @@ class TestTableViewsController:
     def test_create_monthly_table_data(
         self,
         controller: TableViewsController,
-        sample_monthly_data: list[AggregatedData],
+        sample_monthly_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test monthly table data population."""
@@ -297,7 +298,7 @@ class TestTableViewsController:
     def test_create_aggregate_table_daily(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test create_aggregate_table for daily view."""
@@ -311,7 +312,7 @@ class TestTableViewsController:
     def test_create_aggregate_table_monthly(
         self,
         controller: TableViewsController,
-        sample_monthly_data: list[AggregatedData],
+        sample_monthly_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test create_aggregate_table for monthly view."""
@@ -325,7 +326,7 @@ class TestTableViewsController:
     def test_create_aggregate_table_invalid_view_type(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test create_aggregate_table with invalid view type."""
@@ -337,7 +338,7 @@ class TestTableViewsController:
     def test_daily_table_timezone_display(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test daily table displays correct timezone."""
@@ -351,7 +352,7 @@ class TestTableViewsController:
     def test_monthly_table_timezone_display(
         self,
         controller: TableViewsController,
-        sample_monthly_data: list[AggregatedData],
+        sample_monthly_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test monthly table displays correct timezone."""
@@ -362,7 +363,7 @@ class TestTableViewsController:
 
     def test_table_with_zero_tokens(self, controller: TableViewsController) -> None:
         """Test table with entries having zero tokens."""
-        data = [
+        data = cast(list[TotalAggregatedData], [
             {
                 "date": "2024-01-01",
                 "input_tokens": 0,
@@ -374,9 +375,9 @@ class TestTableViewsController:
                 "model_breakdowns": {},
                 "entries_count": 0,
             }
-        ]
+        ])
 
-        totals = {
+        totals = cast(AggregatedTotals, {
             "input_tokens": 0,
             "output_tokens": 0,
             "cache_creation_tokens": 0,
@@ -384,7 +385,7 @@ class TestTableViewsController:
             "total_tokens": 0,
             "total_cost": 0.0,
             "entries_count": 0,
-        }
+        })
 
         table = controller.create_daily_table(data, totals, "UTC")
         # Table should have 3 rows:
@@ -425,7 +426,7 @@ class TestTableViewsController:
     def test_number_formatting_integration(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test that number formatting is integrated correctly."""
@@ -439,7 +440,7 @@ class TestTableViewsController:
     def test_currency_formatting_integration(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test that currency formatting is integrated correctly."""
@@ -453,7 +454,7 @@ class TestTableViewsController:
     def test_table_column_alignment(
         self,
         controller: TableViewsController,
-        sample_daily_data: list[AggregatedData],
+        sample_daily_data: list[TotalAggregatedData],
         sample_totals: AggregatedTotals,
     ) -> None:
         """Test that numeric columns are right-aligned."""
@@ -465,7 +466,7 @@ class TestTableViewsController:
 
     def test_empty_data_lists(self, controller: TableViewsController) -> None:
         """Test handling of empty data lists."""
-        empty_totals = {
+        empty_totals = cast(AggregatedTotals, {
             "input_tokens": 0,
             "output_tokens": 0,
             "cache_creation_tokens": 0,
@@ -473,7 +474,7 @@ class TestTableViewsController:
             "total_tokens": 0,
             "total_cost": 0.0,
             "entries_count": 0,
-        }
+        })
 
         # Daily table with empty data
         daily_table = controller.create_daily_table([], empty_totals, "UTC")

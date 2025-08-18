@@ -1,6 +1,8 @@
 """Data analysis and aggregation types for Claude Monitor."""
 
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import Required
+from typing import TypedDict
 
 
 class AggregatedData(TypedDict, total=False):
@@ -23,6 +25,28 @@ class AggregatedData(TypedDict, total=False):
     # Model information
     models_used: list[str]
     model_breakdowns: dict[str, dict[str, int | float]]
+
+
+class TotalAggregatedData(TypedDict, total=False):
+    """Type-safe aggregated data where all fields are confirmed/required."""
+
+    # Period identifiers (one of these will be present)
+    date: NotRequired[str]  # For daily aggregation (YYYY-MM-DD)
+    month: NotRequired[str]  # For monthly aggregation (YYYY-MM)
+
+    # Token statistics (all required)
+    input_tokens: Required[int]
+    output_tokens: Required[int]
+    cache_creation_tokens: Required[int]
+    cache_read_tokens: Required[int]
+
+    # Cost and count (all required)
+    total_cost: Required[float]
+    entries_count: Required[int]
+
+    # Model information (all required)
+    models_used: Required[list[str]]
+    model_breakdowns: Required[dict[str, dict[str, int | float]]]
 
 
 class AggregatedTotals(TypedDict):

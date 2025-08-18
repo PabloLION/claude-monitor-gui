@@ -12,10 +12,14 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.types import AggregatedData, AggregatedTotals, JSONSerializable
+from claude_monitor.types import AggregatedTotals
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import TotalAggregatedData
 
 # Removed theme import - using direct styles
-from claude_monitor.utils.formatting import format_currency, format_number
+from claude_monitor.utils.formatting import format_currency
+from claude_monitor.utils.formatting import format_number
+
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +96,7 @@ class TableViewsController:
     def _add_data_rows(
         self,
         table: Table,
-        data_list: list[AggregatedData],
+        data_list: list[TotalAggregatedData],
         period_key: str,
     ) -> None:
         """Add data rows to the table.
@@ -105,10 +109,7 @@ class TableViewsController:
         for data in data_list:
             # Safely extract models_used as a list of strings
             models_used = data.get("models_used", [])
-            if isinstance(models_used, list):
-                models_list = [str(model) for model in models_used if model]
-            else:
-                models_list = list[str]()
+            models_list = [str(object=model) for model in models_used if model]
             models_text = self._format_models(models_list)
 
             # Safely extract numeric values
@@ -199,7 +200,7 @@ class TableViewsController:
 
     def create_daily_table(
         self,
-        daily_data: list[AggregatedData],
+        daily_data: list[TotalAggregatedData],
         totals: AggregatedTotals,
         timezone: str = "UTC",
     ) -> Table:
@@ -230,7 +231,7 @@ class TableViewsController:
 
     def create_monthly_table(
         self,
-        monthly_data: list[AggregatedData],
+        monthly_data: list[TotalAggregatedData],
         totals: AggregatedTotals,
         timezone: str = "UTC",
     ) -> Table:
@@ -360,7 +361,7 @@ class TableViewsController:
 
     def create_aggregate_table(
         self,
-        aggregate_data: list[AggregatedData],
+        aggregate_data: list[TotalAggregatedData],
         totals: AggregatedTotals,
         view_type: str,
         timezone: str = "UTC",
@@ -388,7 +389,7 @@ class TableViewsController:
 
     def display_aggregated_view(
         self,
-        data: list[AggregatedData],
+        data: list[TotalAggregatedData],
         view_mode: str,
         timezone: str,
         plan: str,
