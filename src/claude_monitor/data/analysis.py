@@ -4,26 +4,29 @@ Contains the main analyze_usage function and related analysis components.
 """
 
 import logging
-from datetime import datetime, timezone
+
+from datetime import datetime
+from datetime import timezone
 from typing import cast
 
 from claude_monitor.core.calculations import BurnRateCalculator
-from claude_monitor.core.models import CostMode, SessionBlock, UsageEntry
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
 from claude_monitor.data.reader import load_usage_entries
-from claude_monitor.types import (
-    AnalysisMetadata,
-    AnalysisResult,
-    BlockDict,
-    BlockEntry,
-    BurnRateDict,
-    FormattedLimitInfo,
-    LimitDetectionInfo,
-    ModelStats,
-    PartialBlockDict,
-    ProjectionDict,
-    TokenCountsDict,
-)
+from claude_monitor.types import AnalysisMetadata
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import BlockEntry
+from claude_monitor.types import BurnRateData
+from claude_monitor.types import FormattedLimitInfo
+from claude_monitor.types import LimitDetectionInfo
+from claude_monitor.types import ModelUsageStats
+from claude_monitor.types import PartialBlock
+from claude_monitor.types import SerializedBlock
+from claude_monitor.types import SessionProjectionJson
+from claude_monitor.types import TokenCountsData
+
 
 logger = logging.getLogger(__name__)
 
@@ -177,23 +180,23 @@ def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:
 
 def _convert_blocks_to_dict_format(
     blocks: list[SessionBlock],
-) -> list[BlockDict]:
+) -> list[SerializedBlock]:
     """Convert blocks to dictionary format for JSON output."""
-    blocks_data = list[BlockDict]()
+    blocks_data = list[SerializedBlock]()
 
     for block in blocks:
         block_dict = _create_base_block_dict(block)
         _add_optional_block_data(block, block_dict)
         # After adding optional data, cast to complete BlockDict
-        complete_block = cast(BlockDict, block_dict)
+        complete_block = cast(SerializedBlock, block_dict)
         blocks_data.append(complete_block)
 
     return blocks_data
 
 
-def _create_base_block_dict(block: SessionBlock) -> PartialBlockDict:
+def _create_base_block_dict(block: SessionBlock) -> PartialBlock:
     """Create base block dictionary with required fields."""
-    return PartialBlockDict(
+    return PartialBlock(
         {
             "id": block.id,
             "isActive": block.is_active,
@@ -201,9 +204,11 @@ def _create_base_block_dict(block: SessionBlock) -> PartialBlockDict:
             "startTime": block.start_time.isoformat(),
             "endTime": block.end_time.isoformat(),
             "actualEndTime": (
-                block.actual_end_time.isoformat() if block.actual_end_time else None
+                block.actual_end_time.isoformat()
+                if block.actual_end_time
+                else None
             ),
-            "tokenCounts": TokenCountsDict(
+            "tokenCounts": TokenCountsData(
                 {
                     "inputTokens": block.token_counts.input_tokens,
                     "outputTokens": block.token_counts.output_tokens,
@@ -215,7 +220,9 @@ def _create_base_block_dict(block: SessionBlock) -> PartialBlockDict:
             + block.token_counts.output_tokens,
             "costUSD": block.cost_usd,
             "models": block.models,
-            "perModelStats": cast(dict[str, ModelStats], block.per_model_stats),
+            "perModelStats": cast(
+                dict[str, ModelUsageStats], block.per_model_stats
+            ),
             "sentMessagesCount": block.sent_messages_count,
             "durationMinutes": block.duration_minutes,
             "entries": _format_block_entries(block.entries),
@@ -242,10 +249,12 @@ def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
     ]
 
 
-def _add_optional_block_data(block: SessionBlock, block_dict: PartialBlockDict) -> None:
+def _add_optional_block_data(
+    block: SessionBlock, block_dict: PartialBlock
+) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
-        block_dict["burnRate"] = BurnRateDict(
+        block_dict["burnRate"] = BurnRateData(
             {
                 "tokensPerMinute": block.burn_rate_snapshot.tokens_per_minute,
                 "costPerHour": block.burn_rate_snapshot.cost_per_hour,
@@ -253,7 +262,9 @@ def _add_optional_block_data(block: SessionBlock, block_dict: PartialBlockDict) 
         )
 
     if hasattr(block, "projection_data") and block.projection_data:
-        block_dict["projection"] = cast(ProjectionDict, block.projection_data)
+        block_dict["projection"] = cast(
+            SessionProjectionJson, block.projection_data
+        )
 
     if hasattr(block, "limit_messages") and block.limit_messages:
         block_dict["limitMessages"] = block.limit_messages

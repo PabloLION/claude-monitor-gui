@@ -1,10 +1,12 @@
 import time
-from collections.abc import Callable, Sequence
+
+from collections.abc import Callable
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
 
-from claude_monitor.types import BlockData
+from claude_monitor.types import LegacyBlockData
 
 
 @dataclass(frozen=True)
@@ -15,12 +17,15 @@ class P90Config:
     cache_ttl_seconds: int
 
 
-def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) -> bool:
+def _did_hit_limit(
+    tokens: int, common_limits: Sequence[int], threshold: float
+) -> bool:
     return any(tokens >= limit * threshold for limit in common_limits)
 
 
 def _extract_sessions(
-    blocks: Sequence[BlockData], filter_fn: Callable[[BlockData], bool]
+    blocks: Sequence[LegacyBlockData],
+    filter_fn: Callable[[LegacyBlockData], bool],
 ) -> list[int]:
     tokens = list[int]()
     for block in blocks:
@@ -31,17 +36,23 @@ def _extract_sessions(
     return tokens
 
 
-def _calculate_p90_from_blocks(blocks: Sequence[BlockData], cfg: P90Config) -> int:
-    def hit_limit_filter(b: BlockData) -> bool:
+def _calculate_p90_from_blocks(
+    blocks: Sequence[LegacyBlockData], cfg: P90Config
+) -> int:
+    def hit_limit_filter(b: LegacyBlockData) -> bool:
         if b.get("isGap", False) or b.get("isActive", False):
             return False
         total_tokens = b.get("totalTokens", 0)
-        return _did_hit_limit(total_tokens, cfg.common_limits, cfg.limit_threshold)
+        return _did_hit_limit(
+            total_tokens, cfg.common_limits, cfg.limit_threshold
+        )
 
     hits = _extract_sessions(blocks, hit_limit_filter)
     if not hits:
         hits = _extract_sessions(
-            blocks, lambda b: not b.get("isGap", False) and not b.get("isActive", False)
+            blocks,
+            lambda b: not b.get("isGap", False)
+            and not b.get("isActive", False),
         )
     if not hits:
         return cfg.default_min_limit
@@ -52,11 +63,9 @@ def _calculate_p90_from_blocks(blocks: Sequence[BlockData], cfg: P90Config) -> i
 class P90Calculator:
     def __init__(self, config: P90Config | None = None) -> None:
         if config is None:
-            from claude_monitor.core.plans import (
-                COMMON_TOKEN_LIMITS,
-                DEFAULT_TOKEN_LIMIT,
-                LIMIT_DETECTION_THRESHOLD,
-            )
+            from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
+            from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
+            from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
 
             config = P90Config(
                 common_limits=COMMON_TOKEN_LIMITS,
@@ -70,14 +79,15 @@ class P90Calculator:
     def _cached_calc(
         self, key: int, blocks_tuple: tuple[tuple[bool, bool, int], ...]
     ) -> int:
-        blocks: list[BlockData] = [
-            {"isGap": g, "isActive": a, "totalTokens": t} for g, a, t in blocks_tuple
+        blocks: list[LegacyBlockData] = [
+            {"isGap": g, "isActive": a, "totalTokens": t}
+            for g, a, t in blocks_tuple
         ]
         return _calculate_p90_from_blocks(blocks, self._cfg)
 
     def calculate_p90_limit(
         self,
-        blocks: list[BlockData] | None = None,
+        blocks: list[LegacyBlockData] | None = None,
         use_cache: bool = True,
     ) -> int | None:
         if not blocks:

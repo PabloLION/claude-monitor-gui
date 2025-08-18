@@ -6,8 +6,11 @@ based on token usage and model pricing. It supports all Claude model types
 with caching.
 """
 
-from claude_monitor.core.models import CostMode, TokenCounts, normalize_model_name
-from claude_monitor.types import EntryData, RawJSONData
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import ProcessedEntry
+from claude_monitor.types import RawJSONEntry
 
 
 class PricingCalculator:
@@ -182,7 +185,7 @@ class PricingCalculator:
         return self.FALLBACK_PRICING["sonnet"]
 
     def calculate_cost_for_entry(
-        self, entry_data: RawJSONData | EntryData, mode: CostMode
+        self, entry_data: RawJSONEntry | ProcessedEntry, mode: CostMode
     ) -> float:
         """Calculate cost for a single entry (backward compatibility).
 
@@ -222,10 +225,14 @@ class PricingCalculator:
 
         # Ensure all token values are integers
         input_tokens = (
-            int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
+            int(input_tokens_raw)
+            if isinstance(input_tokens_raw, (int, float))
+            else 0
         )
         output_tokens = (
-            int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
+            int(output_tokens_raw)
+            if isinstance(output_tokens_raw, (int, float))
+            else 0
         )
         cache_creation = (
             int(cache_creation_raw)
@@ -233,7 +240,9 @@ class PricingCalculator:
             else 0
         )
         cache_read = (
-            int(cache_read_raw) if isinstance(cache_read_raw, (int, float)) else 0
+            int(cache_read_raw)
+            if isinstance(cache_read_raw, (int, float))
+            else 0
         )
 
         return self.calculate_cost(

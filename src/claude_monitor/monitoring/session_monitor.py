@@ -1,9 +1,12 @@
 """Unified session monitoring - combines tracking and validation."""
 
 import logging
+
 from collections.abc import Callable
 
-from claude_monitor.types import AnalysisResult, BlockDict
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import SerializedBlock
+
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +17,9 @@ class SessionMonitor:
     def __init__(self) -> None:
         """Initialize session monitor."""
         self._current_session_id: str | None = None
-        self._session_callbacks = list[Callable[[str, str, BlockDict | None], None]]()
+        self._session_callbacks = list[
+            Callable[[str, str, SerializedBlock | None], None]
+        ]()
         self._session_history = list[dict[str, str | int | float]]()
 
     def update(self, data: AnalysisResult) -> tuple[bool, list[str]]:
@@ -33,11 +38,11 @@ class SessionMonitor:
             logger.warning(f"Data validation failed: {errors}")
             return is_valid, errors
 
-        blocks: list[BlockDict] = data.get("blocks", [])
+        blocks: list[SerializedBlock] = data.get("blocks", [])
         if "blocks" not in data:
             return False, ["blocks field missing"]
 
-        active_session: BlockDict | None = None
+        active_session: SerializedBlock | None = None
         for block in blocks:
             if block.get("isActive", False):
                 active_session = block
@@ -85,7 +90,7 @@ class SessionMonitor:
 
         return len(errors) == 0, errors
 
-    def _validate_block(self, block: BlockDict, index: int) -> list[str]:
+    def _validate_block(self, block: SerializedBlock, index: int) -> list[str]:
         """Validate individual block.
 
         Args:
@@ -101,7 +106,12 @@ class SessionMonitor:
             errors.append(f"Block {index} must be non-empty")
             return errors
 
-        required_fields: list[str] = ["id", "isActive", "totalTokens", "costUSD"]
+        required_fields: list[str] = [
+            "id",
+            "isActive",
+            "totalTokens",
+            "costUSD",
+        ]
         for field in required_fields:
             if field not in block:
                 errors.append(f"Block {index} missing required field: {field}")
@@ -124,7 +134,7 @@ class SessionMonitor:
         return errors
 
     def _on_session_change(
-        self, old_id: str | None, new_id: str, session_data: BlockDict
+        self, old_id: str | None, new_id: str, session_data: SerializedBlock
     ) -> None:
         """Handle session change.
 
@@ -169,7 +179,7 @@ class SessionMonitor:
                 logger.exception(f"Session callback error: {e}")
 
     def register_callback(
-        self, callback: Callable[[str, str, BlockDict | None], None]
+        self, callback: Callable[[str, str, SerializedBlock | None], None]
     ) -> None:
         """Register session change callback.
 
@@ -180,7 +190,7 @@ class SessionMonitor:
             self._session_callbacks.append(callback)
 
     def unregister_callback(
-        self, callback: Callable[[str, str, BlockDict | None], None]
+        self, callback: Callable[[str, str, SerializedBlock | None], None]
     ) -> None:
         """Unregister session change callback.
 

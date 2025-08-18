@@ -1,12 +1,16 @@
 """Shared pytest fixtures for Claude Monitor tests."""
 
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from unittest.mock import Mock
 
 import pytest
 
-from claude_monitor.core.models import CostMode, UsageEntry
-from claude_monitor.types import AnalysisResult, JSONSerializable, RawJSONData
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import RawJSONEntry
 
 
 @pytest.fixture
@@ -24,7 +28,9 @@ def mock_timezone_handler() -> Mock:
     mock.parse_timestamp.return_value = datetime(
         2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
     )
-    mock.ensure_utc.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    mock.ensure_utc.return_value = datetime(
+        2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+    )
     return mock
 
 
@@ -45,7 +51,7 @@ def sample_usage_entry() -> UsageEntry:
 
 
 @pytest.fixture
-def sample_valid_data() -> RawJSONData:
+def sample_valid_data() -> RawJSONEntry:
     """Sample valid data structure for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -65,7 +71,7 @@ def sample_valid_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_assistant_data() -> RawJSONData:
+def sample_assistant_data() -> RawJSONEntry:
     """Sample assistant-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -85,7 +91,7 @@ def sample_assistant_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_user_data() -> RawJSONData:
+def sample_user_data() -> RawJSONEntry:
     """Sample user-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -103,7 +109,7 @@ def sample_user_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_malformed_data() -> RawJSONData:
+def sample_malformed_data() -> RawJSONEntry:
     """Sample malformed data for testing error handling."""
     return {
         "timestamp": "invalid_timestamp",
@@ -113,7 +119,7 @@ def sample_malformed_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_minimal_data() -> RawJSONData:
+def sample_minimal_data() -> RawJSONEntry:
     """Sample minimal valid data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -123,7 +129,7 @@ def sample_minimal_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_empty_tokens_data() -> RawJSONData:
+def sample_empty_tokens_data() -> RawJSONEntry:
     """Sample data with empty/zero tokens for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -138,7 +144,7 @@ def sample_empty_tokens_data() -> RawJSONData:
 
 
 @pytest.fixture
-def sample_duplicate_data() -> list[RawJSONData]:
+def sample_duplicate_data() -> list[RawJSONEntry]:
     """Sample data for testing duplicate detection."""
     return [
         {
@@ -323,7 +329,7 @@ def sample_monitoring_data() -> AnalysisResult:
 
 
 @pytest.fixture
-def sample_session_data() -> RawJSONData:
+def sample_session_data() -> RawJSONEntry:
     """Sample session data for testing."""
     return {
         "id": "session_1",

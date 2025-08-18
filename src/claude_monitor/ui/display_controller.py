@@ -5,46 +5,47 @@ Orchestrates UI components and coordinates display updates.
 
 import argparse
 import logging
-from datetime import datetime, timedelta, timezone
+
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
 import pytz
-from rich.console import Console, Group, RenderableType
+
+from rich.console import Console
+from rich.console import Group
+from rich.console import RenderableType
 from rich.live import Live
 from rich.text import Text
 
 from claude_monitor.core.calculations import calculate_hourly_burn_rate
 from claude_monitor.core.models import normalize_model_name
 from claude_monitor.core.plans import Plans
-from claude_monitor.types import (
-    AnalysisResult,
-    BlockData,
-    BlockDict,
-    CostPredictions,
-    DisplayTimes,
-    ExtractedSessionData,
-    ModelStats,
-    ModelStatsRaw,
-    NotificationFlags,
-    ProcessedDisplayData,
-    RawJSONData,
-    TimeData,
-)
-from claude_monitor.ui.components import (
-    AdvancedCustomLimitDisplay,
-    ErrorDisplayComponent,
-    LoadingScreenComponent,
-)
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import CostPredictions
+from claude_monitor.types import DisplayState
+from claude_monitor.types import FormattedTimes
+from claude_monitor.types import LegacyBlockData
+from claude_monitor.types import ModelUsageStats
+from claude_monitor.types import NotificationState
+from claude_monitor.types import RawJSONEntry
+from claude_monitor.types import RawModelStats
+from claude_monitor.types import SerializedBlock
+from claude_monitor.types import SessionDataExtract
+from claude_monitor.types import TimeData
+from claude_monitor.ui.components import AdvancedCustomLimitDisplay
+from claude_monitor.ui.components import ErrorDisplayComponent
+from claude_monitor.ui.components import LoadingScreenComponent
 from claude_monitor.ui.layouts import ScreenManager
 from claude_monitor.ui.session_display import SessionDisplayComponent
 from claude_monitor.utils.notifications import NotificationManager
-from claude_monitor.utils.time_utils import (
-    TimezoneHandler,
-    format_display_time,
-    get_time_format_preference,
-    percentage,
-)
+from claude_monitor.utils.time_utils import TimezoneHandler
+from claude_monitor.utils.time_utils import format_display_time
+from claude_monitor.utils.time_utils import get_time_format_preference
+from claude_monitor.utils.time_utils import percentage
 
 
 class DisplayController:
@@ -64,17 +65,19 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(self, active_block: BlockDict) -> ExtractedSessionData:
+    def _extract_session_data(
+        self, active_block: SerializedBlock
+    ) -> SessionDataExtract:
         """Extract basic session data from active block."""
         # BlockDict has well-defined types, so we can access fields directly
-        return ExtractedSessionData(
+        return SessionDataExtract(
             tokens_used=active_block["totalTokens"],
             session_cost=active_block["costUSD"],
             raw_per_model_stats=cast(
-                dict[str, ModelStatsRaw], active_block["perModelStats"]
+                dict[str, RawModelStats], active_block["perModelStats"]
             ),
             sent_messages=active_block["sentMessagesCount"],
-            entries=cast(list[RawJSONData], active_block["entries"]),
+            entries=cast(list[RawJSONEntry], active_block["entries"]),
             start_time_str=active_block["startTime"],
             end_time_str=active_block["endTime"],
         )
@@ -92,14 +95,16 @@ class DisplayController:
         return token_limit, token_limit
 
     def _calculate_time_data(
-        self, session_data: ExtractedSessionData, current_time: datetime
+        self, session_data: SessionDataExtract, current_time: datetime
     ) -> TimeData:
         """Calculate time-related data for the session."""
-        return self.session_calculator.calculate_time_data(session_data, current_time)
+        return self.session_calculator.calculate_time_data(
+            session_data, current_time
+        )
 
     def _calculate_cost_predictions(
         self,
-        session_data: ExtractedSessionData,
+        session_data: SessionDataExtract,
         time_data: TimeData,
         args: argparse.Namespace,
         cost_limit_p90: float | None,
@@ -123,7 +128,7 @@ class DisplayController:
         cost_limit: float,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> NotificationFlags:
+    ) -> NotificationState:
         """Check and update notification states."""
         notifications = dict[str, bool]()
 
@@ -137,7 +142,9 @@ class DisplayController:
         else:
             notifications["show_switch_notification"] = (
                 switch_condition
-                and self.notification_manager.is_notification_active("switch_to_custom")
+                and self.notification_manager.is_notification_active(
+                    "switch_to_custom"
+                )
             )
 
         # Exceed limit notification
@@ -150,7 +157,9 @@ class DisplayController:
         else:
             notifications["show_exceed_notification"] = (
                 exceed_condition
-                and self.notification_manager.is_notification_active("exceed_max_limit")
+                and self.notification_manager.is_notification_active(
+                    "exceed_max_limit"
+                )
             )
 
         # Cost will exceed notification
@@ -163,10 +172,12 @@ class DisplayController:
         else:
             notifications["show_cost_will_exceed"] = (
                 run_out_condition
-                and self.notification_manager.is_notification_active("cost_will_exceed")
+                and self.notification_manager.is_notification_active(
+                    "cost_will_exceed"
+                )
             )
 
-        return cast(NotificationFlags, notifications)
+        return cast(NotificationState, notifications)
 
     def _format_display_times(
         self,
@@ -174,7 +185,7 @@ class DisplayController:
         current_time: datetime,
         predicted_end_time: datetime,
         reset_time: datetime,
-    ) -> DisplayTimes:
+    ) -> FormattedTimes:
         """Format times for display."""
         tz_handler = TimezoneHandler(default_tz="Europe/Warsaw")
         timezone_to_use = (
@@ -187,7 +198,9 @@ class DisplayController:
         predicted_end_local = tz_handler.convert_to_timezone(
             predicted_end_time, timezone_to_use
         )
-        reset_time_local = tz_handler.convert_to_timezone(reset_time, timezone_to_use)
+        reset_time_local = tz_handler.convert_to_timezone(
+            reset_time, timezone_to_use
+        )
 
         # Format times
         time_format = get_time_format_preference(args)
@@ -209,7 +222,7 @@ class DisplayController:
             current_time_display, time_format, include_seconds=True
         )
 
-        return DisplayTimes(
+        return FormattedTimes(
             predicted_end_str=predicted_end_str,
             reset_time_str=reset_time_str,
             current_time_str=current_time_str,
@@ -247,8 +260,10 @@ class DisplayController:
         current_time = datetime.now(pytz.UTC)
 
         if not active_block:
-            screen_buffer = self.session_display.format_no_active_session_screen(
-                args.plan, args.timezone, token_limit, current_time, args
+            screen_buffer = (
+                self.session_display.format_no_active_session_screen(
+                    args.plan, args.timezone, token_limit, current_time, args
+                )
             )
             return self.buffer_manager.create_screen_renderable(screen_buffer)
 
@@ -284,7 +299,9 @@ class DisplayController:
         except Exception as e:
             # Log the error and show error screen
             logger = logging.getLogger(__name__)
-            logger.error(f"Error processing active session data: {e}", exc_info=True)
+            logger.error(
+                f"Error processing active session data: {e}", exc_info=True
+            )
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
             )
@@ -298,12 +315,14 @@ class DisplayController:
         try:
             # Cast processed_data for type safety - we know the types are correct from construction
             screen_buffer = self.session_display.format_active_session_screen(
-                **cast(ProcessedDisplayData, processed_data)
+                **cast(DisplayState, processed_data)
             )
         except Exception as e:
             # Log the error with more details
             logger = logging.getLogger(__name__)
-            logger.error(f"Error in format_active_session_screen: {e}", exc_info=True)
+            logger.error(
+                f"Error in format_active_session_screen: {e}", exc_info=True
+            )
             logger.exception(f"processed_data type: {type(processed_data)}")
             if processed_data:
                 for key, value in processed_data.items():
@@ -327,7 +346,9 @@ class DisplayController:
                             f"  {key}: {type(value).__name__} with {len(value) if value else 'N/A'} items"
                         )
                     else:
-                        logger.exception(f"  {key}: {type(value).__name__} = {value}")
+                        logger.exception(
+                            f"  {key}: {type(value).__name__} = {value}"
+                        )
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
             )
@@ -337,7 +358,7 @@ class DisplayController:
 
     def _process_active_session_data(
         self,
-        active_block: BlockDict,
+        active_block: SerializedBlock,
         data: AnalysisResult,
         args: argparse.Namespace,
         token_limit: int,
@@ -366,7 +387,9 @@ class DisplayController:
         )
 
         # Calculate token limits
-        token_limit, original_limit = self._calculate_token_limits(args, token_limit)
+        token_limit, original_limit = self._calculate_token_limits(
+            args, token_limit
+        )
 
         # Calculate usage metrics
         tokens_used = session_data["tokens_used"]
@@ -380,7 +403,7 @@ class DisplayController:
 
         # Calculate burn rate
         burn_rate = calculate_hourly_burn_rate(
-            cast(list[BlockData], data["blocks"]), current_time
+            cast(list[LegacyBlockData], data["blocks"]), current_time
         )
 
         # Calculate cost predictions
@@ -421,7 +444,7 @@ class DisplayController:
             "burn_rate": burn_rate,
             "session_cost": session_data["session_cost"],
             "per_model_stats": cast(
-                dict[str, ModelStats], session_data["raw_per_model_stats"]
+                dict[str, ModelUsageStats], session_data["raw_per_model_stats"]
             ),
             "model_distribution": model_distribution,
             "sent_messages": session_data["sent_messages"],
@@ -429,14 +452,18 @@ class DisplayController:
             "predicted_end_str": display_times["predicted_end_str"],
             "reset_time_str": display_times["reset_time_str"],
             "current_time_str": display_times["current_time_str"],
-            "show_switch_notification": notifications["show_switch_notification"],
-            "show_exceed_notification": notifications["show_exceed_notification"],
+            "show_switch_notification": notifications[
+                "show_switch_notification"
+            ],
+            "show_exceed_notification": notifications[
+                "show_exceed_notification"
+            ],
             "show_tokens_will_run_out": notifications["show_cost_will_exceed"],
             "original_limit": original_limit,
         }
 
     def _calculate_model_distribution(
-        self, raw_per_model_stats: dict[str, ModelStatsRaw]
+        self, raw_per_model_stats: dict[str, RawModelStats]
     ) -> dict[str, float]:
         """Calculate model distribution percentages from current active session only.
 
@@ -638,7 +665,7 @@ class SessionCalculator:
         self.tz_handler = TimezoneHandler()
 
     def calculate_time_data(
-        self, session_data: ExtractedSessionData, current_time: datetime
+        self, session_data: SessionDataExtract, current_time: datetime
     ) -> TimeData:
         """Calculate time-related data for the session.
 
@@ -667,7 +694,8 @@ class SessionCalculator:
             reset_time = (
                 start_time + timedelta(hours=5)  # Default session duration
                 if start_time
-                else current_time + timedelta(hours=5)  # Default session duration
+                else current_time
+                + timedelta(hours=5)  # Default session duration
             )
 
         # Calculate session times
@@ -678,12 +706,20 @@ class SessionCalculator:
             minutes_to_reset = 0.0
 
         if start_time and reset_time and session_data.get("end_time_str"):
-            total_session_minutes = (reset_time - start_time).total_seconds() / 60
-            elapsed_session_minutes = (current_time - start_time).total_seconds() / 60
+            total_session_minutes = (
+                reset_time - start_time
+            ).total_seconds() / 60
+            elapsed_session_minutes = (
+                current_time - start_time
+            ).total_seconds() / 60
             elapsed_session_minutes = max(0, elapsed_session_minutes)
         else:
-            total_session_minutes = 5 * 60  # Default session duration in minutes
-            elapsed_session_minutes = max(0, total_session_minutes - minutes_to_reset)
+            total_session_minutes = (
+                5 * 60
+            )  # Default session duration in minutes
+            elapsed_session_minutes = max(
+                0, total_session_minutes - minutes_to_reset
+            )
 
         return TimeData(
             start_time=start_time,
@@ -695,7 +731,7 @@ class SessionCalculator:
 
     def calculate_cost_predictions(
         self,
-        session_data: ExtractedSessionData,
+        session_data: SessionDataExtract,
         time_data: TimeData,
         cost_limit: float | None = None,
     ) -> CostPredictions:

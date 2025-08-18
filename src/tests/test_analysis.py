@@ -1,29 +1,31 @@
 """Tests for data/analysis.py module."""
 
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch
+from datetime import datetime
+from datetime import timezone
+from unittest.mock import Mock
+from unittest.mock import patch
 
-from claude_monitor.core.models import (
-    BurnRate,
-    CostMode,
-    SessionBlock,
-    TokenCounts,
-    UsageEntry,
-    UsageProjection,
-)
+from claude_monitor.core.models import BurnRate
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import UsageProjection
+from claude_monitor.data.analysis import _add_optional_block_data  # type: ignore[misc]
 from claude_monitor.data.analysis import (
-    _add_optional_block_data,  # type: ignore[misc]
     _convert_blocks_to_dict_format,  # type: ignore[misc]
-    _create_base_block_dict,  # type: ignore[misc]
-    _create_result,  # type: ignore[misc]
-    _format_block_entries,  # type: ignore[misc]
-    _format_limit_info,  # type: ignore[misc]
-    _is_limit_in_block_timerange,  # type: ignore[misc]
-    _process_burn_rates,  # type: ignore[misc]
-    analyze_usage,
 )
+from claude_monitor.data.analysis import _create_base_block_dict  # type: ignore[misc]
+from claude_monitor.data.analysis import _create_result  # type: ignore[misc]
+from claude_monitor.data.analysis import _format_block_entries  # type: ignore[misc]
+from claude_monitor.data.analysis import _format_limit_info  # type: ignore[misc]
+from claude_monitor.data.analysis import (
+    _is_limit_in_block_timerange,  # type: ignore[misc]
+)
+from claude_monitor.data.analysis import _process_burn_rates  # type: ignore[misc]
+from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.types import LimitDetectionInfo
-from claude_monitor.types.sessions import PartialBlockDict
+from claude_monitor.types.sessions import PartialBlock
 
 
 class TestAnalyzeUsage:
@@ -73,7 +75,9 @@ class TestAnalyzeUsage:
         assert result["total_tokens"] == 150
         assert result["total_cost"] == 0.001
         mock_load.assert_called_once()
-        mock_analyzer.transform_to_blocks.assert_called_once_with([sample_entry])
+        mock_analyzer.transform_to_blocks.assert_called_once_with(
+            [sample_entry]
+        )
         mock_analyzer.detect_limits.assert_called_once_with([{"raw": "data"}])
 
     @patch("claude_monitor.data.analysis.load_usage_entries")
@@ -229,7 +233,9 @@ class TestProcessBurnRates:
         calculator = Mock()
         burn_rate = BurnRate(tokens_per_minute=5.0, cost_per_hour=1.0)
         projection = UsageProjection(
-            projected_total_tokens=500, projected_total_cost=0.005, remaining_minutes=60
+            projected_total_tokens=500,
+            projected_total_cost=0.005,
+            remaining_minutes=60,
         )
 
         calculator.calculate_burn_rate.return_value = burn_rate
@@ -254,7 +260,9 @@ class TestProcessBurnRates:
             start_time=datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc),
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
             is_active=True,
-            token_counts=TokenCounts(input_tokens=0, output_tokens=0),  # No tokens
+            token_counts=TokenCounts(
+                input_tokens=0, output_tokens=0
+            ),  # No tokens
             cost_usd=0.0,
         )
 
@@ -343,7 +351,9 @@ class TestLimitFunctions:
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
         )
 
-        limit_info = {"timestamp": datetime(2024, 1, 1, 14, 0, tzinfo=timezone.utc)}
+        limit_info = {
+            "timestamp": datetime(2024, 1, 1, 14, 0, tzinfo=timezone.utc)
+        }
 
         assert _is_limit_in_block_timerange(limit_info, block) is True
 
@@ -355,7 +365,9 @@ class TestLimitFunctions:
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
         )
 
-        limit_info = {"timestamp": datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc)}
+        limit_info = {
+            "timestamp": datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc)
+        }
 
         assert _is_limit_in_block_timerange(limit_info, block) is False
 
@@ -513,19 +525,26 @@ class TestBlockConversion:
     def test_add_optional_block_data_all_fields(self) -> None:
         """Test _add_optional_block_data with all optional fields."""
         block = Mock()
-        block.burn_rate_snapshot = BurnRate(tokens_per_minute=5.0, cost_per_hour=1.0)
+        block.burn_rate_snapshot = BurnRate(
+            tokens_per_minute=5.0, cost_per_hour=1.0
+        )
         block.projection_data = {
             "totalTokens": 500,
             "totalCost": 0.005,
             "remainingMinutes": 60,
         }
-        block.limit_messages = [{"type": "rate_limit", "content": "Limit reached"}]
+        block.limit_messages = [
+            {"type": "rate_limit", "content": "Limit reached"}
+        ]
 
-        block_dict = PartialBlockDict()
+        block_dict = PartialBlock()
         _add_optional_block_data(block, block_dict)
 
         assert "burnRate" in block_dict
-        assert block_dict["burnRate"] == {"tokensPerMinute": 5.0, "costPerHour": 1.0}
+        assert block_dict["burnRate"] == {
+            "tokensPerMinute": 5.0,
+            "costPerHour": 1.0,
+        }
 
         assert "projection" in block_dict
         assert block_dict["projection"] == {
@@ -550,7 +569,7 @@ class TestBlockConversion:
         if hasattr(block, "limit_messages"):
             del block.limit_messages
 
-        block_dict = PartialBlockDict()
+        block_dict = PartialBlock()
         _add_optional_block_data(block, block_dict)
 
         assert "burnRate" not in block_dict

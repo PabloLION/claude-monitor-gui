@@ -3,16 +3,16 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from rich.console import Console, RenderableType
+from rich.console import Console
+from rich.console import RenderableType
 
-from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
-from claude_monitor.types import (
-    BlockDict,
-    PercentileDict,
-    SessionCollectionDict,
-    SessionDataDict,
-    SessionPercentilesDict,
-)
+from claude_monitor.terminal.themes import get_cost_style
+from claude_monitor.terminal.themes import get_velocity_indicator
+from claude_monitor.types import Percentiles
+from claude_monitor.types import SerializedBlock
+from claude_monitor.types import SessionCollection
+from claude_monitor.types import SessionPercentiles
+from claude_monitor.types.analysis import SessionMonitoringData
 from claude_monitor.ui.layouts import HeaderManager
 
 
@@ -111,7 +111,9 @@ class ErrorDisplayComponent:
         screen_buffer.append("  • You're not logged into Claude")
         screen_buffer.append("  • Network connection issues")
         screen_buffer.append("")
-        screen_buffer.append("[dim]Retrying in 3 seconds... (Ctrl+C to exit)[/]")
+        screen_buffer.append(
+            "[dim]Retrying in 3 seconds... (Ctrl+C to exit)[/]"
+        )
 
         return screen_buffer
 
@@ -178,7 +180,9 @@ class LoadingScreenComponent:
         Returns:
             Rich renderable for loading screen
         """
-        screen_buffer = self.create_loading_screen(plan, timezone, custom_message)
+        screen_buffer = self.create_loading_screen(
+            plan, timezone, custom_message
+        )
 
         from claude_monitor.ui.display_controller import ScreenBufferManager
 
@@ -193,22 +197,24 @@ class AdvancedCustomLimitDisplay:
         self.console = console or Console()
 
     def collect_session_data(
-        self, blocks: list[BlockDict] | None = None
-    ) -> SessionCollectionDict:
+        self, blocks: list[SerializedBlock] | None = None
+    ) -> SessionCollection:
         """Collect session data and identify limit sessions."""
         if not blocks:
-            default_session = SessionDataDict(tokens=0, cost=0.0, messages=0)
-            return SessionCollectionDict(
-                all_sessions=list[SessionDataDict](),
-                limit_sessions=list[SessionDataDict](),
+            default_session = SessionMonitoringData(
+                tokens=0, cost=0.0, messages=0
+            )
+            return SessionCollection(
+                all_sessions=list[SessionMonitoringData](),
+                limit_sessions=list[SessionMonitoringData](),
                 current_session=default_session,
                 total_sessions=0,
                 active_sessions=0,
             )
 
-        all_sessions = list[SessionDataDict]()
-        limit_sessions = list[SessionDataDict]()
-        current_session = SessionDataDict(tokens=0, cost=0.0, messages=0)
+        all_sessions = list[SessionMonitoringData]()
+        limit_sessions = list[SessionMonitoringData]()
+        current_session = SessionMonitoringData(tokens=0, cost=0.0, messages=0)
         active_sessions = 0
 
         for block in blocks:
@@ -225,7 +231,7 @@ class AdvancedCustomLimitDisplay:
             cost = float(cost_raw)  # cost_raw is float from BlockDict
             messages = int(messages_raw)  # messages_raw is int from BlockDict
 
-            session = SessionDataDict(
+            session = SessionMonitoringData(
                 tokens=tokens,
                 cost=cost,
                 messages=messages,
@@ -240,7 +246,7 @@ class AdvancedCustomLimitDisplay:
                 if self._is_limit_session(session):
                     limit_sessions.append(session)
 
-        return SessionCollectionDict(
+        return SessionCollection(
             all_sessions=all_sessions,
             limit_sessions=limit_sessions,
             current_session=current_session,
@@ -248,14 +254,12 @@ class AdvancedCustomLimitDisplay:
             active_sessions=active_sessions,
         )
 
-    def _is_limit_session(self, session: SessionDataDict) -> bool:
+    def _is_limit_session(self, session: SessionMonitoringData) -> bool:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
-        from claude_monitor.core.plans import (
-            COMMON_TOKEN_LIMITS,
-            LIMIT_DETECTION_THRESHOLD,
-        )
+        from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
+        from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
 
         for limit in COMMON_TOKEN_LIMITS:
             if tokens >= limit * LIMIT_DETECTION_THRESHOLD:
@@ -264,14 +268,14 @@ class AdvancedCustomLimitDisplay:
         return False
 
     def calculate_session_percentiles(
-        self, sessions: list[SessionDataDict]
-    ) -> SessionPercentilesDict:
+        self, sessions: list[SessionMonitoringData]
+    ) -> SessionPercentiles:
         """Calculate percentiles from session data."""
         if not sessions:
-            return SessionPercentilesDict(
-                tokens=PercentileDict(p50=19000, p75=66000, p90=88000, p95=110000),
-                costs=PercentileDict(p50=100.0, p75=150.0, p90=200.0, p95=250.0),
-                messages=PercentileDict(p50=150, p75=200, p90=250, p95=300),
+            return SessionPercentiles(
+                tokens=Percentiles(p50=19000, p75=66000, p90=88000, p95=110000),
+                costs=Percentiles(p50=100.0, p75=150.0, p90=200.0, p95=250.0),
+                messages=Percentiles(p50=150, p75=200, p90=250, p95=300),
                 averages={"tokens": 19000, "cost": 100.0, "messages": 150},
                 count=0,
             )
@@ -282,20 +286,20 @@ class AdvancedCustomLimitDisplay:
         costs = [s["cost"] for s in sessions]
         messages = [s["messages"] for s in sessions]
 
-        return SessionPercentilesDict(
-            tokens=PercentileDict(
+        return SessionPercentiles(
+            tokens=Percentiles(
                 p50=int(np.percentile(tokens, 50)),
                 p75=int(np.percentile(tokens, 75)),
                 p90=int(np.percentile(tokens, 90)),
                 p95=int(np.percentile(tokens, 95)),
             ),
-            costs=PercentileDict(
+            costs=Percentiles(
                 p50=float(np.percentile(costs, 50)),
                 p75=float(np.percentile(costs, 75)),
                 p90=float(np.percentile(costs, 90)),
                 p95=float(np.percentile(costs, 95)),
             ),
-            messages=PercentileDict(
+            messages=Percentiles(
                 p50=int(np.percentile(messages, 50)),
                 p75=int(np.percentile(messages, 75)),
                 p90=int(np.percentile(messages, 90)),

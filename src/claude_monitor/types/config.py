@@ -3,7 +3,7 @@
 from typing import TypedDict
 
 
-class LastUsedParamsDict(TypedDict, total=False):
+class UserPreferences(TypedDict, total=False):
     """Type-safe structure for last used parameters."""
 
     plan: str
@@ -20,7 +20,7 @@ class LastUsedParamsDict(TypedDict, total=False):
     timestamp: str  # Added for compatibility with existing code
 
 
-class PlanLimitsEntry(TypedDict):
+class PlanConfiguration(TypedDict):
     """Typed structure for plan limit definitions."""
 
     token_limit: int

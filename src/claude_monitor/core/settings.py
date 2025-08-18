@@ -3,20 +3,23 @@
 import argparse
 import json
 import logging
+
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 import pytz
-from pydantic import Field, field_validator
-from pydantic_settings import (
-    BaseSettings,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-)
+
+from pydantic import Field
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+from pydantic_settings import PydanticBaseSettingsSource
+from pydantic_settings import SettingsConfigDict
 
 from claude_monitor import __version__
-from claude_monitor.types import LastUsedParamsDict
+from claude_monitor.types import UserPreferences
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +60,14 @@ class LastUsedParams:
         except Exception as e:
             logger.warning(f"Failed to save last used params: {e}")
 
-    def load(self) -> LastUsedParamsDict:
+    def load(self) -> UserPreferences:
         """Load last used parameters."""
         if not self.params_file.exists():
-            return LastUsedParamsDict()
+            return UserPreferences()
 
         try:
             with open(self.params_file) as f:
-                params: LastUsedParamsDict = json.load(f)
+                params: UserPreferences = json.load(f)
 
             params.pop("timestamp", None)
 
@@ -73,7 +76,7 @@ class LastUsedParams:
 
         except Exception as e:
             logger.warning(f"Failed to load last used params: {e}")
-            return LastUsedParamsDict()
+            return UserPreferences()
 
     def clear(self) -> None:
         """Clear last used parameters."""
@@ -178,7 +181,9 @@ class Settings(BaseSettings):
 
     clear: bool = Field(default=False, description="Clear saved configuration")
 
-    def __init__(self, _cli_parse_args: list[str] | None = None, **data: Any) -> None:
+    def __init__(
+        self, _cli_parse_args: list[str] | None = None, **data: Any
+    ) -> None:
         """Initialize Settings with optional CLI arguments parsing.
 
         Args:
@@ -334,10 +339,8 @@ class Settings(BaseSettings):
         if settings.theme == "auto" or (
             "theme" not in cli_provided_fields and not clear_config
         ):
-            from claude_monitor.terminal.themes import (
-                BackgroundDetector,
-                BackgroundType,
-            )
+            from claude_monitor.terminal.themes import BackgroundDetector
+            from claude_monitor.terminal.themes import BackgroundType
 
             detector = BackgroundDetector()
             detected_bg = detector.detect_background()

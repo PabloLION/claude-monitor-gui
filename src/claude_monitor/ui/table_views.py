@@ -12,10 +12,14 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.types import AggregatedTotals, JSONSerializable, TotalAggregatedData
+from claude_monitor.types import CompleteAggregatedUsage
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import UsageTotals
 
 # Removed theme import - using direct styles
-from claude_monitor.utils.formatting import format_currency, format_number
+from claude_monitor.utils.formatting import format_currency
+from claude_monitor.utils.formatting import format_number
+
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +72,12 @@ class TableViewsController:
             period_column_name, style=self.key_style, width=period_column_width
         )
         table.add_column("Models", style=self.value_style, width=20)
-        table.add_column("Input", style=self.value_style, justify="right", width=12)
-        table.add_column("Output", style=self.value_style, justify="right", width=12)
+        table.add_column(
+            "Input", style=self.value_style, justify="right", width=12
+        )
+        table.add_column(
+            "Output", style=self.value_style, justify="right", width=12
+        )
         table.add_column(
             "Cache Create", style=self.value_style, justify="right", width=12
         )
@@ -88,7 +96,7 @@ class TableViewsController:
     def _add_data_rows(
         self,
         table: Table,
-        data_list: list[TotalAggregatedData],
+        data_list: list[CompleteAggregatedUsage],
         period_key: str,
     ) -> None:
         """Add data rows to the table.
@@ -138,7 +146,7 @@ class TableViewsController:
                 format_currency(safe_float(data.get("total_cost", 0.0))),
             )
 
-    def _add_totals_row(self, table: Table, totals: AggregatedTotals) -> None:
+    def _add_totals_row(self, table: Table, totals: UsageTotals) -> None:
         """Add totals row to the table.
 
         Args:
@@ -192,8 +200,8 @@ class TableViewsController:
 
     def create_daily_table(
         self,
-        daily_data: list[TotalAggregatedData],
-        totals: AggregatedTotals,
+        daily_data: list[CompleteAggregatedUsage],
+        totals: UsageTotals,
         timezone: str = "UTC",
     ) -> Table:
         """Create a daily statistics table.
@@ -223,8 +231,8 @@ class TableViewsController:
 
     def create_monthly_table(
         self,
-        monthly_data: list[TotalAggregatedData],
-        totals: AggregatedTotals,
+        monthly_data: list[CompleteAggregatedUsage],
+        totals: UsageTotals,
         timezone: str = "UTC",
     ) -> Table:
         """Create a monthly statistics table.
@@ -253,7 +261,7 @@ class TableViewsController:
         return table
 
     def create_summary_panel(
-        self, view_type: str, totals: AggregatedTotals, period: str
+        self, view_type: str, totals: UsageTotals, period: str
     ) -> Panel:
         """Create a summary panel for the table view.
 
@@ -353,8 +361,8 @@ class TableViewsController:
 
     def create_aggregate_table(
         self,
-        aggregate_data: list[TotalAggregatedData],
-        totals: AggregatedTotals,
+        aggregate_data: list[CompleteAggregatedUsage],
+        totals: UsageTotals,
         view_type: str,
         timezone: str = "UTC",
     ) -> Table:
@@ -381,7 +389,7 @@ class TableViewsController:
 
     def display_aggregated_view(
         self,
-        data: list[TotalAggregatedData],
+        data: list[CompleteAggregatedUsage],
         view_mode: str,
         timezone: str,
         plan: str,
@@ -415,8 +423,12 @@ class TableViewsController:
         # Calculate totals with safe type conversion
         # #TODO-ref: use a clearer approach for calculating totals
         totals = {
-            "input_tokens": sum(safe_numeric(d.get("input_tokens", 0)) for d in data),
-            "output_tokens": sum(safe_numeric(d.get("output_tokens", 0)) for d in data),
+            "input_tokens": sum(
+                safe_numeric(d.get("input_tokens", 0)) for d in data
+            ),
+            "output_tokens": sum(
+                safe_numeric(d.get("output_tokens", 0)) for d in data
+            ),
             "cache_creation_tokens": sum(
                 safe_numeric(d.get("cache_creation_tokens", 0)) for d in data
             ),
@@ -430,8 +442,12 @@ class TableViewsController:
                 + safe_numeric(d.get("cache_read_tokens", 0))
                 for d in data
             ),
-            "total_cost": sum(safe_numeric(d.get("total_cost", 0)) for d in data),
-            "entries_count": sum(safe_numeric(d.get("entries_count", 0)) for d in data),
+            "total_cost": sum(
+                safe_numeric(d.get("total_cost", 0)) for d in data
+            ),
+            "entries_count": sum(
+                safe_numeric(d.get("entries_count", 0)) for d in data
+            ),
         }
 
         # Determine period for summary
@@ -452,7 +468,7 @@ class TableViewsController:
 
         # Create and display summary panel
         # Cast totals to AggregatedTotals
-        json_totals = AggregatedTotals(
+        json_totals = UsageTotals(
             {
                 "input_tokens": int(totals["input_tokens"]),
                 "output_tokens": int(totals["output_tokens"]),
@@ -463,10 +479,14 @@ class TableViewsController:
                 "entries_count": int(totals["entries_count"]),
             }
         )
-        summary_panel = self.create_summary_panel(view_mode, json_totals, period)
+        summary_panel = self.create_summary_panel(
+            view_mode, json_totals, period
+        )
 
         # Create and display table
-        table = self.create_aggregate_table(data, json_totals, view_mode, timezone)
+        table = self.create_aggregate_table(
+            data, json_totals, view_mode, timezone
+        )
 
         # Display using console if provided
         if console:

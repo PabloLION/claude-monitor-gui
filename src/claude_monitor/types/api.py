@@ -1,23 +1,26 @@
 """Claude API message types and related structures."""
 
-from typing import Literal, NotRequired, Required, TypedDict
+from typing import Literal
+from typing import NotRequired
+from typing import Required
+from typing import TypedDict
 
 
-class MessageContentBase(TypedDict, total=False):
+class BaseMessageContent(TypedDict, total=False):
     """Base structure for all message content types."""
 
     id: NotRequired[str]
     role: NotRequired[str]
 
 
-class SystemMessageContent(MessageContentBase, total=False):
+class SystemMessage(BaseMessageContent, total=False):
     """Structure for system message content."""
 
     content: NotRequired[str]
     text: NotRequired[str]
 
 
-class UserMessageContent(MessageContentBase, total=False):
+class UserMessage(BaseMessageContent, total=False):
     """Structure for user message content."""
 
     content: NotRequired[str | list[dict[str, str]]]
@@ -25,15 +28,15 @@ class UserMessageContent(MessageContentBase, total=False):
     attachments: NotRequired[list[dict[str, str]]]
 
 
-class AssistantMessageContent(MessageContentBase, total=False):
+class AssistantMessage(BaseMessageContent, total=False):
     """Structure for assistant message content."""
 
     model: NotRequired[str]
-    usage: NotRequired["TokenUsage"]
+    usage: NotRequired["TokenUsageData"]
     content: NotRequired[str | list[dict[str, str]]]
 
 
-class ClaudeEntryBase(TypedDict, total=False):
+class BaseClaudeEntry(TypedDict, total=False):
     """Base class for all Claude API message entries."""
 
     timestamp: Required[str]
@@ -42,27 +45,27 @@ class ClaudeEntryBase(TypedDict, total=False):
     requestId: NotRequired[str]  # Alternative field name
 
 
-class SystemEntry(ClaudeEntryBase, total=False):
+class SystemMessageEntry(BaseClaudeEntry, total=False):
     """System messages from Claude (type='system')."""
 
     type: Required[Literal["system"]]
     content: NotRequired[str]  # For backward compatibility
-    message: NotRequired[SystemMessageContent]
+    message: NotRequired[SystemMessage]
 
 
-class UserEntry(ClaudeEntryBase, total=False):
+class UserMessageEntry(BaseClaudeEntry, total=False):
     """User messages (type='user')."""
 
     type: Required[Literal["user"]]
-    message: Required[UserMessageContent]
+    message: Required[UserMessage]
 
 
-class AssistantEntry(ClaudeEntryBase, total=False):
+class AssistantMessageEntry(BaseClaudeEntry, total=False):
     """Assistant responses with token usage (type='assistant')."""
 
     type: Required[Literal["assistant"]]
     model: NotRequired[str]  # Model might not always be present
-    message: NotRequired[AssistantMessageContent]
+    message: NotRequired[AssistantMessage]
     usage: NotRequired[dict[str, int]]
     input_tokens: NotRequired[int]
     output_tokens: NotRequired[int]
@@ -73,10 +76,12 @@ class AssistantEntry(ClaudeEntryBase, total=False):
 
 
 # Discriminated union for all Claude JSONL entry types
-ClaudeJSONEntry = SystemEntry | UserEntry | AssistantEntry
+ClaudeMessageEntry = (
+    SystemMessageEntry | UserMessageEntry | AssistantMessageEntry
+)
 
 
-class TokenUsage(TypedDict, total=False):
+class TokenUsageData(TypedDict, total=False):
     """Token usage information from various sources."""
 
     input_tokens: NotRequired[int]
@@ -87,8 +92,12 @@ class TokenUsage(TypedDict, total=False):
     cache_read_input_tokens: NotRequired[int]  # Alternative field name
     inputTokens: NotRequired[int]  # Alternative field name (camelCase)
     outputTokens: NotRequired[int]  # Alternative field name (camelCase)
-    cacheCreationInputTokens: NotRequired[int]  # Alternative field name (camelCase)
+    cacheCreationInputTokens: NotRequired[
+        int
+    ]  # Alternative field name (camelCase)
     cacheReadInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     prompt_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
-    completion_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
+    completion_tokens: NotRequired[
+        int
+    ]  # Alternative field name (OpenAI format)
     total_tokens: NotRequired[int]

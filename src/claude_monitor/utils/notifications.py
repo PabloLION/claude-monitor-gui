@@ -1,10 +1,12 @@
 """Notification management utilities."""
 
 import json
-from datetime import datetime, timedelta
+
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 
-from claude_monitor.types import ValidationState
+from claude_monitor.types import NotificationValidation
 
 
 class NotificationManager:
@@ -12,7 +14,9 @@ class NotificationManager:
 
     def __init__(self, config_dir: Path) -> None:
         self.notification_file: Path = config_dir / "notification_states.json"
-        self.states: dict[str, dict[str, bool | datetime | None]] = self._load_states()
+        self.states: dict[str, dict[str, bool | datetime | None]] = (
+            self._load_states()
+        )
 
         self.default_states: dict[str, dict[str, bool | datetime | None]] = {
             "switch_to_custom": {"triggered": False, "timestamp": None},
@@ -31,11 +35,11 @@ class NotificationManager:
 
         try:
             with open(self.notification_file) as f:
-                states: dict[str, ValidationState] = json.load(f)
+                states: dict[str, NotificationValidation] = json.load(f)
                 # Convert timestamp strings back to datetime objects
-                parsed_states: dict[str, dict[str, bool | datetime | None]] = dict[
-                    str, dict[str, bool | datetime | None]
-                ]()
+                parsed_states: dict[str, dict[str, bool | datetime | None]] = (
+                    dict[str, dict[str, bool | datetime | None]]()
+                )
                 for key, state in states.items():
                     parsed_state: dict[str, bool | datetime | None] = {
                         "triggered": bool(state.get("triggered", False)),
@@ -103,7 +107,9 @@ class NotificationManager:
         self.states[key] = {"triggered": True, "timestamp": now}
         self._save_states()
 
-    def get_notification_state(self, key: str) -> dict[str, bool | datetime | None]:
+    def get_notification_state(
+        self, key: str
+    ) -> dict[str, bool | datetime | None]:
         """Get current notification state."""
         default_state: dict[str, bool | datetime | None] = {
             "triggered": False,

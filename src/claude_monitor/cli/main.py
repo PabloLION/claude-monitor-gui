@@ -7,6 +7,7 @@ import signal
 import sys
 import time
 import traceback
+
 from collections.abc import Callable
 from pathlib import Path
 from typing import NoReturn
@@ -15,32 +16,32 @@ from rich.console import Console
 from rich.live import Live
 
 from claude_monitor import __version__
-from claude_monitor.cli.bootstrap import (
-    ensure_directories,
-    init_timezone,
-    setup_environment,
-    setup_logging,
-)
-from claude_monitor.core.plans import Plans, PlanType, get_token_limit
+from claude_monitor.cli.bootstrap import ensure_directories
+from claude_monitor.cli.bootstrap import init_timezone
+from claude_monitor.cli.bootstrap import setup_environment
+from claude_monitor.cli.bootstrap import setup_logging
+from claude_monitor.core.plans import Plans
+from claude_monitor.core.plans import PlanType
+from claude_monitor.core.plans import get_token_limit
 from claude_monitor.core.settings import Settings
 from claude_monitor.data.aggregator import UsageAggregator
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
-from claude_monitor.terminal.manager import (
-    enter_alternate_screen,
-    handle_cleanup_and_exit,
-    handle_error_and_exit,
-    restore_terminal,
-    setup_terminal,
-)
-from claude_monitor.terminal.themes import get_themed_console, print_themed
-from claude_monitor.types import MonitoringData
+from claude_monitor.terminal.manager import enter_alternate_screen
+from claude_monitor.terminal.manager import handle_cleanup_and_exit
+from claude_monitor.terminal.manager import handle_error_and_exit
+from claude_monitor.terminal.manager import restore_terminal
+from claude_monitor.terminal.manager import setup_terminal
+from claude_monitor.terminal.themes import get_themed_console
+from claude_monitor.terminal.themes import print_themed
+from claude_monitor.types import MonitoringState
 from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
 
+
 # Type aliases for CLI callbacks
-DataUpdateCallback = Callable[[MonitoringData], None]
+DataUpdateCallback = Callable[[MonitoringState], None]
 SessionChangeCallback = Callable[[str, str, object | None], None]
 
 
@@ -61,7 +62,9 @@ def discover_claude_data_paths(
         List of Path objects for existing Claude data directories
     """
     paths_to_check: list[str] = (
-        [str(p) for p in custom_paths] if custom_paths else get_standard_claude_paths()
+        [str(p) for p in custom_paths]
+        if custom_paths
+        else get_standard_claude_paths()
     )
 
     discovered_paths: list[Path] = list[Path]()
@@ -90,7 +93,9 @@ def main(argv: list[str] | None = None) -> int:
         ensure_directories()
 
         if settings.log_file:
-            setup_logging(settings.log_level, settings.log_file, disable_console=True)
+            setup_logging(
+                settings.log_level, settings.log_file, disable_console=True
+            )
         else:
             setup_logging(settings.log_level, disable_console=True)
 
@@ -181,7 +186,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             orchestrator.set_args(args)
 
             # Setup monitoring callback
-            def on_data_update(monitoring_data: MonitoringData) -> None:
+            def on_data_update(monitoring_data: MonitoringState) -> None:
                 """Handle data updates from orchestrator."""
                 try:
                     data = monitoring_data["data"]
@@ -197,13 +202,17 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                         active_blocks = [b for b in blocks if b.get("isActive")]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
                         if active_blocks:
-                            total_tokens_raw = active_blocks[0].get("totalTokens", 0)
+                            total_tokens_raw = active_blocks[0].get(
+                                "totalTokens", 0
+                            )
                             total_tokens = (
                                 int(total_tokens_raw) if total_tokens_raw else 0
                             )
                             logger.debug(f"Active block tokens: {total_tokens}")
 
-                    token_limit_val = monitoring_data.get("token_limit", token_limit)
+                    token_limit_val = monitoring_data.get(
+                        "token_limit", token_limit
+                    )
 
                     # Create display renderable (AnalysisResult is a dict-like TypedDict)
                     renderable = display_controller.create_data_display(
@@ -280,7 +289,9 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         restore_terminal(old_terminal_settings)
 
 
-def _get_initial_token_limit(args: argparse.Namespace, data_path: str | Path) -> int:
+def _get_initial_token_limit(
+    args: argparse.Namespace, data_path: str | Path
+) -> int:
     """Get initial token limit for the plan."""
     logger = logging.getLogger(__name__)
     plan: str = getattr(args, "plan", PlanType.PRO.value)
@@ -297,7 +308,9 @@ def _get_initial_token_limit(args: argparse.Namespace, data_path: str | Path) ->
             return custom_limit
 
         # Otherwise, analyze usage data to calculate P90
-        print_themed("Analyzing usage data to determine cost limits...", style="info")
+        print_themed(
+            "Analyzing usage data to determine cost limits...", style="info"
+        )
 
         try:
             # Use quick start mode for faster initial load
@@ -346,7 +359,9 @@ def handle_application_error(
     logger = logging.getLogger(__name__)
 
     # Log the error with traceback
-    logger.error(f"Application error in {component}: {exception}", exc_info=True)
+    logger.error(
+        f"Application error in {component}: {exception}", exc_info=True
+    )
 
     # Report to error handling system
     from claude_monitor.error_handling import report_application_startup_error
@@ -419,7 +434,9 @@ def _run_table_view(
         aggregated_data = aggregator.aggregate()
 
         if not aggregated_data:
-            print_themed(f"No usage data found for {view_mode} view", style="warning")
+            print_themed(
+                f"No usage data found for {view_mode} view", style="warning"
+            )
             return
 
         # Display the table with type validation

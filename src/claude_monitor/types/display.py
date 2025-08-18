@@ -1,13 +1,15 @@
 """UI and display-related types for Claude Monitor."""
 
 from datetime import datetime
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import TypedDict
 
-from .common import ModelStatsRaw, RawJSONData
-from .sessions import ModelStats
+from .common import RawJSONEntry
+from .common import RawModelStats
+from .sessions import ModelUsageStats
 
 
-class ModelStatsDisplay(TypedDict):
+class DisplayModelStats(TypedDict):
     """Token statistics for display purposes - simplified version."""
 
     input_tokens: int
@@ -35,19 +37,19 @@ class CostPredictions(TypedDict):
     predicted_end_time: datetime
 
 
-class ExtractedSessionData(TypedDict):
+class SessionDataExtract(TypedDict):
     """Type-safe structure for extracted session data in display controller."""
 
     tokens_used: int
     session_cost: float
-    raw_per_model_stats: dict[str, ModelStatsRaw]
+    raw_per_model_stats: dict[str, RawModelStats]
     sent_messages: int
-    entries: list[RawJSONData]
+    entries: list[RawJSONEntry]
     start_time_str: str | None
     end_time_str: str | None
 
 
-class ProcessedDisplayData(TypedDict):
+class DisplayState(TypedDict):
     """Type-safe structure for processed display data."""
 
     plan: str
@@ -60,10 +62,10 @@ class ProcessedDisplayData(TypedDict):
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, ModelStats]
+    per_model_stats: dict[str, ModelUsageStats]
     model_distribution: dict[str, float]
     sent_messages: int
-    entries: list[RawJSONData]
+    entries: list[RawJSONEntry]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
@@ -75,7 +77,7 @@ class ProcessedDisplayData(TypedDict):
     messages_limit_p90: NotRequired[int | float]
 
 
-class ModelStatsDict(TypedDict, total=False):
+class ModelStatsDisplay(TypedDict, total=False):
     """Model statistics for progress bar display."""
 
     input_tokens: int
@@ -87,7 +89,7 @@ class ModelStatsDict(TypedDict, total=False):
     percentage: float
 
 
-class ProgressBarStyleConfig(TypedDict, total=False):
+class ProgressBarStyle(TypedDict, total=False):
     """Configuration for progress bar styling."""
 
     bar_width: int
@@ -106,7 +108,7 @@ class ThresholdConfig(TypedDict):
     high: float
 
 
-class NotificationFlags(TypedDict):
+class NotificationState(TypedDict):
     """Notification flags for display controller."""
 
     show_switch_notification: bool
@@ -114,7 +116,7 @@ class NotificationFlags(TypedDict):
     show_cost_will_exceed: bool
 
 
-class DisplayTimes(TypedDict):
+class FormattedTimes(TypedDict):
     """Formatted display times for UI."""
 
     predicted_end_str: str

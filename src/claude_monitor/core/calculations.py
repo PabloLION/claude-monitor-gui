@@ -1,14 +1,20 @@
 """Burn rate and cost calculations for Claude Monitor."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from typing import Protocol
 
-from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
+from claude_monitor.core.models import BurnRate
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageProjection
 from claude_monitor.core.p90_calculator import P90Calculator
 from claude_monitor.error_handling import report_error
-from claude_monitor.types import BlockData
+from claude_monitor.types import LegacyBlockData
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -79,7 +85,9 @@ class BurnRateCalculator:
         )
         current_cost = block.cost_usd
 
-        projected_additional_tokens = burn_rate.tokens_per_minute * remaining_minutes
+        projected_additional_tokens = (
+            burn_rate.tokens_per_minute * remaining_minutes
+        )
         projected_total_tokens = current_tokens + projected_additional_tokens
 
         projected_additional_cost = burn_rate.cost_per_hour * remaining_hours
@@ -93,30 +101,36 @@ class BurnRateCalculator:
 
 
 def calculate_hourly_burn_rate(
-    blocks: list[BlockData], current_time: datetime
+    blocks: list[LegacyBlockData], current_time: datetime
 ) -> float:
     """Calculate burn rate based on all sessions in the last hour."""
     if not blocks:
         return 0.0
 
     one_hour_ago = current_time - timedelta(hours=1)
-    total_tokens = _calculate_total_tokens_in_hour(blocks, one_hour_ago, current_time)
+    total_tokens = _calculate_total_tokens_in_hour(
+        blocks, one_hour_ago, current_time
+    )
 
     return total_tokens / 60.0 if total_tokens > 0 else 0.0
 
 
 def _calculate_total_tokens_in_hour(
-    blocks: list[BlockData], one_hour_ago: datetime, current_time: datetime
+    blocks: list[LegacyBlockData],
+    one_hour_ago: datetime,
+    current_time: datetime,
 ) -> float:
     """Calculate total tokens for all blocks in the last hour."""
     total_tokens = 0.0
     for block in blocks:
-        total_tokens += _process_block_for_burn_rate(block, one_hour_ago, current_time)
+        total_tokens += _process_block_for_burn_rate(
+            block, one_hour_ago, current_time
+        )
     return total_tokens
 
 
 def _process_block_for_burn_rate(
-    block: BlockData, one_hour_ago: datetime, current_time: datetime
+    block: LegacyBlockData, one_hour_ago: datetime, current_time: datetime
 ) -> float:
     """Process a single block for burn rate calculation."""
     start_time = _parse_block_start_time(block)
@@ -132,7 +146,7 @@ def _process_block_for_burn_rate(
     )
 
 
-def _parse_block_start_time(block: BlockData) -> datetime | None:
+def _parse_block_start_time(block: LegacyBlockData) -> datetime | None:
     """Parse start time from block with error handling."""
     start_time_str = block.get("startTime")
     if not start_time_str:
@@ -151,7 +165,9 @@ def _parse_block_start_time(block: BlockData) -> datetime | None:
         return None
 
 
-def _determine_session_end_time(block: BlockData, current_time: datetime) -> datetime:
+def _determine_session_end_time(
+    block: LegacyBlockData, current_time: datetime
+) -> datetime:
     """Determine session end time based on block status."""
     if block.get("isActive", False):
         return current_time
@@ -166,12 +182,14 @@ def _determine_session_end_time(block: BlockData, current_time: datetime) -> dat
         except (ValueError, TypeError, AttributeError) as e:
             block_id = block.get("id")
             block_id_str = str(block_id) if block_id is not None else None
-            _log_timestamp_error(e, actual_end_str, block_id_str, "actual_end_time")
+            _log_timestamp_error(
+                e, actual_end_str, block_id_str, "actual_end_time"
+            )
     return current_time
 
 
 def _calculate_tokens_in_hour(
-    block: BlockData,
+    block: LegacyBlockData,
     start_time: datetime,
     session_actual_end: datetime,
     one_hour_ago: datetime,
@@ -184,8 +202,12 @@ def _calculate_tokens_in_hour(
     if session_end_in_hour <= session_start_in_hour:
         return 0
 
-    total_session_duration = (session_actual_end - start_time).total_seconds() / 60
-    hour_duration = (session_end_in_hour - session_start_in_hour).total_seconds() / 60
+    total_session_duration = (
+        session_actual_end - start_time
+    ).total_seconds() / 60
+    hour_duration = (
+        session_end_in_hour - session_start_in_hour
+    ).total_seconds() / 60
 
     if total_session_duration > 0:
         session_tokens = float(block.get("totalTokens", 0))
@@ -200,10 +222,15 @@ def _log_timestamp_error(
     timestamp_type: str,
 ) -> None:
     """Log timestamp parsing errors with context."""
-    logging.debug(f"Failed to parse {timestamp_type} '{timestamp_str}': {exception}")
+    logging.debug(
+        f"Failed to parse {timestamp_type} '{timestamp_str}': {exception}"
+    )
     report_error(
         exception=exception,
         component="burn_rate_calculator",
         context_name="timestamp_error",
-        context_data={f"{timestamp_type}_str": timestamp_str, "block_id": block_id},
+        context_data={
+            f"{timestamp_type}_str": timestamp_str,
+            "block_id": block_id,
+        },
     )

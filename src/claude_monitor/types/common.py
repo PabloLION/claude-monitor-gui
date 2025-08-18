@@ -1,6 +1,8 @@
 """Common utility types and aliases for Claude Monitor."""
 
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import TypedDict
+
 
 # Type aliases for common patterns
 JSONSerializable = (
@@ -14,7 +16,7 @@ JSONSerializable = (
 )
 
 
-class ErrorContext(TypedDict, total=False):
+class ErrorState(TypedDict, total=False):
     """Context data for error reporting."""
 
     component: str
@@ -24,7 +26,7 @@ class ErrorContext(TypedDict, total=False):
     additional_info: NotRequired[str]
 
 
-class EntryData(TypedDict):
+class ProcessedEntry(TypedDict):
     """Processed entry data for cost calculation."""
 
     model: str
@@ -35,7 +37,7 @@ class EntryData(TypedDict):
     cost_usd: float | None
 
 
-class LimitInfo(TypedDict):
+class LimitEvent(TypedDict):
     """Information about detected usage limits."""
 
     timestamp: str  # Changed from datetime to match usage
@@ -44,7 +46,7 @@ class LimitInfo(TypedDict):
     message: str
 
 
-class ProjectionData(TypedDict):
+class SessionProjection(TypedDict):
     """Projection data for session blocks."""
 
     projected_total_tokens: int
@@ -52,7 +54,7 @@ class ProjectionData(TypedDict):
     remaining_minutes: float
 
 
-class ExtractedTokens(TypedDict):
+class TokenExtract(TypedDict):
     """Extracted token counts from Claude message data."""
 
     input_tokens: int
@@ -61,14 +63,14 @@ class ExtractedTokens(TypedDict):
     cache_read_tokens: int
 
 
-class ExtractedMetadata(TypedDict):
+class MetadataExtract(TypedDict):
     """Extracted metadata from Claude message entries."""
 
     message_id: str
     request_id: str
 
 
-class RawJSONData(TypedDict, total=False):
+class RawJSONEntry(TypedDict, total=False):
     """Type-safe structure for raw JSON data from JSONL files."""
 
     # Core fields that may be present in raw Claude data
@@ -86,7 +88,7 @@ class RawJSONData(TypedDict, total=False):
     # Allow additional unknown fields
 
 
-class FlattenedData(TypedDict, total=False):
+class FlattenedEntry(TypedDict, total=False):
     """Type-safe structure for flattened data from data processors."""
 
     # All fields are optional since flattening can create various structures
@@ -100,7 +102,7 @@ class FlattenedData(TypedDict, total=False):
     # Allow additional flattened fields
 
 
-class ValidationState(TypedDict, total=False):
+class NotificationValidation(TypedDict, total=False):
     """Type-safe structure for validation states in notifications."""
 
     # Common notification state fields
@@ -111,7 +113,7 @@ class ValidationState(TypedDict, total=False):
     notification_count: NotRequired[int]
 
 
-class TokenSource(TypedDict, total=False):
+class TokenSourceData(TypedDict, total=False):
     """Type-safe structure for token source data from usage fields."""
 
     # Common token field variations found in Claude API responses
@@ -131,7 +133,7 @@ class TokenSource(TypedDict, total=False):
     completion_tokens: NotRequired[int]
 
 
-class ModelStatsRaw(TypedDict, total=False):
+class RawModelStats(TypedDict, total=False):
     """Type-safe structure for raw model statistics from API responses."""
 
     # Token counts (most common format)
@@ -145,7 +147,7 @@ class ModelStatsRaw(TypedDict, total=False):
     model_name: NotRequired[str]
 
 
-class MonitoringCallbackData(TypedDict):
+class CallbackEventData(TypedDict):
     """Type-safe structure for monitoring callback data."""
 
     # Core monitoring fields that callbacks expect

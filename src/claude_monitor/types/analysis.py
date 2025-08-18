@@ -1,9 +1,11 @@
 """Data analysis and aggregation types for Claude Monitor."""
 
-from typing import NotRequired, Required, TypedDict
+from typing import NotRequired
+from typing import Required
+from typing import TypedDict
 
 
-class AggregatedData(TypedDict, total=False):
+class AggregatedUsage(TypedDict, total=False):
     """Type-safe aggregated data for daily/monthly statistics."""
 
     # Period identifiers (one of these will be present)
@@ -25,7 +27,7 @@ class AggregatedData(TypedDict, total=False):
     model_breakdowns: dict[str, dict[str, int | float]]
 
 
-class TotalAggregatedData(TypedDict, total=False):
+class CompleteAggregatedUsage(TypedDict, total=False):
     """Type-safe aggregated data where all fields are confirmed/required."""
 
     # Period identifiers (one of these will be present)
@@ -47,7 +49,7 @@ class TotalAggregatedData(TypedDict, total=False):
     model_breakdowns: Required[dict[str, dict[str, int | float]]]
 
 
-class AggregatedTotals(TypedDict):
+class UsageTotals(TypedDict):
     """Type-safe totals from aggregated data."""
 
     input_tokens: int
@@ -59,7 +61,7 @@ class AggregatedTotals(TypedDict):
     entries_count: int
 
 
-class SessionDataDict(TypedDict):
+class SessionMonitoringData(TypedDict):
     """Type-safe structure for session data in UI components."""
 
     tokens: int
@@ -67,17 +69,17 @@ class SessionDataDict(TypedDict):
     messages: int
 
 
-class SessionCollectionDict(TypedDict):
+class SessionCollection(TypedDict):
     """Type-safe structure for session collection results."""
 
-    all_sessions: list[SessionDataDict]
-    limit_sessions: list[SessionDataDict]
-    current_session: SessionDataDict | None
+    all_sessions: list[SessionMonitoringData]
+    limit_sessions: list[SessionMonitoringData]
+    current_session: SessionMonitoringData | None
     total_sessions: int
     active_sessions: int
 
 
-class PercentileDict(TypedDict):
+class Percentiles(TypedDict):
     """Type-safe structure for percentile calculations."""
 
     p50: int | float
@@ -86,17 +88,17 @@ class PercentileDict(TypedDict):
     p95: int | float
 
 
-class SessionPercentilesDict(TypedDict):
+class SessionPercentiles(TypedDict):
     """Type-safe structure for session percentiles results."""
 
-    tokens: PercentileDict
-    costs: PercentileDict
-    messages: PercentileDict
+    tokens: Percentiles
+    costs: Percentiles
+    messages: Percentiles
     averages: dict[str, int | float]
     count: int
 
 
-class AggregatedStats(TypedDict):
+class UsageStatistics(TypedDict):
     """Aggregated statistics from data aggregator to_dict method."""
 
     input_tokens: int

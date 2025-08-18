@@ -1,10 +1,14 @@
 """Session and block data types for Claude Monitor."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
+from typing import TYPE_CHECKING
+from typing import NotRequired
+from typing import Required
+from typing import TypedDict
+
 
 if TYPE_CHECKING:
-    from .api import ClaudeJSONEntry
+    from .api import ClaudeMessageEntry
 
 
 class BlockEntry(TypedDict):
@@ -38,11 +42,11 @@ class LimitDetectionInfo(TypedDict, total=False):
     content: Required[str]
     reset_time: NotRequired[datetime]
     wait_minutes: NotRequired[float]
-    raw_data: NotRequired["ClaudeJSONEntry"]
+    raw_data: NotRequired["ClaudeMessageEntry"]
     block_context: NotRequired[dict[str, str | int]]
 
 
-class TokenCountsDict(TypedDict):
+class TokenCountsData(TypedDict):
     """Token counts dictionary for JSON output."""
 
     inputTokens: int
@@ -51,14 +55,14 @@ class TokenCountsDict(TypedDict):
     cacheReadInputTokens: int
 
 
-class BurnRateDict(TypedDict):
+class BurnRateData(TypedDict):
     """Burn rate dictionary for JSON output."""
 
     tokensPerMinute: float
     costPerHour: float
 
 
-class ProjectionDict(TypedDict):
+class SessionProjectionJson(TypedDict):
     """Projection data dictionary for JSON output."""
 
     totalTokens: int
@@ -66,7 +70,7 @@ class ProjectionDict(TypedDict):
     remainingMinutes: float
 
 
-class ModelStats(TypedDict):
+class ModelUsageStats(TypedDict):
     """Statistics for a specific model's usage."""
 
     input_tokens: int
@@ -77,7 +81,7 @@ class ModelStats(TypedDict):
     entries_count: int
 
 
-class BlockDict(TypedDict):
+class SerializedBlock(TypedDict):
     """Serialized SessionBlock for JSON output."""
 
     id: str
@@ -86,21 +90,21 @@ class BlockDict(TypedDict):
     startTime: str
     endTime: str
     actualEndTime: str | None
-    tokenCounts: TokenCountsDict
+    tokenCounts: TokenCountsData
     totalTokens: int
     costUSD: float
     models: list[str]
-    perModelStats: dict[str, ModelStats]
+    perModelStats: dict[str, ModelUsageStats]
     sentMessagesCount: int
     durationMinutes: float
     entries: list[BlockEntry]
     entries_count: int
-    burnRate: NotRequired[BurnRateDict]
-    projection: NotRequired[ProjectionDict]
+    burnRate: NotRequired[BurnRateData]
+    projection: NotRequired[SessionProjectionJson]
     limitMessages: NotRequired[list[FormattedLimitInfo]]
 
 
-class PartialBlockDict(TypedDict, total=False):
+class PartialBlock(TypedDict, total=False):
     """Partial block data - same fields as BlockDict but all optional."""
 
     id: str
@@ -109,29 +113,29 @@ class PartialBlockDict(TypedDict, total=False):
     startTime: str
     endTime: str
     actualEndTime: str | None
-    tokenCounts: TokenCountsDict
+    tokenCounts: TokenCountsData
     totalTokens: int
     costUSD: float
     models: list[str]
-    perModelStats: dict[str, ModelStats]
+    perModelStats: dict[str, ModelUsageStats]
     sentMessagesCount: int
     durationMinutes: float
     entries: list[BlockEntry]
     entries_count: int
-    burnRate: BurnRateDict
-    projection: ProjectionDict
+    burnRate: BurnRateData
+    projection: SessionProjectionJson
     limitMessages: list[FormattedLimitInfo]
 
 
 # BlockData now uses the partial format - will be renamed in future commit
-BlockData = PartialBlockDict
+LegacyBlockData = PartialBlock
 
 
-class SessionData(TypedDict):
-    """Data for session monitoring."""
+class SessionBlockMonitoringData(TypedDict):
+    """Data for session monitoring with block information."""
 
     session_id: str
-    block_data: BlockDict
+    block_data: SerializedBlock
     is_new: bool
     timestamp: datetime
 
@@ -153,14 +157,14 @@ class AnalysisMetadata(TypedDict):
 class AnalysisResult(TypedDict):
     """Result from analyze_usage function."""
 
-    blocks: list[BlockDict]
+    blocks: list[SerializedBlock]
     metadata: AnalysisMetadata
     entries_count: int
     total_tokens: int
     total_cost: float
 
 
-class MonitoringData(TypedDict):
+class MonitoringState(TypedDict):
     """Data from monitoring orchestrator."""
 
     data: AnalysisResult

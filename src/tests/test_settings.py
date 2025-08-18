@@ -3,13 +3,16 @@
 import argparse
 import json
 import tempfile
+
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
-from claude_monitor.core.settings import LastUsedParams, Settings
-from claude_monitor.types import LastUsedParamsDict
+from claude_monitor.core.settings import LastUsedParams
+from claude_monitor.core.settings import Settings
+from claude_monitor.types import UserPreferences
 
 
 class TestLastUsedParams:
@@ -133,7 +136,9 @@ class TestLastUsedParams:
     def test_save_error_handling(self, mock_logger: Mock) -> None:
         """Test error handling during save operation."""
         # Mock file operations to raise exception
-        with patch("builtins.open", side_effect=PermissionError("Access denied")):
+        with patch(
+            "builtins.open", side_effect=PermissionError("Access denied")
+        ):
             mock_settings = Mock()
             mock_settings.plan = "pro"
             mock_settings.theme = "dark"
@@ -182,7 +187,7 @@ class TestLastUsedParams:
     def test_load_file_not_exists(self) -> None:
         """Test loading when file doesn't exist."""
         result = self.last_used.load()
-        assert result == LastUsedParamsDict()
+        assert result == UserPreferences()
 
     @patch("claude_monitor.core.settings.logger")
     def test_load_error_handling(self, mock_logger: Mock) -> None:
@@ -193,7 +198,7 @@ class TestLastUsedParams:
 
         result = self.last_used.load()
 
-        assert result == LastUsedParamsDict()
+        assert result == UserPreferences()
         mock_logger.warning.assert_called_once()
 
     def test_clear_success(self) -> None:
@@ -222,7 +227,9 @@ class TestLastUsedParams:
         with open(self.last_used.params_file, "w") as f:
             f.write("{}")
 
-        with patch.object(Path, "unlink", side_effect=PermissionError("Access denied")):
+        with patch.object(
+            Path, "unlink", side_effect=PermissionError("Access denied")
+        ):
             self.last_used.clear()
             mock_logger.warning.assert_called_once()
 
@@ -319,7 +326,9 @@ class TestSettings:
 
     def test_timezone_validator_invalid_value(self) -> None:
         """Test timezone validator with invalid value."""
-        with pytest.raises(ValueError, match="Invalid timezone: Invalid/Timezone"):
+        with pytest.raises(
+            ValueError, match="Invalid timezone: Invalid/Timezone"
+        ):
             Settings(timezone="Invalid/Timezone", _cli_parse_args=[])
 
     def test_time_format_validator_valid_values(self) -> None:
@@ -337,7 +346,13 @@ class TestSettings:
 
     def test_log_level_validator_valid_values(self) -> None:
         """Test log level validator with valid values."""
-        valid_levels: list[str] = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        valid_levels: list[str] = [
+            "DEBUG",
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "CRITICAL",
+        ]
 
         for level in valid_levels:
             settings = Settings(log_level=level, _cli_parse_args=[])
@@ -408,11 +423,16 @@ class TestSettings:
             params_file = config_dir / "last_used.json"
             params_file.parent.mkdir(parents=True, exist_ok=True)
 
-            test_data: dict[str, str] = {"theme": "dark", "timezone": "Europe/Warsaw"}
+            test_data: dict[str, str] = {
+                "theme": "dark",
+                "timezone": "Europe/Warsaw",
+            }
             with open(params_file, "w") as f:
                 json.dump(test_data, f)
 
-            with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+            with patch(
+                "claude_monitor.core.settings.LastUsedParams"
+            ) as MockLastUsed:
                 mock_instance = Mock()
                 MockLastUsed.return_value = mock_instance
 
@@ -439,7 +459,9 @@ class TestSettings:
             "view": "realtime",
         }
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
             mock_instance.load.return_value = test_params
             MockLastUsed.return_value = mock_instance
@@ -472,7 +494,9 @@ class TestSettings:
             "view": "realtime",
         }
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
             mock_instance.load.return_value = test_params
             MockLastUsed.return_value = mock_instance
@@ -495,9 +519,11 @@ class TestSettings:
         mock_timezone.return_value = "America/New_York"
         mock_time_format.return_value = "12h"
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = LastUsedParamsDict()
+            mock_instance.load.return_value = UserPreferences()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used([])
@@ -514,9 +540,11 @@ class TestSettings:
         mock_timezone.return_value = "UTC"
         mock_time_format.return_value = "24h"
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = LastUsedParamsDict()
+            mock_instance.load.return_value = UserPreferences()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used(["--debug"])
@@ -540,11 +568,15 @@ class TestSettings:
 
         from claude_monitor.terminal.themes import BackgroundType
 
-        mock_detector_instance.detect_background.return_value = BackgroundType.DARK
+        mock_detector_instance.detect_background.return_value = (
+            BackgroundType.DARK
+        )
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = LastUsedParamsDict()
+            mock_instance.load.return_value = UserPreferences()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used([])
@@ -562,7 +594,9 @@ class TestSettings:
 
         test_params: dict[str, int] = {"custom_limit_tokens": 5000}
 
-        with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+        with patch(
+            "claude_monitor.core.settings.LastUsedParams"
+        ) as MockLastUsed:
             mock_instance = Mock()
             mock_instance.load.return_value = test_params
             MockLastUsed.return_value = mock_instance
@@ -624,7 +658,9 @@ class TestSettingsIntegration:
             config_dir = Path(temp_dir)
 
             # Mock the config directory
-            with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
+            with patch(
+                "claude_monitor.core.settings.LastUsedParams"
+            ) as MockLastUsed:
                 # Create real LastUsedParams instance with temp directory
                 real_last_used = LastUsedParams(config_dir)
                 MockLastUsed.return_value = real_last_used

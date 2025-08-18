@@ -7,16 +7,14 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import (
-    AssistantEntry,
-    ClaudeJSONEntry,
-    ExtractedTokens,
-    FlattenedData,
-    JSONSerializable,
-    RawJSONData,
-    TokenSource,
-    UserEntry,
-)
+from claude_monitor.types import AssistantMessageEntry
+from claude_monitor.types import ClaudeMessageEntry
+from claude_monitor.types import FlattenedEntry
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import RawJSONEntry
+from claude_monitor.types import TokenExtract
+from claude_monitor.types import TokenSourceData
+from claude_monitor.types import UserMessageEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -25,7 +23,9 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
+        self.timezone_handler: TimezoneHandler = (
+            timezone_handler or TimezoneHandler()
+        )
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -76,7 +76,7 @@ class TokenExtractor:
     """Unified token extraction utilities."""
 
     @staticmethod
-    def extract_tokens(data: ClaudeJSONEntry) -> ExtractedTokens:
+    def extract_tokens(data: ClaudeMessageEntry) -> TokenExtract:
         """Extract token counts from data in standardized format.
 
         Args:
@@ -122,7 +122,9 @@ class TokenExtractor:
             entry_type = data.get("type")
             if entry_type == "system" or entry_type == "user":
                 # System and user messages don't have token usage
-                logger.debug("TokenExtractor: System/user messages have no token usage")
+                logger.debug(
+                    "TokenExtractor: System/user messages have no token usage"
+                )
                 return {
                     "input_tokens": 0,
                     "output_tokens": 0,
@@ -134,45 +136,47 @@ class TokenExtractor:
                 pass
 
         # Build token sources - these are dicts that might contain token info
-        token_sources = list[TokenSource]()
+        token_sources = list[TokenSourceData]()
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
 
         if is_assistant:
-            data = cast(AssistantEntry, data)
+            data = cast(AssistantMessageEntry, data)
             # Assistant message: check message.usage first, then usage, then top-level
             message = data.get("message")
             if message is not None:
                 usage = message.get("usage")
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
-                    token_sources.append(cast(TokenSource, usage))
+                    token_sources.append(cast(TokenSourceData, usage))
 
             if usage := data.get("usage"):
                 # TODO: Replace with proper TypedDict when removing JSONSerializable
-                token_sources.append(cast(TokenSource, usage))
+                token_sources.append(cast(TokenSourceData, usage))
 
             # Top-level fields as fallback (cast for type compatibility)
-            token_sources.append(cast(TokenSource, data))
+            token_sources.append(cast(TokenSourceData, data))
         else:
-            data = cast(UserEntry, data)
+            data = cast(UserMessageEntry, data)
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
-                    token_sources.append(cast(TokenSource, usage))
+                    token_sources.append(cast(TokenSourceData, usage))
 
             if message := data.get("message"):
                 usage = message.get("usage")
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
-                    token_sources.append(cast(TokenSource, usage))
+                    token_sources.append(cast(TokenSourceData, usage))
 
             # Top-level fields as fallback (cast for type compatibility)
-            token_sources.append(cast(TokenSource, data))
+            token_sources.append(cast(TokenSourceData, data))
 
-        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
+        logger.debug(
+            f"TokenExtractor: Checking {len(token_sources)} token sources"
+        )
 
         # Extract tokens from first valid source
         for source in token_sources:
@@ -236,7 +240,9 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(data: RawJSONData, prefix: str = "") -> FlattenedData:
+    def flatten_nested_dict(
+        data: RawJSONEntry, prefix: str = ""
+    ) -> FlattenedEntry:
         """Flatten nested dictionary structure.
 
         Args:
@@ -246,14 +252,16 @@ class DataConverter:
         Returns:
             Flattened dictionary
         """
-        result: FlattenedData = FlattenedData()
+        result: FlattenedEntry = FlattenedEntry()
 
         for key, value in data.items():
             new_key = f"{prefix}.{key}" if prefix else key
 
             if isinstance(value, dict):
                 result.update(
-                    DataConverter.flatten_nested_dict(cast(RawJSONData, value), new_key)
+                    DataConverter.flatten_nested_dict(
+                        cast(RawJSONEntry, value), new_key
+                    )
                 )
             else:
                 # Use type: ignore for dynamic key assignment in TypedDict
@@ -264,7 +272,7 @@ class DataConverter:
     @staticmethod
     def extract_model_name(
         # #TODO: default might be outdated; use constant var.
-        data: ClaudeJSONEntry,
+        data: ClaudeMessageEntry,
         default: str = "claude-3-5-sonnet",
     ) -> str:
         """Extract model name from various data sources.

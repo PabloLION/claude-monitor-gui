@@ -1,18 +1,25 @@
 """Tests for calculations module."""
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
+from claude_monitor.core.calculations import BurnRateCalculator
 from claude_monitor.core.calculations import (
-    BurnRateCalculator,
     _calculate_total_tokens_in_hour,  # type: ignore[misc]
-    _process_block_for_burn_rate,  # type: ignore[misc]
-    calculate_hourly_burn_rate,
 )
-from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
-from claude_monitor.types import BlockData
+from claude_monitor.core.calculations import (
+    _process_block_for_burn_rate,  # type: ignore[misc]
+)
+from claude_monitor.core.calculations import calculate_hourly_burn_rate
+from claude_monitor.core.models import BurnRate
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageProjection
+from claude_monitor.types import LegacyBlockData
 
 
 class TestBurnRateCalculator:
@@ -94,7 +101,9 @@ class TestBurnRateCalculator:
         self, calculator: BurnRateCalculator, mock_active_block: Mock
     ) -> None:
         """Test burn rate calculation with very small duration."""
-        mock_active_block.duration_minutes = 1  # 1 minute minimum for active check
+        mock_active_block.duration_minutes = (
+            1  # 1 minute minimum for active check
+        )
         burn_rate = calculator.calculate_burn_rate(mock_active_block)
 
         assert burn_rate is not None
@@ -159,9 +168,9 @@ class TestHourlyBurnRateCalculation:
         return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     @pytest.fixture
-    def mock_blocks(self) -> list[BlockData]:
+    def mock_blocks(self) -> list[LegacyBlockData]:
         """Create mock blocks for testing."""
-        block1: BlockData = {
+        block1: LegacyBlockData = {
             "id": "block1",
             "isActive": False,
             "isGap": False,
@@ -173,7 +182,7 @@ class TestHourlyBurnRateCalculation:
             "tokenCounts": {"input_tokens": 100, "output_tokens": 50},
         }
 
-        block2: BlockData = {
+        block2: LegacyBlockData = {
             "id": "block2",
             "isActive": False,
             "isGap": False,
@@ -185,7 +194,7 @@ class TestHourlyBurnRateCalculation:
             "tokenCounts": {"input_tokens": 200, "output_tokens": 100},
         }
 
-        block3: BlockData = {
+        block3: LegacyBlockData = {
             "id": "block3",
             "isActive": False,
             "isGap": True,
@@ -209,7 +218,7 @@ class TestHourlyBurnRateCalculation:
         self, current_time: datetime
     ) -> None:
         """Test hourly burn rate with empty blocks list."""
-        empty_blocks: list[BlockData] = list[BlockData]()
+        empty_blocks: list[LegacyBlockData] = list[LegacyBlockData]()
         burn_rate = calculate_hourly_burn_rate(empty_blocks, current_time)
         assert burn_rate == 0.0
 
@@ -220,7 +229,7 @@ class TestHourlyBurnRateCalculation:
         """Test successful hourly burn rate calculation."""
         mock_calc_tokens.return_value = 180.0  # Total tokens in hour
 
-        simple_block: BlockData = {
+        simple_block: LegacyBlockData = {
             "id": "test",
             "isActive": False,
             "isGap": False,
@@ -235,7 +244,9 @@ class TestHourlyBurnRateCalculation:
         assert burn_rate == 3.0
 
         one_hour_ago = current_time - timedelta(hours=1)
-        mock_calc_tokens.assert_called_once_with(blocks, one_hour_ago, current_time)
+        mock_calc_tokens.assert_called_once_with(
+            blocks, one_hour_ago, current_time
+        )
 
     @patch("claude_monitor.core.calculations._calculate_total_tokens_in_hour")
     def test_calculate_hourly_burn_rate_zero_tokens(
@@ -274,7 +285,9 @@ class TestHourlyBurnRateCalculation:
         gap_block = {"isGap": True, "start_time": "2024-01-01T11:30:00Z"}
         one_hour_ago = current_time - timedelta(hours=1)
 
-        tokens = _process_block_for_burn_rate(gap_block, one_hour_ago, current_time)
+        tokens = _process_block_for_burn_rate(
+            gap_block, one_hour_ago, current_time
+        )
         assert tokens == 0
 
     @patch("claude_monitor.core.calculations._parse_block_start_time")
@@ -300,7 +313,9 @@ class TestHourlyBurnRateCalculation:
         old_time = one_hour_ago - timedelta(minutes=30)
 
         mock_parse_time.return_value = old_time
-        mock_end_time.return_value = old_time  # Session ended before one hour ago
+        mock_end_time.return_value = (
+            old_time  # Session ended before one hour ago
+        )
 
         block = {"isGap": False, "start_time": "2024-01-01T10:30:00Z"}
 
@@ -454,8 +469,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_with_hits(self) -> None:
         """Test _calculate_p90_from_blocks when limit hits are found."""
+        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
-            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -481,8 +496,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_no_hits(self) -> None:
         """Test _calculate_p90_from_blocks when no limit hits are found."""
+        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
-            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -498,7 +513,11 @@ class TestP90Calculator:
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": False},
             {"totalTokens": 3000, "isGap": False, "isActive": False},
-            {"totalTokens": 1500, "isGap": True, "isActive": False},  # Gap - ignored
+            {
+                "totalTokens": 1500,
+                "isGap": True,
+                "isActive": False,
+            },  # Gap - ignored
         ]
 
         result = _calculate_p90_from_blocks(blocks, config)
@@ -508,8 +527,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_empty(self) -> None:
         """Test _calculate_p90_from_blocks with empty or invalid blocks."""
+        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
-            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -544,7 +563,8 @@ class TestP90Calculator:
 
     def test_p90_calculator_custom_config(self) -> None:
         """Test P90Calculator with custom configuration."""
-        from claude_monitor.core.p90_calculator import P90Calculator, P90Config
+        from claude_monitor.core.p90_calculator import P90Calculator
+        from claude_monitor.core.p90_calculator import P90Config
 
         custom_config = P90Config(
             common_limits=[5000, 25000],
@@ -607,8 +627,8 @@ class TestP90Calculator:
 
     def test_p90_calculation_edge_cases(self) -> None:
         """Test P90 calculation with edge cases."""
+        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
-            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -635,8 +655,8 @@ class TestP90Calculator:
 
     def test_p90_quantiles_calculation(self) -> None:
         """Test that P90 uses proper quantiles calculation."""
+        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
-            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 

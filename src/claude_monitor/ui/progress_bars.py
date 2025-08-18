@@ -6,9 +6,11 @@ Provides token usage, time progress, and model usage progress bars.
 from __future__ import annotations
 
 from abc import ABC
-from typing import Final, Protocol, TypedDict
+from typing import Final
+from typing import Protocol
+from typing import TypedDict
 
-from claude_monitor.types.sessions import ModelStats
+from claude_monitor.types.sessions import ModelUsageStats
 from claude_monitor.utils.time_utils import percentage
 
 
@@ -57,7 +59,7 @@ class TimeProgressRenderer(Protocol):
 class ModelProgressRenderer(Protocol):
     """Protocol for model progress bar rendering."""
 
-    def render(self, per_model_stats: dict[str, ModelStats]) -> str:
+    def render(self, per_model_stats: dict[str, ModelUsageStats]) -> str:
         """Render model progress bar."""
         ...
 
@@ -292,7 +294,7 @@ class TimeProgressBar(BaseProgressBar):
 class ModelUsageBar(BaseProgressBar):
     """Model usage progress bar showing Sonnet vs Opus distribution."""
 
-    def render(self, per_model_stats: dict[str, ModelStats]) -> str:
+    def render(self, per_model_stats: dict[str, ModelUsageStats]) -> str:
         """Render model usage progress bar.
 
         Args:
@@ -367,7 +369,9 @@ class ModelUsageBar(BaseProgressBar):
         bar_display = "".join(bar_segments)
 
         if opus_tokens > 0 and sonnet_tokens > 0:
-            summary = f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
+            summary = (
+                f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
+            )
         elif sonnet_tokens > 0:
             summary = f"Sonnet {sonnet_percentage:.1f}%"
         elif opus_tokens > 0:

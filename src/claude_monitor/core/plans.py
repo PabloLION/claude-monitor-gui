@@ -7,7 +7,9 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 from dataclasses import dataclass
 from enum import Enum
 
-from claude_monitor.types import BlockData, BlockDict, PlanLimitsEntry
+from claude_monitor.types import LegacyBlockData
+from claude_monitor.types import PlanConfiguration
+from claude_monitor.types import SerializedBlock
 
 
 class PlanType(Enum):
@@ -45,7 +47,7 @@ class PlanConfig:
         return str(self.token_limit)
 
 
-PLAN_LIMITS: dict[PlanType, PlanLimitsEntry] = {
+PLAN_LIMITS: dict[PlanType, PlanConfiguration] = {
     PlanType.PRO: {
         "token_limit": 19_000,
         "cost_limit": 18.0,
@@ -121,7 +123,9 @@ class Plans:
 
     @classmethod
     def get_token_limit(
-        cls, plan: str, blocks: list[BlockData] | list[BlockDict] | None = None
+        cls,
+        plan: str,
+        blocks: list[LegacyBlockData] | list[SerializedBlock] | None = None,
     ) -> int:
         """
         Get the token limit for a plan.
@@ -137,7 +141,7 @@ class Plans:
             from claude_monitor.core.p90_calculator import P90Calculator
 
             # Convert BlockDict to BlockData if needed
-            block_data = list[BlockData]()
+            block_data = list[LegacyBlockData]()
             for block in blocks:
                 if "isActive" in block:
                     # This is a BlockDict, convert to BlockData
@@ -190,7 +194,8 @@ DEFAULT_COST_LIMIT: float = Plans.DEFAULT_COST_LIMIT
 
 
 def get_token_limit(
-    plan: str, blocks: list[BlockData] | list[BlockDict] | None = None
+    plan: str,
+    blocks: list[LegacyBlockData] | list[SerializedBlock] | None = None,
 ) -> int:
     """Get token limit for a plan, using P90 for custom plans.
 
