@@ -6,28 +6,28 @@ into a single cohesive module.
 
 import json
 import logging
-from datetime import datetime, timedelta
+
+from datetime import datetime
+from datetime import timedelta
 from datetime import timezone as tz
 from pathlib import Path
 
-from claude_monitor.core.data_processors import (
-    DataConverter,
-    TimestampProcessor,
-    TokenExtractor,
-)
-from claude_monitor.core.models import CostMode, UsageEntry
+from claude_monitor.core.data_processors import DataConverter
+from claude_monitor.core.data_processors import TimestampProcessor
+from claude_monitor.core.data_processors import TokenExtractor
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.error_handling import report_file_error
-from claude_monitor.types import (
-    AssistantEntry,
-    ClaudeJSONEntry,
-    EntryData,
-    ExtractedMetadata,
-    RawJSONData,
-    SystemEntry,
-    UserEntry,
-)
+from claude_monitor.types import AssistantEntry
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import EntryData
+from claude_monitor.types import ExtractedMetadata
+from claude_monitor.types import RawJSONData
+from claude_monitor.types import SystemEntry
+from claude_monitor.types import UserEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 FIELD_COST_USD = "cost_usd"
 FIELD_MODEL = "model"
@@ -153,7 +153,9 @@ def load_usage_entries(
 
     all_entries.sort(key=lambda e: e.timestamp)
 
-    logger.info(f"Processed {len(all_entries)} entries from {len(jsonl_files)} files")
+    logger.info(
+        f"Processed {len(all_entries)} entries from {len(jsonl_files)} files"
+    )
 
     return all_entries, raw_entries
 
@@ -252,7 +254,9 @@ def _process_single_file(
                             raw_data.append(parsed_entry)
 
                 except json.JSONDecodeError as e:
-                    logger.debug(f"Failed to parse JSON line in {file_path}: {e}")
+                    logger.debug(
+                        f"Failed to parse JSON line in {file_path}: {e}"
+                    )
                     continue
 
         logger.debug(
@@ -312,7 +316,9 @@ def _create_unique_hash(data: RawJSONData) -> str | None:
     return f"{message_id}:{request_id}" if message_id and request_id else None
 
 
-def _update_processed_hashes(data: RawJSONData, processed_hashes: set[str]) -> None:
+def _update_processed_hashes(
+    data: RawJSONData, processed_hashes: set[str]
+) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
     if unique_hash:
@@ -345,7 +351,9 @@ def _map_to_usage_entry(
         if not any(v for k, v in token_data.items() if k != "total_tokens"):
             return None
 
-        model = DataConverter.extract_model_name(claude_entry, default="unknown")
+        model = DataConverter.extract_model_name(
+            claude_entry, default="unknown"
+        )
 
         entry_data: EntryData = {
             FIELD_MODEL: model,
@@ -365,12 +373,18 @@ def _map_to_usage_entry(
         msg_id_from_message = message.get("id") if message else ""
         message_id = (
             (msg_id_raw if isinstance(msg_id_raw, str) else "")
-            or (msg_id_from_message if isinstance(msg_id_from_message, str) else "")
+            or (
+                msg_id_from_message
+                if isinstance(msg_id_from_message, str)
+                else ""
+            )
             or ""
         )
 
         # Extract request_id with proper type handling
-        req_id_raw = claude_entry.get("request_id") or claude_entry.get("requestId")
+        req_id_raw = claude_entry.get("request_id") or claude_entry.get(
+            "requestId"
+        )
         request_id = req_id_raw if isinstance(req_id_raw, str) else "unknown"
 
         return UsageEntry(
@@ -399,7 +413,9 @@ class UsageEntryMapper:
     """
 
     def __init__(
-        self, pricing_calculator: PricingCalculator, timezone_handler: TimezoneHandler
+        self,
+        pricing_calculator: PricingCalculator,
+        timezone_handler: TimezoneHandler,
     ):
         """Initialize with required components."""
         self.pricing_calculator = pricing_calculator
@@ -428,7 +444,9 @@ class UsageEntryMapper:
         # Convert to ClaudeJSONEntry for compatibility
         parsed_data = _parse_claude_entry(data)
         if parsed_data:
-            return DataConverter.extract_model_name(parsed_data, default="unknown")
+            return DataConverter.extract_model_name(
+                parsed_data, default="unknown"
+            )
         return "unknown"
 
     def _extract_metadata(self, data: RawJSONData) -> ExtractedMetadata:
