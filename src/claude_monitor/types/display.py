@@ -1,8 +1,7 @@
 """UI and display-related types for Claude Monitor."""
 
 from datetime import datetime
-from typing import NotRequired
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from .common import JSONSerializable
 from .sessions import ModelStats

@@ -3,7 +3,6 @@
 import logging
 import os
 import sys
-
 from logging import Handler
 from pathlib import Path
 

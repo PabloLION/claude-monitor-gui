@@ -1,7 +1,5 @@
 import time
-
-from collections.abc import Callable
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
@@ -54,9 +52,11 @@ def _calculate_p90_from_blocks(blocks: Sequence[BlockData], cfg: P90Config) -> i
 class P90Calculator:
     def __init__(self, config: P90Config | None = None) -> None:
         if config is None:
-            from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
-            from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
-            from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
+            from claude_monitor.core.plans import (
+                COMMON_TOKEN_LIMITS,
+                DEFAULT_TOKEN_LIMIT,
+                LIMIT_DETECTION_THRESHOLD,
+            )
 
             config = P90Config(
                 common_limits=COMMON_TOKEN_LIMITS,

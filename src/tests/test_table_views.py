@@ -1,7 +1,6 @@
 """Tests for table views module."""
 
 import pytest
-
 from rich.panel import Panel
 from rich.table import Table
 

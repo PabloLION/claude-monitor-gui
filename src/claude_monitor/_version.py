@@ -6,7 +6,6 @@ as the single source of truth, avoiding version duplication across the codebase.
 
 import importlib.metadata
 import sys
-
 from pathlib import Path
 
 

@@ -1,12 +1,13 @@
 """Tests for version management."""
 
-from unittest.mock import mock_open
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pytest
 
-from claude_monitor._version import _get_version_from_pyproject  # type: ignore[misc]
-from claude_monitor._version import get_version
+from claude_monitor._version import (
+    _get_version_from_pyproject,  # type: ignore[misc]
+    get_version,
+)
 
 
 def test_get_version_from_metadata() -> None:

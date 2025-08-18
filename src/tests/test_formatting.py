@@ -1,18 +1,20 @@
 """Tests for formatting utilities."""
 
-from datetime import datetime
-from datetime import timezone
-from unittest.mock import Mock
-from unittest.mock import patch
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 
-from claude_monitor.utils.formatting import format_currency
-from claude_monitor.utils.formatting import format_display_time
-from claude_monitor.utils.formatting import format_time
-from claude_monitor.utils.formatting import get_time_format_preference
-from claude_monitor.utils.model_utils import get_model_display_name
-from claude_monitor.utils.model_utils import get_model_generation
-from claude_monitor.utils.model_utils import is_claude_model
-from claude_monitor.utils.model_utils import normalize_model_name
+from claude_monitor.utils.formatting import (
+    format_currency,
+    format_display_time,
+    format_time,
+    get_time_format_preference,
+)
+from claude_monitor.utils.model_utils import (
+    get_model_display_name,
+    get_model_generation,
+    is_claude_model,
+    normalize_model_name,
+)
 
 
 class TestFormatTime:

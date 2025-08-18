@@ -14,17 +14,22 @@ try:
 except ImportError:
     try:
         # Python < 3.11 fallback
-        import tomli as tomllib  # type: ignore[import-not-found]
+        import tomli as tomllib  # pyright: ignore[reportMissingImports]
     except ImportError:
-        tomllib = None  # type: ignore[assignment]
+        tomllib = None
 
 
 # Babel library backport
 HAS_BABEL = False
 try:
-    from babel.dates import get_timezone_location  # type: ignore[import-not-found]
+    # fmt: off
+    from babel.dates import (
+        get_timezone_location,  # pyright: ignore[reportUnknownVariableType]; pyright: ignore[reportMissingImports]
+    )
 
-    HAS_BABEL = True  # type: ignore[assignment]
+    # fmt: on
+
+    HAS_BABEL = True  # pyright: ignore[reportConstantRedefinition]
 except ImportError:
 
     def get_timezone_location(
@@ -39,11 +44,11 @@ except ImportError:
 # Platform-specific imports for terminal handling
 HAS_TERMINAL_CONTROL = False
 try:
-    import select  # type: ignore[import-not-found]
-    import termios  # type: ignore[import-not-found]
-    import tty  # type: ignore[import-not-found]
+    import select
+    import termios
+    import tty
 
-    HAS_TERMINAL_CONTROL = True  # type: ignore[assignment]
+    HAS_TERMINAL_CONTROL = True  # pyright: ignore[reportConstantRedefinition]
 except ImportError:
     # Windows or other platforms without these modules
     termios = None  # type: ignore[assignment]
@@ -58,10 +63,10 @@ if sys.platform == "win32":
 
         HAS_WINREG = True
     except ImportError:
-        winreg = None  # type: ignore[assignment]
+        winreg = None
         HAS_WINREG = False
 else:
-    winreg = None  # type: ignore[assignment]
+    winreg = None
     HAS_WINREG = False
 
 

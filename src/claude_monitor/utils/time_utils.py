@@ -8,19 +8,16 @@ import os
 import platform
 import re
 import subprocess
-
 from datetime import datetime
 
 import pytz
-
 from pytz import BaseTzInfo
-
 
 from claude_monitor.utils.backports import HAS_BABEL
 
 # Keep the existing fallback implementation
 try:
-    from babel.dates import get_timezone_location  # type: ignore[import-not-found]
+    from babel.dates import get_timezone_location
 except ImportError:
     def get_timezone_location(
         timezone_name: str, locale_name: str = "en_US"

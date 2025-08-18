@@ -1,12 +1,8 @@
 """Tests for session analyzer module."""
 
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 
-from claude_monitor.core.models import SessionBlock
-from claude_monitor.core.models import TokenCounts
-from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import SessionBlock, TokenCounts, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
 
 

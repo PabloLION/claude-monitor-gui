@@ -1,14 +1,15 @@
 """Tests for data aggregator module."""
 
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
 import pytest
 
 from claude_monitor.core.models import UsageEntry
-from claude_monitor.data.aggregator import AggregatedPeriod
-from claude_monitor.data.aggregator import AggregatedStatsData
-from claude_monitor.data.aggregator import UsageAggregator
+from claude_monitor.data.aggregator import (
+    AggregatedPeriod,
+    AggregatedStatsData,
+    UsageAggregator,
+)
 
 
 class TestAggregatedStats:

@@ -2,8 +2,7 @@
 
 import pytest
 
-from claude_monitor.core.models import CostMode
-from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import CostMode, TokenCounts
 from claude_monitor.core.pricing import PricingCalculator
 
 

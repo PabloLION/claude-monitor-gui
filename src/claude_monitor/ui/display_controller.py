@@ -5,45 +5,44 @@ Orchestrates UI components and coordinates display updates.
 
 import argparse
 import logging
-
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import pytz
-
-from rich.console import Console
-from rich.console import Group
-from rich.console import RenderableType
+from rich.console import Console, Group, RenderableType
 from rich.live import Live
 from rich.text import Text
 
 from claude_monitor.core.calculations import calculate_hourly_burn_rate
 from claude_monitor.core.models import normalize_model_name
 from claude_monitor.core.plans import Plans
-from claude_monitor.types import AnalysisResult
-from claude_monitor.types import BlockData
-from claude_monitor.types import BlockDict
-from claude_monitor.types import CostPredictions
-from claude_monitor.types import DisplayTimes
-from claude_monitor.types import ExtractedSessionData
-from claude_monitor.types import JSONSerializable
-from claude_monitor.types import NotificationFlags
-from claude_monitor.types import ProcessedDisplayData
-from claude_monitor.types import TimeData
-from claude_monitor.ui.components import AdvancedCustomLimitDisplay
-from claude_monitor.ui.components import ErrorDisplayComponent
-from claude_monitor.ui.components import LoadingScreenComponent
+from claude_monitor.types import (
+    AnalysisResult,
+    BlockData,
+    BlockDict,
+    CostPredictions,
+    DisplayTimes,
+    ExtractedSessionData,
+    JSONSerializable,
+    NotificationFlags,
+    ProcessedDisplayData,
+    TimeData,
+)
+from claude_monitor.ui.components import (
+    AdvancedCustomLimitDisplay,
+    ErrorDisplayComponent,
+    LoadingScreenComponent,
+)
 from claude_monitor.ui.layouts import ScreenManager
 from claude_monitor.ui.session_display import SessionDisplayComponent
 from claude_monitor.utils.notifications import NotificationManager
-from claude_monitor.utils.time_utils import TimezoneHandler
-from claude_monitor.utils.time_utils import format_display_time
-from claude_monitor.utils.time_utils import get_time_format_preference
-from claude_monitor.utils.time_utils import percentage
+from claude_monitor.utils.time_utils import (
+    TimezoneHandler,
+    format_display_time,
+    get_time_format_preference,
+    percentage,
+)
 
 from ..types.sessions import ModelStats
 

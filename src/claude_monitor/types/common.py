@@ -1,8 +1,6 @@
 """Common utility types and aliases for Claude Monitor."""
 
-from typing import NotRequired
-from typing import TypedDict
-
+from typing import NotRequired, TypedDict
 
 # Type aliases for common patterns
 JSONSerializable = (

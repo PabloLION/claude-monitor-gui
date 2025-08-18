@@ -1,20 +1,14 @@
 """Burn rate and cost calculations for Claude Monitor."""
 
 import logging
-
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
-from claude_monitor.core.models import BurnRate
-from claude_monitor.core.models import TokenCounts
-from claude_monitor.core.models import UsageProjection
+from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
 from claude_monitor.core.p90_calculator import P90Calculator
 from claude_monitor.error_handling import report_error
 from claude_monitor.types import BlockData
 from claude_monitor.utils.time_utils import TimezoneHandler
-
 
 logger: logging.Logger = logging.getLogger(__name__)
 

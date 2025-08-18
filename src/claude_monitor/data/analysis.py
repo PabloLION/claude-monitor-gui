@@ -4,29 +4,26 @@ Contains the main analyze_usage function and related analysis components.
 """
 
 import logging
-
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import cast
 
 from claude_monitor.core.calculations import BurnRateCalculator
-from claude_monitor.core.models import CostMode
-from claude_monitor.core.models import SessionBlock
-from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import CostMode, SessionBlock, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
 from claude_monitor.data.reader import load_usage_entries
-from claude_monitor.types import AnalysisMetadata
-from claude_monitor.types import AnalysisResult
-from claude_monitor.types import BlockDict
-from claude_monitor.types import BlockEntry
-from claude_monitor.types import TokenCountsDict
-from claude_monitor.types import ModelStats
-from claude_monitor.types import PartialBlockDict
-from claude_monitor.types import BurnRateDict
-from claude_monitor.types import ProjectionDict
-from claude_monitor.types import FormattedLimitInfo
-from claude_monitor.types import LimitDetectionInfo
-
+from claude_monitor.types import (
+    AnalysisMetadata,
+    AnalysisResult,
+    BlockDict,
+    BlockEntry,
+    BurnRateDict,
+    FormattedLimitInfo,
+    LimitDetectionInfo,
+    ModelStats,
+    PartialBlockDict,
+    ProjectionDict,
+    TokenCountsDict,
+)
 
 logger = logging.getLogger(__name__)
 

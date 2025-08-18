@@ -4,12 +4,10 @@ Raw mode setup, input handling, and terminal control.
 
 import logging
 import sys
-
 from typing import Any
 
 from claude_monitor.error_handling import report_error
 from claude_monitor.terminal.themes import print_themed
-
 
 logger: logging.Logger = logging.getLogger(__name__)
 

@@ -10,6 +10,7 @@ from abc import abstractmethod
 from typing import Final
 from typing import Protocol
 from typing import TypedDict
+from typing import overload
 
 from claude_monitor.utils.time_utils import percentage
 
@@ -157,8 +158,9 @@ class BaseProgressBar(ABC):
                 return style
         return thresholds[-1][1] if thresholds else ""
 
+
     @abstractmethod
-    def render(self, *args, **kwargs) -> str:
+    def render(self, *args: object, **kwargs: object) -> str:
         """Render the progress bar.
 
         This method must be implemented by subclasses.
@@ -166,6 +168,7 @@ class BaseProgressBar(ABC):
         Returns:
             Formatted progress bar string
         """
+        ...
 
 
 class TokenProgressBar(BaseProgressBar):
@@ -210,9 +213,11 @@ class TokenProgressBar(BaseProgressBar):
         bar: str = self._render_bar(
             filled,
             filled_style=filled_style,
-            empty_style=self.BORDER_STYLE
-            if percentage < self.HIGH_USAGE_THRESHOLD
-            else self.MEDIUM_USAGE_STYLE,
+            empty_style=(
+                self.BORDER_STYLE
+                if percentage < self.HIGH_USAGE_THRESHOLD
+                else self.MEDIUM_USAGE_STYLE
+            ),
         )
 
         if percentage >= self.HIGH_USAGE_THRESHOLD:
@@ -226,7 +231,10 @@ class TokenProgressBar(BaseProgressBar):
         return f"{icon} [{bar}] {percentage_str}"
 
     def render_with_style(
-        self, percentage: float, filled_style: str, empty_style: str = "table.border"
+        self,
+        percentage: float,
+        filled_style: str,
+        empty_style: str = "table.border",
     ) -> str:
         """Render token usage progress bar with custom styling.
 
@@ -369,7 +377,9 @@ class ModelUsageBar(BaseProgressBar):
         bar_display = "".join(bar_segments)
 
         if opus_tokens > 0 and sonnet_tokens > 0:
-            summary = f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
+            summary = (
+                f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
+            )
         elif sonnet_tokens > 0:
             summary = f"Sonnet {sonnet_percentage:.1f}%"
         elif opus_tokens > 0:

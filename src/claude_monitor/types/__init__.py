@@ -17,7 +17,6 @@ from .config import *
 from .display import *
 from .sessions import *
 
-
 __all__ = [
     # API types
     "SystemEntry",

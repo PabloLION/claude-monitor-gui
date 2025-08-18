@@ -6,12 +6,9 @@ for backward compatibility.
 
 import argparse
 import logging
-
 from datetime import datetime
 
-from claude_monitor.utils.time_utils import TimezoneHandler
-from claude_monitor.utils.time_utils import get_time_format_preference
-
+from claude_monitor.utils.time_utils import TimezoneHandler, get_time_format_preference
 
 logger: logging.Logger = logging.getLogger(__name__)
 

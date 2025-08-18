@@ -1,8 +1,6 @@
 """Claude API message types and related structures."""
 
-from typing import Literal
-from typing import NotRequired
-from typing import TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 class SystemEntry(TypedDict, total=False):

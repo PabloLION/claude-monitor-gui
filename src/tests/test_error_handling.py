@@ -1,12 +1,10 @@
 """Tests for error handling module."""
 
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.error_handling import ErrorLevel
-from claude_monitor.error_handling import report_error
+from claude_monitor.error_handling import ErrorLevel, report_error
 
 
 class TestErrorLevel:

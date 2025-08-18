@@ -1,15 +1,15 @@
 """Comprehensive tests for TimezoneHandler class."""
 
-from datetime import datetime
-from datetime import timezone
-from unittest.mock import Mock
-from unittest.mock import patch
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 
 import pytest
 import pytz
 
-from claude_monitor.utils.timezone import TimezoneHandler
-from claude_monitor.utils.timezone import detect_timezone_time_preference
+from claude_monitor.utils.timezone import (
+    TimezoneHandler,
+    detect_timezone_time_preference,
+)
 
 
 class TestTimezoneHandler:

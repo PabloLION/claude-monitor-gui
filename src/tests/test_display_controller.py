@@ -1,18 +1,17 @@
 """Tests for DisplayController class."""
 
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-from unittest.mock import Mock
-from unittest.mock import patch
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
 
 import pytest
 
 from claude_monitor.types import JSONSerializable
-from claude_monitor.ui.display_controller import DisplayController
-from claude_monitor.ui.display_controller import LiveDisplayManager
-from claude_monitor.ui.display_controller import ScreenBufferManager
-from claude_monitor.ui.display_controller import SessionCalculator
+from claude_monitor.ui.display_controller import (
+    DisplayController,
+    LiveDisplayManager,
+    ScreenBufferManager,
+    SessionCalculator,
+)
 
 
 class TestDisplayController:

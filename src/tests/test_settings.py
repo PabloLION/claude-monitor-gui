@@ -3,15 +3,12 @@
 import argparse
 import json
 import tempfile
-
 from pathlib import Path
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.core.settings import LastUsedParams
-from claude_monitor.core.settings import Settings
+from claude_monitor.core.settings import LastUsedParams, Settings
 
 
 class TestLastUsedParams:

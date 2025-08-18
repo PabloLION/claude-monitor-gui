@@ -6,7 +6,6 @@ This module provides a unified interface for error reporting and logging.
 import logging
 import os
 import sys
-
 from enum import Enum
 from pathlib import Path
 

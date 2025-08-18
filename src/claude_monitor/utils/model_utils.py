@@ -6,9 +6,7 @@ for backward compatibility.
 
 import logging
 import re
-
 from re import Match
-
 
 logger = logging.getLogger(__name__)
 

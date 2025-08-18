@@ -4,8 +4,7 @@ Contains dataclasses, enums, and business logic models.
 TypedDicts have been moved to the types/ package for better organization.
 """
 
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 

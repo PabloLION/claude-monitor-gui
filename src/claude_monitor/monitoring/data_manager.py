@@ -7,7 +7,6 @@ from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
 from claude_monitor.types import AnalysisResult
 
-
 logger = logging.getLogger(__name__)
 
 

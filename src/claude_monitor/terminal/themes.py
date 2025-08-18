@@ -5,22 +5,18 @@ import os
 import re
 import sys
 import threading
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-
-
-# Platform-specific imports
-from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
-from claude_monitor.utils.backports import select
-from claude_monitor.utils.backports import termios
-from claude_monitor.utils.backports import tty
 
 from rich.console import Console
 from rich.theme import Theme
 
 from claude_monitor.types import VelocityIndicator
+
+# Platform-specific imports
+from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
+from claude_monitor.utils.backports import select, termios, tty
 
 
 class BackgroundType(Enum):

@@ -2,23 +2,23 @@
 
 import locale
 import platform
-
 from datetime import datetime
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import pytz
 
-from claude_monitor.utils.time_utils import SystemTimeDetector
-from claude_monitor.utils.time_utils import TimeFormatDetector
-from claude_monitor.utils.time_utils import TimezoneHandler
-from claude_monitor.utils.time_utils import format_display_time
-from claude_monitor.utils.time_utils import format_time
-from claude_monitor.utils.time_utils import get_system_time_format
-from claude_monitor.utils.time_utils import get_system_timezone
-from claude_monitor.utils.time_utils import get_time_format_preference
-from claude_monitor.utils.time_utils import percentage
+from claude_monitor.utils.time_utils import (
+    SystemTimeDetector,
+    TimeFormatDetector,
+    TimezoneHandler,
+    format_display_time,
+    format_time,
+    get_system_time_format,
+    get_system_timezone,
+    get_time_format_preference,
+    percentage,
+)
 
 
 class TestTimeFormatDetector:

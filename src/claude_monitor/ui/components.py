@@ -3,15 +3,15 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from rich.console import Console
-from rich.console import RenderableType
+from rich.console import Console, RenderableType
 
-from claude_monitor.terminal.themes import get_cost_style
-from claude_monitor.terminal.themes import get_velocity_indicator
-from claude_monitor.types import BlockDict
-from claude_monitor.types import SessionCollectionDict
-from claude_monitor.types import SessionDataDict
-from claude_monitor.types import SessionPercentilesDict
+from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
+from claude_monitor.types import (
+    BlockDict,
+    SessionCollectionDict,
+    SessionDataDict,
+    SessionPercentilesDict,
+)
 from claude_monitor.ui.layouts import HeaderManager
 
 
@@ -253,8 +253,10 @@ class AdvancedCustomLimitDisplay:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
-        from claude_monitor.core.plans import COMMON_TOKEN_LIMITS
-        from claude_monitor.core.plans import LIMIT_DETECTION_THRESHOLD
+        from claude_monitor.core.plans import (
+            COMMON_TOKEN_LIMITS,
+            LIMIT_DETECTION_THRESHOLD,
+        )
 
         for limit in COMMON_TOKEN_LIMITS:
             if tokens >= limit * LIMIT_DETECTION_THRESHOLD:
