@@ -219,12 +219,10 @@ class AdvancedCustomLimitDisplay:
             cost_raw = block.get("costUSD", 0.0)
             messages_raw = block.get("sentMessagesCount", 0)
 
-            # Ensure proper types
-            tokens = int(tokens_raw) if isinstance(tokens_raw, (int, float)) else 0
-            cost = float(cost_raw) if isinstance(cost_raw, (int, float)) else 0.0
-            messages = (
-                int(messages_raw) if isinstance(messages_raw, (int, float)) else 0
-            )
+            # Convert to required types (BlockDict already guarantees compatible types)
+            tokens = int(tokens_raw)  # tokens_raw is int from BlockDict
+            cost = float(cost_raw)    # cost_raw is float from BlockDict  
+            messages = int(messages_raw)  # messages_raw is int from BlockDict
 
             session: SessionDataDict = {
                 "tokens": tokens,

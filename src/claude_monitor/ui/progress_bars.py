@@ -10,7 +10,7 @@ from typing import Final, Protocol, TypedDict
 
 from claude_monitor.utils.time_utils import percentage
 
-from ..types.sessions import ModelStats
+from claude_monitor.types.sessions import ModelStats
 
 
 # Type definitions for progress bar components
@@ -316,22 +316,13 @@ class ModelUsageBar(BaseProgressBar):
         other_tokens = 0
 
         for model_name, stats in per_model_stats.items():
-            if isinstance(stats, dict):
-                input_tokens_raw = stats.get("input_tokens", 0)
-                output_tokens_raw = stats.get("output_tokens", 0)
-                input_tokens = (
-                    int(input_tokens_raw)
-                    if isinstance(input_tokens_raw, (int, float))
-                    else 0
-                )
-                output_tokens = (
-                    int(output_tokens_raw)
-                    if isinstance(output_tokens_raw, (int, float))
-                    else 0
-                )
-                model_tokens = input_tokens + output_tokens
-            else:
-                model_tokens = 0
+            # stats is ModelStats TypedDict, so no need for isinstance check
+            input_tokens_raw = stats.get("input_tokens", 0)
+            output_tokens_raw = stats.get("output_tokens", 0)
+            # These are already int from ModelStats, no isinstance check needed
+            input_tokens = int(input_tokens_raw)
+            output_tokens = int(output_tokens_raw)
+            model_tokens = input_tokens + output_tokens
 
             if "sonnet" in model_name.lower():
                 sonnet_tokens += model_tokens

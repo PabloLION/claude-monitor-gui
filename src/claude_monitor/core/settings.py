@@ -293,6 +293,7 @@ class Settings(BaseSettings):
             last_used = LastUsedParams()
             last_used.clear()
             settings = cls(_cli_parse_args=argv)
+            cli_provided_fields: set[str] = set()
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()

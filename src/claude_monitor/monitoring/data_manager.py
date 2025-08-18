@@ -57,21 +57,17 @@ class DataManager:
                 logger.debug(
                     f"Fetching fresh usage data (attempt {attempt + 1}/{max_retries})"
                 )
-                data: AnalysisResult | None = analyze_usage(
+                data: AnalysisResult = analyze_usage(
                     hours_back=self.hours_back,
                     quick_start=False,
                     use_cache=False,
                     data_path=self.data_path,
                 )
 
-                if data is not None:
-                    self._set_cache(data)
-                    self._last_successful_fetch = time.time()
-                    self._last_error = None
-                    return data
-
-                logger.warning("No data returned from analyze_usage")
-                break
+                self._set_cache(data)
+                self._last_successful_fetch = time.time()
+                self._last_error = None
+                return data
 
             except (FileNotFoundError, PermissionError, OSError) as e:
                 logger.exception(f"Data access error (attempt {attempt + 1}): {e}")

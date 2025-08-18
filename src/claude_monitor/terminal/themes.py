@@ -425,13 +425,13 @@ class BackgroundDetector:
                             else BackgroundType.DARK
                         )
 
-            # Restore terminal settings
-            if old_settings is not None:
+            # Restore terminal settings  
+            if old_settings:  # old_settings is list[Any] if set, None if tcgetattr failed
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
         except (OSError, termios.error, AttributeError):
             # Restore terminal settings on any error
-            if old_settings is not None:
+            if old_settings:
                 try:
                     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 except (OSError, termios.error, AttributeError) as e:
