@@ -6,9 +6,7 @@ Provides token usage, time progress, and model usage progress bars.
 from __future__ import annotations
 
 from abc import ABC
-from typing import Final
-from typing import Protocol
-from typing import TypedDict
+from typing import Final, Protocol, TypedDict
 
 from claude_monitor.types.sessions import ModelUsageStats
 from claude_monitor.utils.time_utils import percentage

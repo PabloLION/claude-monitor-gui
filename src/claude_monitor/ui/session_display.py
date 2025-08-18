@@ -4,22 +4,24 @@ Handles formatting of active session screens and session data display.
 """
 
 import argparse
-
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 import pytz
 
-from claude_monitor.ui.components import CostIndicator
-from claude_monitor.ui.components import VelocityIndicator
+from claude_monitor.ui.components import CostIndicator, VelocityIndicator
 from claude_monitor.ui.layouts import HeaderManager
-from claude_monitor.ui.progress_bars import ModelUsageBar
-from claude_monitor.ui.progress_bars import TimeProgressBar
-from claude_monitor.ui.progress_bars import TokenProgressBar
-from claude_monitor.utils.time_utils import format_display_time
-from claude_monitor.utils.time_utils import get_time_format_preference
-from claude_monitor.utils.time_utils import percentage
+from claude_monitor.ui.progress_bars import (
+    ModelUsageBar,
+    TimeProgressBar,
+    TokenProgressBar,
+)
+from claude_monitor.utils.time_utils import (
+    format_display_time,
+    get_time_format_preference,
+    percentage,
+)
 
 from ..types.common import RawJSONEntry
 from ..types.sessions import ModelUsageStats

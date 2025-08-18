@@ -1,12 +1,9 @@
 """Unified session monitoring - combines tracking and validation."""
 
 import logging
-
 from collections.abc import Callable
 
-from claude_monitor.types import AnalysisResult
-from claude_monitor.types import SerializedBlock
-
+from claude_monitor.types import AnalysisResult, SerializedBlock
 
 logger = logging.getLogger(__name__)
 

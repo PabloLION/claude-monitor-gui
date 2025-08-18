@@ -5,22 +5,15 @@ by day and month, similar to ccusage's functionality.
 """
 
 import logging
-
 from collections import defaultdict
 from collections.abc import Callable
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.core.models import SessionBlock
-from claude_monitor.core.models import UsageEntry
-from claude_monitor.core.models import normalize_model_name
-from claude_monitor.types import CompleteAggregatedUsage
-from claude_monitor.types import UsageStatistics
-from claude_monitor.types import UsageTotals
+from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
+from claude_monitor.types import CompleteAggregatedUsage, UsageStatistics, UsageTotals
 from claude_monitor.utils.time_utils import TimezoneHandler
-
 
 logger = logging.getLogger(__name__)
 

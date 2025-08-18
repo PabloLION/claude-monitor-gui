@@ -1,9 +1,6 @@
 """Claude API message types and related structures."""
 
-from typing import Literal
-from typing import NotRequired
-from typing import Required
-from typing import TypedDict
+from typing import Literal, NotRequired, Required, TypedDict
 
 
 class BaseMessageContent(TypedDict, total=False):

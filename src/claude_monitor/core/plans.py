@@ -7,9 +7,7 @@ Shared constants (defaults, common limits, threshold) are exposed on the Plans c
 from dataclasses import dataclass
 from enum import Enum
 
-from claude_monitor.types import LegacyBlockData
-from claude_monitor.types import PlanConfiguration
-from claude_monitor.types import SerializedBlock
+from claude_monitor.types import LegacyBlockData, PlanConfiguration, SerializedBlock
 
 
 class PlanType(Enum):

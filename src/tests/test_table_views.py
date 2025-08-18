@@ -3,12 +3,10 @@
 from typing import cast
 
 import pytest
-
 from rich.panel import Panel
 from rich.table import Table
 
-from claude_monitor.types import CompleteAggregatedUsage
-from claude_monitor.types import UsageTotals
+from claude_monitor.types import CompleteAggregatedUsage, UsageTotals
 from claude_monitor.ui.table_views import TableViewsController
 
 

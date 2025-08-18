@@ -1,24 +1,17 @@
 """Tests for calculations module."""
 
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-from unittest.mock import Mock
-from unittest.mock import patch
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.core.calculations import BurnRateCalculator
 from claude_monitor.core.calculations import (
+    BurnRateCalculator,
     _calculate_total_tokens_in_hour,  # type: ignore[misc]
-)
-from claude_monitor.core.calculations import (
     _process_block_for_burn_rate,  # type: ignore[misc]
+    calculate_hourly_burn_rate,
 )
-from claude_monitor.core.calculations import calculate_hourly_burn_rate
-from claude_monitor.core.models import BurnRate
-from claude_monitor.core.models import TokenCounts
-from claude_monitor.core.models import UsageProjection
+from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
 from claude_monitor.types import LegacyBlockData
 
 
@@ -469,8 +462,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_with_hits(self) -> None:
         """Test _calculate_p90_from_blocks when limit hits are found."""
-        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
+            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -496,8 +489,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_no_hits(self) -> None:
         """Test _calculate_p90_from_blocks when no limit hits are found."""
-        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
+            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -527,8 +520,8 @@ class TestP90Calculator:
 
     def test_calculate_p90_from_blocks_empty(self) -> None:
         """Test _calculate_p90_from_blocks with empty or invalid blocks."""
-        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
+            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -563,8 +556,7 @@ class TestP90Calculator:
 
     def test_p90_calculator_custom_config(self) -> None:
         """Test P90Calculator with custom configuration."""
-        from claude_monitor.core.p90_calculator import P90Calculator
-        from claude_monitor.core.p90_calculator import P90Config
+        from claude_monitor.core.p90_calculator import P90Calculator, P90Config
 
         custom_config = P90Config(
             common_limits=[5000, 25000],
@@ -627,8 +619,8 @@ class TestP90Calculator:
 
     def test_p90_calculation_edge_cases(self) -> None:
         """Test P90 calculation with edge cases."""
-        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
+            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 
@@ -655,8 +647,8 @@ class TestP90Calculator:
 
     def test_p90_quantiles_calculation(self) -> None:
         """Test that P90 uses proper quantiles calculation."""
-        from claude_monitor.core.p90_calculator import P90Config
         from claude_monitor.core.p90_calculator import (
+            P90Config,
             _calculate_p90_from_blocks,  # type: ignore[misc]
         )
 

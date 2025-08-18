@@ -1,11 +1,7 @@
 """Session and block data types for Claude Monitor."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
-from typing import NotRequired
-from typing import Required
-from typing import TypedDict
-
+from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
 
 if TYPE_CHECKING:
     from .api import ClaudeMessageEntry

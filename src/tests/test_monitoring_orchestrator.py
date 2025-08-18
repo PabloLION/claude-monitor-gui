@@ -2,16 +2,13 @@
 
 import threading
 import time
-
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
-from claude_monitor.types import JSONSerializable
-from claude_monitor.types import MonitoringState
+from claude_monitor.types import JSONSerializable, MonitoringState
 
 
 @pytest.fixture

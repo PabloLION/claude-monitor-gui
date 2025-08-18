@@ -12,14 +12,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.types import CompleteAggregatedUsage
-from claude_monitor.types import JSONSerializable
-from claude_monitor.types import UsageTotals
+from claude_monitor.types import CompleteAggregatedUsage, JSONSerializable, UsageTotals
 
 # Removed theme import - using direct styles
-from claude_monitor.utils.formatting import format_currency
-from claude_monitor.utils.formatting import format_number
-
+from claude_monitor.utils.formatting import format_currency, format_number
 
 logger = logging.getLogger(__name__)
 
