@@ -271,7 +271,9 @@ class DataConverter:
 
     @staticmethod
     def extract_model_name(
-        data: ClaudeJSONEntry, default: str = "claude-3-5-sonnet"
+        # #TODO: default might be outdated; use constant var.
+        data: ClaudeJSONEntry,
+        default: str = "claude-3-5-sonnet",
     ) -> str:
         """Extract model name from various data sources.
 
