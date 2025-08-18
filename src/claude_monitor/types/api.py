@@ -6,33 +6,34 @@ from typing import Required
 from typing import TypedDict
 
 
-class SystemMessageContent(TypedDict, total=False):
-    """Structure for system message content."""
+class MessageContentBase(TypedDict, total=False):
+    """Base structure for all message content types."""
 
     id: NotRequired[str]
-    content: NotRequired[str]
     role: NotRequired[str]
+
+
+class SystemMessageContent(MessageContentBase, total=False):
+    """Structure for system message content."""
+
+    content: NotRequired[str]
     text: NotRequired[str]
 
 
-class UserMessageContent(TypedDict, total=False):
+class UserMessageContent(MessageContentBase, total=False):
     """Structure for user message content."""
 
-    id: NotRequired[str]
     content: NotRequired[str | list[dict[str, str]]]
-    role: NotRequired[str]
     text: NotRequired[str]
     attachments: NotRequired[list[dict[str, str]]]
 
 
-class AssistantMessageContent(TypedDict, total=False):
+class AssistantMessageContent(MessageContentBase, total=False):
     """Structure for assistant message content."""
 
-    id: NotRequired[str]
     model: NotRequired[str]
     usage: NotRequired["TokenUsage"]
     content: NotRequired[str | list[dict[str, str]]]
-    role: NotRequired[str]
 
 
 class ClaudeEntryBase(TypedDict, total=False):
