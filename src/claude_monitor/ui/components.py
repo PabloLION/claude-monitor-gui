@@ -99,7 +99,7 @@ class ErrorDisplayComponent:
         Returns:
             List of formatted error screen lines
         """
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))
@@ -136,7 +136,7 @@ class LoadingScreenComponent:
         Returns:
             List of loading screen lines
         """
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))

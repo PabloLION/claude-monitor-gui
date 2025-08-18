@@ -175,7 +175,7 @@ class SessionDisplayComponent:
             List of formatted screen lines
         """
 
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))
@@ -391,7 +391,7 @@ class SessionDisplayComponent:
             List of formatted screen lines
         """
 
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))

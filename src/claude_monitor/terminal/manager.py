@@ -13,12 +13,8 @@ from claude_monitor.terminal.themes import print_themed
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-try:
-    import termios
-
-    HAS_TERMIOS = True
-except ImportError:
-    HAS_TERMIOS = False
+from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
+from claude_monitor.utils.backports import termios
 
 
 def setup_terminal() -> list[Any] | None:

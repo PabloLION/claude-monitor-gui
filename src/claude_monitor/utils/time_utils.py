@@ -16,13 +16,12 @@ import pytz
 from pytz import BaseTzInfo
 
 
+from claude_monitor.utils.backports import HAS_BABEL
+
+# Keep the existing fallback implementation
 try:
-    from babel.dates import get_timezone_location
-
-    HAS_BABEL = True
+    from babel.dates import get_timezone_location  # type: ignore[import-not-found]
 except ImportError:
-    HAS_BABEL = False
-
     def get_timezone_location(
         timezone_name: str, locale_name: str = "en_US"
     ) -> str | None:
@@ -262,14 +261,15 @@ class TimeFormatDetector:
 
         elif system == "Windows":
             try:
-                import winreg
+                from claude_monitor.utils.backports import winreg
 
-                with winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER, r"Control Panel\International"
-                ) as key:
-                    time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]
-                    if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
-                        return "12h"
+                if winreg is not None:
+                    with winreg.OpenKey(
+                        winreg.HKEY_CURRENT_USER, r"Control Panel\International"
+                    ) as key:
+                        time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]
+                        if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
+                            return "12h"
             except Exception:
                 pass
 

@@ -34,16 +34,11 @@ def _get_version_from_pyproject() -> str:
     Returns:
         Version string or "unknown" if cannot be determined
     """
-    try:
-        # Python 3.11+
-        import tomllib
-    except ImportError:
-        try:
-            # Python < 3.11 fallback
-            import tomli as tomllib
-        except ImportError:
-            # No TOML library available
-            return "unknown"
+    from claude_monitor.utils.backports import tomllib
+
+    if tomllib is None:
+        # No TOML library available
+        return "unknown"
 
     try:
         # Find pyproject.toml - go up from this file's directory

@@ -11,15 +11,11 @@ from enum import Enum
 from typing import Any
 
 
-# Windows-compatible imports with graceful fallbacks
-try:
-    import select
-    import termios
-    import tty
-
-    HAS_TERMIOS = True
-except ImportError:
-    HAS_TERMIOS = False
+# Platform-specific imports
+from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
+from claude_monitor.utils.backports import select
+from claude_monitor.utils.backports import termios
+from claude_monitor.utils.backports import tty
 
 from rich.console import Console
 from rich.theme import Theme

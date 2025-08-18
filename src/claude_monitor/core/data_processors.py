@@ -127,7 +127,7 @@ class TokenExtractor:
                 pass
 
         # Build token sources - these are dicts that might contain token info
-        token_sources: list[dict[str, JSONSerializable]] = []
+        token_sources = list[dict[str, JSONSerializable]]()
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
@@ -137,13 +137,13 @@ class TokenExtractor:
             if message := data.get("message"):
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
-                        # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                        token_sources.append(usage)
+                        # TODO: Replace with proper TypedDict when removing JSONSerializable
+                        token_sources.append(cast(dict[str, JSONSerializable], usage))
 
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
-                    # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                    token_sources.append(usage)
+                    # TODO: Replace with proper TypedDict when removing JSONSerializable
+                    token_sources.append(cast(dict[str, JSONSerializable], usage))
 
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(dict[str, JSONSerializable], data))
@@ -151,14 +151,14 @@ class TokenExtractor:
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
-                    # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                    token_sources.append(usage)
+                    # TODO: Replace with proper TypedDict when removing JSONSerializable
+                    token_sources.append(cast(dict[str, JSONSerializable], usage))
 
             if message := data.get("message"):
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
-                        # Cast to ensure type compatibility - dict values are compatible with JSONSerializable
-                        token_sources.append(usage)
+                        # TODO: Replace with proper TypedDict when removing JSONSerializable
+                        token_sources.append(cast(dict[str, JSONSerializable], usage))
 
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(dict[str, JSONSerializable], data))
