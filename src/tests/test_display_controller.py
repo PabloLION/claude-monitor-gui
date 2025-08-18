@@ -1,18 +1,17 @@
 """Tests for DisplayController class."""
 
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-from unittest.mock import Mock
-from unittest.mock import patch
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
 
 import pytest
 
 from claude_monitor.types import SerializedBlock
-from claude_monitor.ui.display_controller import DisplayController
-from claude_monitor.ui.display_controller import LiveDisplayManager
-from claude_monitor.ui.display_controller import ScreenBufferManager
-from claude_monitor.ui.display_controller import SessionCalculator
+from claude_monitor.ui.display_controller import (
+    DisplayController,
+    LiveDisplayManager,
+    ScreenBufferManager,
+    SessionCalculator,
+)
 
 
 class TestDisplayController:
@@ -209,7 +208,7 @@ class TestDisplayController:
 
             # Testing cost prediction with valid plan - private method access for business logic
             result = controller._calculate_cost_predictions(  # type: ignore[attr-defined]
-                session_data, time_data, sample_args, cost_limit_p90
+                session_data, time_data, sample_args, cost_limit_p90  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_limit"] == 5.0
@@ -233,7 +232,7 @@ class TestDisplayController:
 
             # Testing cost prediction with invalid plan - private method access for edge cases
             controller._calculate_cost_predictions(  # type: ignore[attr-defined]
-                session_data, time_data, sample_args, None
+                session_data, time_data, sample_args, None  # type: ignore[arg-type]  # Mock test data
             )
 
             mock_calc.assert_called_once_with(session_data, time_data, 100.0)
@@ -400,17 +399,18 @@ class TestDisplayController:
         self, mock_normalize: Mock, controller: DisplayController
     ) -> None:
         """Test model distribution calculation with valid stats."""
-        mock_normalize.side_effect = lambda x: {
+        mock_normalize.side_effect = lambda x: {  # type: ignore[misc]
             "claude-3-opus": "claude-3-opus",
             "claude-3-5-sonnet": "claude-3.5-sonnet",
-        }.get(x, "unknown")
+        }.get(x, "unknown")  # type: ignore[misc]  # Mock lambda parameter
 
         raw_stats = {
             "claude-3-opus": {"input_tokens": 5000, "output_tokens": 3000},
             "claude-3-5-sonnet": {"input_tokens": 4000, "output_tokens": 3000},
         }
 
-        result = controller._calculate_model_distribution(raw_stats)
+        # Testing model distribution calculations - private method access for statistical logic
+        result = controller._calculate_model_distribution(raw_stats)  # type: ignore[attr-defined,arg-type]
 
         # Total tokens: opus=8000, sonnet=7000, total=15000
         expected_opus_pct = (8000 / 15000) * 100  # ~53.33%
@@ -423,7 +423,8 @@ class TestDisplayController:
         self, controller: DisplayController, sample_args: Mock
     ) -> None:
         """Test create_data_display with no data."""
-        result = controller.create_data_display({}, sample_args, 200000)
+        # Test with empty data - using dict literal for edge case testing
+        result = controller.create_data_display({}, sample_args, 200000)  # type: ignore[arg-type]  # Mock test data
 
         assert result is not None
         # Should return error screen renderable
@@ -434,7 +435,8 @@ class TestDisplayController:
         """Test create_data_display with no active blocks."""
         data = {"blocks": [{"isActive": False, "totalTokens": 1000}]}
 
-        result = controller.create_data_display(data, sample_args, 200000)
+        # Test with mock block data - using dict literal for testing edge cases
+        result = controller.create_data_display(data, sample_args, 200000)  # type: ignore[arg-type]  # Mock test data
 
         assert result is not None
         # Should return no active session screen
@@ -492,8 +494,9 @@ class TestDisplayController:
             ) as mock_format:
                 mock_format.return_value = ["Sample screen buffer"]
 
+                # Test with mock data containing SerializedBlock - using dict for edge case testing
                 result = controller.create_data_display(
-                    data, sample_args, 200000
+                    data, sample_args, 200000  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result is not None
@@ -659,8 +662,8 @@ class TestDisplayControllerEdgeCases:
         return args
 
     def test_process_active_session_data_exception_handling(
-        self, controller, sample_args
-    ):
+        self, controller: DisplayController, sample_args: Mock
+    ) -> None:
         """Test exception handling in _process_active_session_data."""
         sample_active_block = {
             "isActive": True,
@@ -674,14 +677,15 @@ class TestDisplayControllerEdgeCases:
         with patch.object(controller, "_extract_session_data") as mock_extract:
             mock_extract.side_effect = Exception("Test error")
 
-            result = controller.create_data_display(data, sample_args, 200000)
+            # Test error handling with mock block data - using dict for exception testing
+            result = controller.create_data_display(data, sample_args, 200000)  # type: ignore[arg-type]  # Mock test data
 
             # Should return error screen renderable instead of crashing
             assert result is not None
 
     def test_format_display_times_invalid_timezone(
-        self, controller, sample_args
-    ):
+        self, controller: DisplayController, sample_args: Mock
+    ) -> None:
         """Test format_display_times with invalid timezone."""
         sample_args.timezone = "Invalid/Timezone"
 
@@ -689,8 +693,8 @@ class TestDisplayControllerEdgeCases:
         predicted_end = current_time + timedelta(hours=2)
         reset_time = current_time + timedelta(hours=12)
 
-        # Should handle invalid timezone gracefully
-        result = controller._format_display_times(
+        # Testing timezone handling - private method access for edge case testing
+        result = controller._format_display_times(  # type: ignore[attr-defined]
             sample_args, current_time, predicted_end, reset_time
         )
 
@@ -707,8 +711,8 @@ class TestDisplayControllerEdgeCases:
             "another-model": {"inputTokens": "not-a-number"},
         }
 
-        # Should handle invalid data gracefully
-        result = controller._calculate_model_distribution(invalid_stats)
+        # Testing invalid model data handling - private method access for error case testing
+        result = controller._calculate_model_distribution(invalid_stats)  # type: ignore[attr-defined,arg-type]
 
         # Should return empty or handle gracefully
         assert isinstance(result, dict)
@@ -798,8 +802,9 @@ class TestDisplayControllerAdvanced:
                 mock_format.return_value = ["screen", "buffer"]
                 mock_create.return_value = "rendered_screen"
 
+                # Test advanced display mode with complex mock data - using dict for testing
                 result = controller.create_data_display(
-                    data, sample_args_custom, 200000
+                    data, sample_args_custom, 200000  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result == "rendered_screen"
@@ -838,7 +843,8 @@ class TestDisplayControllerAdvanced:
                 mock_error.return_value = ["error", "screen"]
                 mock_create.return_value = "error_rendered"
 
-                result = controller.create_data_display(data, args, 200000)
+                # Test error handling with mock data - using dict for exception testing
+                result = controller.create_data_display(data, args, 200000)  # type: ignore[arg-type]  # Mock test data
 
                 assert result == "error_rendered"
                 mock_error.assert_called_once_with("pro", "UTC")
@@ -893,7 +899,8 @@ class TestDisplayControllerAdvanced:
                     mock_error.return_value = ["error", "screen"]
                     mock_create.return_value = "error_rendered"
 
-                    result = controller.create_data_display(data, args, 200000)
+                    # Test exception handling with complex mock data - using dict for edge cases
+                    result = controller.create_data_display(data, args, 200000)  # type: ignore[arg-type]  # Mock test data
 
                     assert result == "error_rendered"
                     mock_error.assert_called_once_with("pro", "UTC")
@@ -968,9 +975,10 @@ class TestDisplayControllerAdvanced:
                                 "current_time_str": "12:30",
                             }
 
-                            result = controller._process_active_session_data(
-                                active_block,
-                                data,
+                            # Testing active session data processing - private method access for pipeline testing
+                            result = controller._process_active_session_data(  # type: ignore[attr-defined]
+                                active_block,  # type: ignore[arg-type]  # Mock test data
+                                data,  # type: ignore[arg-type]  # Mock test data
                                 args,
                                 200000,
                                 current_time,
@@ -1019,8 +1027,9 @@ class TestSessionCalculator:
                 mock_parse.side_effect = [start_time, end_time]
                 mock_ensure.side_effect = [start_time, end_time]
 
+                # Test with mock session data - using dict for testing time calculations
                 result = calculator.calculate_time_data(
-                    session_data, current_time
+                    session_data, current_time  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result["start_time"] == start_time
@@ -1046,8 +1055,9 @@ class TestSessionCalculator:
                 mock_parse.return_value = start_time
                 mock_ensure.return_value = start_time
 
+                # Test with mock session data - using dict for testing time calculations with no end time
                 result = calculator.calculate_time_data(
-                    session_data, current_time
+                    session_data, current_time  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result["start_time"] == start_time
@@ -1062,7 +1072,8 @@ class TestSessionCalculator:
         session_data = dict[str, str | None]()
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
-        result = calculator.calculate_time_data(session_data, current_time)
+        # Test with empty mock session data - using dict for edge case testing
+        result = calculator.calculate_time_data(session_data, current_time)  # type: ignore[arg-type]  # Mock test data
 
         assert result["start_time"] is None
         # Reset time should be current_time + 5 hours
@@ -1084,12 +1095,13 @@ class TestSessionCalculator:
         ) as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(
-                *args, **kw
+            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
+                *args, **kw  # type: ignore[misc]  # Mock datetime args
             )
 
+            # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, cost_limit
+                session_data, time_data, cost_limit  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_per_minute"] == 2.5 / 60  # Approximately 0.0417
@@ -1112,12 +1124,13 @@ class TestSessionCalculator:
         ) as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(
-                *args, **kw
+            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
+                *args, **kw  # type: ignore[misc]  # Mock datetime args
             )
 
+            # Test cost predictions without cost limit - using dict for edge case testing
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, None
+                session_data, time_data, None  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_limit"] == 100.0  # Default
@@ -1140,12 +1153,13 @@ class TestSessionCalculator:
         ) as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(
-                *args, **kw
+            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
+                *args, **kw  # type: ignore[misc]  # Mock datetime args
             )
 
+            # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, cost_limit
+                session_data, time_data, cost_limit  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_per_minute"] == 0.0
@@ -1154,7 +1168,7 @@ class TestSessionCalculator:
 
 # Test the legacy function
 @patch("claude_monitor.ui.display_controller.ScreenBufferManager")
-def test_create_screen_renderable_legacy(mock_manager_class):
+def test_create_screen_renderable_legacy(mock_manager_class: Mock) -> None:
     """Test the legacy create_screen_renderable function."""
     mock_manager = Mock()
     mock_manager_class.return_value = mock_manager
