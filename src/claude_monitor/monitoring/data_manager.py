@@ -46,6 +46,8 @@ class DataManager:
             Usage data dictionary or None if fetch fails
         """
         if not force_refresh and self._is_cache_valid():
+            # _is_cache_valid() ensures _cache_timestamp is not None
+            assert self._cache_timestamp is not None
             cache_age: float = time.time() - self._cache_timestamp
             logger.debug(f"Using cached data (age: {cache_age:.1f}s)")
             return self._cache

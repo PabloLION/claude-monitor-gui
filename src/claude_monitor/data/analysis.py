@@ -7,6 +7,7 @@ import logging
 
 from datetime import datetime
 from datetime import timezone
+from typing import cast
 
 from claude_monitor.core.calculations import BurnRateCalculator
 from claude_monitor.core.models import CostMode
@@ -18,6 +19,11 @@ from claude_monitor.types import AnalysisMetadata
 from claude_monitor.types import AnalysisResult
 from claude_monitor.types import BlockDict
 from claude_monitor.types import BlockEntry
+from claude_monitor.types import TokenCountsDict
+from claude_monitor.types import ModelStats
+from claude_monitor.types import PartialBlockDict
+from claude_monitor.types import BurnRateDict
+from claude_monitor.types import ProjectionDict
 from claude_monitor.types import FormattedLimitInfo
 from claude_monitor.types import LimitDetectionInfo
 
@@ -184,14 +190,16 @@ def _convert_blocks_to_dict_format(
     for block in blocks:
         block_dict = _create_base_block_dict(block)
         _add_optional_block_data(block, block_dict)
-        blocks_data.append(block_dict)
+        # After adding optional data, cast to complete BlockDict
+        complete_block = cast(BlockDict, block_dict)
+        blocks_data.append(complete_block)
 
     return blocks_data
 
 
-def _create_base_block_dict(block: SessionBlock) -> BlockDict:
+def _create_base_block_dict(block: SessionBlock) -> PartialBlockDict:
     """Create base block dictionary with required fields."""
-    return {
+    return PartialBlockDict({
         "id": block.id,
         "isActive": block.is_active,
         "isGap": block.is_gap,
@@ -200,22 +208,22 @@ def _create_base_block_dict(block: SessionBlock) -> BlockDict:
         "actualEndTime": (
             block.actual_end_time.isoformat() if block.actual_end_time else None
         ),
-        "tokenCounts": {
+        "tokenCounts": TokenCountsDict({
             "inputTokens": block.token_counts.input_tokens,
             "outputTokens": block.token_counts.output_tokens,
             "cacheCreationInputTokens": block.token_counts.cache_creation_tokens,
             "cacheReadInputTokens": block.token_counts.cache_read_tokens,
-        },
+        }),
         "totalTokens": block.token_counts.input_tokens
         + block.token_counts.output_tokens,
         "costUSD": block.cost_usd,
         "models": block.models,
-        "perModelStats": block.per_model_stats,
+        "perModelStats": cast(dict[str, ModelStats], block.per_model_stats),
         "sentMessagesCount": block.sent_messages_count,
         "durationMinutes": block.duration_minutes,
         "entries": _format_block_entries(block.entries),
         "entries_count": len(block.entries),
-    }
+    })
 
 
 def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
@@ -236,16 +244,16 @@ def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
     ]
 
 
-def _add_optional_block_data(block: SessionBlock, block_dict: BlockDict) -> None:
+def _add_optional_block_data(block: SessionBlock, block_dict: PartialBlockDict) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
-        block_dict["burnRate"] = {
+        block_dict["burnRate"] = BurnRateDict({
             "tokensPerMinute": block.burn_rate_snapshot.tokens_per_minute,
             "costPerHour": block.burn_rate_snapshot.cost_per_hour,
-        }
+        })
 
     if hasattr(block, "projection_data") and block.projection_data:
-        block_dict["projection"] = block.projection_data
+        block_dict["projection"] = cast(ProjectionDict, block.projection_data)
 
     if hasattr(block, "limit_messages") and block.limit_messages:
         block_dict["limitMessages"] = block.limit_messages

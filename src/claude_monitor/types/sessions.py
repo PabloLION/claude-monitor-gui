@@ -103,30 +103,31 @@ class BlockDict(TypedDict):
     limitMessages: NotRequired[list[FormattedLimitInfo]]
 
 
-class BlockData(TypedDict, total=False):
-    """Block data from Claude session analysis."""
+class PartialBlockDict(TypedDict, total=False):
+    """Partial block data - same fields as BlockDict but all optional."""
 
-    # Required fields
     id: str
     isActive: bool
     isGap: bool
-    totalTokens: int
     startTime: str
     endTime: str
+    actualEndTime: str | None
+    tokenCounts: TokenCountsDict
+    totalTokens: int
     costUSD: float
-
-    # Optional fields
-    actualEndTime: str
-    tokenCounts: dict[str, int]
     models: list[str]
-    perModelStats: dict[str, dict[str, int | float]]
+    perModelStats: dict[str, ModelStats]
     sentMessagesCount: int
     durationMinutes: float
-    entries: list[dict[str, str | int | float]]
+    entries: list[BlockEntry]
     entries_count: int
-    burnRate: dict[str, float]
-    projection: dict[str, int | float]
-    limitMessages: list[dict[str, str]]
+    burnRate: BurnRateDict
+    projection: ProjectionDict
+    limitMessages: list[FormattedLimitInfo]
+
+
+# BlockData now uses the partial format - will be renamed in future commit
+BlockData = PartialBlockDict
 
 
 class SessionData(TypedDict):

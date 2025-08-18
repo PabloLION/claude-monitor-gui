@@ -8,7 +8,6 @@ import sys
 
 
 # TOML library backport
-tomllib = None
 try:
     # Python 3.11+
     import tomllib
@@ -17,7 +16,7 @@ except ImportError:
         # Python < 3.11 fallback
         import tomli as tomllib  # type: ignore[import-not-found]
     except ImportError:
-        pass  # tomllib remains None
+        tomllib = None  # type: ignore[assignment]
 
 
 # Babel library backport
