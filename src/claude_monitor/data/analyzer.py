@@ -244,7 +244,7 @@ class SessionAnalyzer:
             return None
 
         timestamp_str = entry.get("timestamp")
-        if not isinstance(timestamp_str, str):
+        if not timestamp_str:
             return None
 
         try:
@@ -254,35 +254,41 @@ class SessionAnalyzer:
             # Check for Opus-specific limit
             if self._is_opus_limit(content_lower) and timestamp is not None:
                 reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
-                return {
+                opus_limit: LimitDetectionInfo = {
                     "type": "opus_limit",
                     "timestamp": timestamp,
                     "content": content,
-                    "reset_time": reset_time,
-                    "wait_minutes": wait_minutes,
-                    "raw_data": entry,
-                    "block_context": block_context,
                 }
+                opus_limit["raw_data"] = entry
+                opus_limit["block_context"] = block_context
+                if reset_time is not None:
+                    opus_limit["reset_time"] = reset_time
+                if wait_minutes is not None:
+                    opus_limit["wait_minutes"] = float(wait_minutes)
+                return opus_limit
 
-            # General system limit
-            result = {
-                "type": "system_limit",
-                "timestamp": timestamp,
-                "content": content,
-                "raw_data": entry,
-                "block_context": block_context,
-            }
-            return result  # type: ignore[return-value]
+            # General system limit (only if timestamp is valid)
+            if timestamp is not None:
+                system_limit: LimitDetectionInfo = {
+                    "type": "system_limit",
+                    "timestamp": timestamp,
+                    "content": content,
+                }
+                system_limit["raw_data"] = entry
+                system_limit["block_context"] = block_context
+                return system_limit
 
         except (ValueError, TypeError):
             return None
+        
+        return None
 
     def _process_user_message(
         self, entry: ClaudeJSONEntry
     ) -> LimitDetectionInfo | None:
         """Process user messages for tool result limit detection."""
         message = entry.get("message", {})
-        if not isinstance(message, dict):
+        if not message:
             return None
         content_list = message.get("content", [])
 
@@ -290,10 +296,12 @@ class SessionAnalyzer:
             return None
 
         for item in content_list:
-            if isinstance(item, dict) and item.get("type") == "tool_result":
+            if item.get("type") == "tool_result":
                 # Cast to RawJSONData since we verified it's a dict with the expected structure
                 from typing import cast
-                limit_info = self._process_tool_result(cast(RawJSONData, item), entry, message)
+                # Cast the message to the expected type
+                msg_cast = cast(dict[str, str | int | list[dict[str, str]]], message)
+                limit_info = self._process_tool_result(cast(RawJSONData, item), entry, msg_cast)
                 if limit_info:
                     return limit_info
 
@@ -303,7 +311,7 @@ class SessionAnalyzer:
         self,
         item: RawJSONData,
         entry: ClaudeJSONEntry,
-        message: dict[str, str | int],
+        message: dict[str, str | int | list[dict[str, str]]],
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -314,36 +322,42 @@ class SessionAnalyzer:
             if not isinstance(tool_item, dict):
                 continue
 
-            text = tool_item.get("text", "")
-            if not isinstance(text, str) or "limit reached" not in text.lower():
+            # We already checked tool_item is dict, so cast it for proper typing
+            from typing import cast
+            tool_dict = cast(dict[str, str], tool_item)
+            text_str = str(tool_dict.get("text", ""))
+            if not text_str or "limit reached" not in text_str.lower():
                 continue
 
             timestamp_str = entry.get("timestamp")
-            if not isinstance(timestamp_str, str):
+            if not timestamp_str:
                 continue
 
             try:
                 timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
-                result = {
+                if timestamp is None:
+                    continue
+                    
+                general_limit: LimitDetectionInfo = {
                     "type": "general_limit",
                     "timestamp": timestamp,
-                    "content": text,
-                    "raw_data": entry,
-                    "block_context": self._extract_block_context(entry, message),
+                    "content": text_str,
                 }
+                general_limit["raw_data"] = entry
+                general_limit["block_context"] = self._extract_block_context(entry, message)
 
-                reset_time = self._parse_reset_timestamp(text)
+                reset_time = self._parse_reset_timestamp(text_str)
                 if reset_time is not None:
-                    result["reset_time"] = reset_time
+                    general_limit["reset_time"] = reset_time
 
-                return result  # type: ignore[return-value]
+                return general_limit
             except (ValueError, TypeError):
                 continue
 
         return None
 
     def _extract_block_context(
-        self, entry: ClaudeJSONEntry, message: dict[str, str | int] | None = None
+        self, entry: ClaudeJSONEntry, message: dict[str, str | int | list[dict[str, str]]] | None = None
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}

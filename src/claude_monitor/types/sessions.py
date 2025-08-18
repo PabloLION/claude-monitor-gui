@@ -1,7 +1,7 @@
 """Session and block data types for Claude Monitor."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, NotRequired, TypedDict
+from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
 
 if TYPE_CHECKING:
     from .api import ClaudeJSONEntry
@@ -30,12 +30,12 @@ class FormattedLimitInfo(TypedDict):
     reset_time: str | None
 
 
-class LimitDetectionInfo(TypedDict):
+class LimitDetectionInfo(TypedDict, total=False):
     """Raw limit detection info from analyzer."""
 
-    type: str
-    timestamp: datetime
-    content: str
+    type: Required[str]
+    timestamp: Required[datetime]
+    content: Required[str]
     reset_time: NotRequired[datetime]
     wait_minutes: NotRequired[float]
     raw_data: NotRequired["ClaudeJSONEntry"]
