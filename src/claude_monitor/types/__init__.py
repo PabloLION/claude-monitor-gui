@@ -71,5 +71,7 @@ __all__ = [
     "RawJSONData",
     "FlattenedData",
     "ValidationState",
+    "TokenSource",
+    "ModelStatsRaw",
     "MonitoringCallbackData",
 ]

@@ -8,7 +8,7 @@ import pytest
 
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import JSONSerializable, MonitoringData
 
 
 @pytest.fixture
@@ -549,9 +549,9 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.data_manager.get_data.return_value = test_data
 
         # Setup callback to capture monitoring data
-        captured_data: list[dict[str, JSONSerializable]] = []
+        captured_data: list[MonitoringData] = []
 
-        def capture_callback(data: dict[str, JSONSerializable]) -> None:
+        def capture_callback(data: MonitoringData) -> None:
             captured_data.append(data)
 
         orchestrator.register_update_callback(capture_callback)
@@ -626,7 +626,7 @@ class TestMonitoringOrchestratorIntegration:
         # Mock session monitor to return different session IDs
         session_call_count = 0
 
-        def mock_update(data: dict[str, JSONSerializable]) -> tuple[bool, list[str]]:
+        def mock_update(data: MonitoringData) -> tuple[bool, list[str]]:
             nonlocal session_call_count
             session_call_count += 1
             orchestrator.session_monitor.current_session_id = (
@@ -638,7 +638,7 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.session_monitor.update.side_effect = mock_update
 
         # Capture callback data
-        captured_data: list[dict[str, JSONSerializable]] = []
+        captured_data: list[MonitoringData] = []
         orchestrator.register_update_callback(lambda data: captured_data.append(data))
 
         with patch(

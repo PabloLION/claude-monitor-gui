@@ -12,6 +12,7 @@ from claude_monitor.types import (
     ExtractedTokens,
     FlattenedData,
     JSONSerializable,
+    TokenSource,
 )
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -130,7 +131,7 @@ class TokenExtractor:
                 pass
 
         # Build token sources - these are dicts that might contain token info
-        token_sources = list[dict[str, JSONSerializable]]()
+        token_sources = list[TokenSource]()
 
         # Build token sources in priority order
         is_assistant: bool = data.get("type") == "assistant"
@@ -141,30 +142,30 @@ class TokenExtractor:
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
                         # TODO: Replace with proper TypedDict when removing JSONSerializable
-                        token_sources.append(cast(dict[str, JSONSerializable], usage))
+                        token_sources.append(cast(TokenSource, usage))
 
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
-                    token_sources.append(cast(dict[str, JSONSerializable], usage))
+                    token_sources.append(cast(TokenSource, usage))
 
             # Top-level fields as fallback (cast for type compatibility)
-            token_sources.append(cast(dict[str, JSONSerializable], data))
+            token_sources.append(cast(TokenSource, data))
         else:
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
-                    token_sources.append(cast(dict[str, JSONSerializable], usage))
+                    token_sources.append(cast(TokenSource, usage))
 
             if message := data.get("message"):
                 if isinstance(message, dict) and (usage := message.get("usage")):
                     if isinstance(usage, dict):
                         # TODO: Replace with proper TypedDict when removing JSONSerializable
-                        token_sources.append(cast(dict[str, JSONSerializable], usage))
+                        token_sources.append(cast(TokenSource, usage))
 
             # Top-level fields as fallback (cast for type compatibility)
-            token_sources.append(cast(dict[str, JSONSerializable], data))
+            token_sources.append(cast(TokenSource, data))
 
         logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
 

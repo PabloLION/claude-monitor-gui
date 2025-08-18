@@ -111,6 +111,40 @@ class ValidationState(TypedDict, total=False):
     notification_count: NotRequired[int]
 
 
+class TokenSource(TypedDict, total=False):
+    """Type-safe structure for token source data from usage fields."""
+
+    # Common token field variations found in Claude API responses
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+    cache_creation_input_tokens: NotRequired[int]
+    cache_read_input_tokens: NotRequired[int]
+
+    # Alternative field names
+    inputTokens: NotRequired[int]
+    outputTokens: NotRequired[int]
+    cacheCreationInputTokens: NotRequired[int]
+    cacheReadInputTokens: NotRequired[int]
+    prompt_tokens: NotRequired[int]
+    completion_tokens: NotRequired[int]
+
+
+class ModelStatsRaw(TypedDict, total=False):
+    """Type-safe structure for raw model statistics from API responses."""
+
+    # Token counts (most common format)
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+
+    # Additional cost and metadata fields that might be present
+    cost: NotRequired[float]
+    model_name: NotRequired[str]
+
+
 class MonitoringCallbackData(TypedDict):
     """Type-safe structure for monitoring callback data."""
 

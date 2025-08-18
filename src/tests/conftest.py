@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from claude_monitor.core.models import CostMode, UsageEntry
-from claude_monitor.types import JSONSerializable, RawJSONData
+from claude_monitor.types import AnalysisResult, JSONSerializable, RawJSONData
 
 
 @pytest.fixture
@@ -300,7 +300,7 @@ def mock_session_monitor() -> Mock:
 
 
 @pytest.fixture
-def sample_monitoring_data() -> dict[str, JSONSerializable]:
+def sample_monitoring_data() -> AnalysisResult:
     """Sample monitoring data structure for testing."""
     return {
         "blocks": [

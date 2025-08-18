@@ -4,15 +4,16 @@ Raw mode setup, input handling, and terminal control.
 
 import logging
 import sys
+
 from typing import Any
 
 from claude_monitor.error_handling import report_error
 from claude_monitor.terminal.themes import print_themed
-
-logger: logging.Logger = logging.getLogger(__name__)
-
 from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
 from claude_monitor.utils.backports import termios
+
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def setup_terminal() -> list[Any] | None:
@@ -64,7 +65,8 @@ def enter_alternate_screen() -> None:
 
 
 def handle_cleanup_and_exit(
-    old_terminal_settings: list[Any] | None, message: str = "Monitoring stopped."
+    old_terminal_settings: list[Any] | None,
+    message: str = "Monitoring stopped.",
 ) -> None:
     """Handle cleanup and exit gracefully.
 

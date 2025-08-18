@@ -24,7 +24,7 @@ from claude_monitor.types import (
     CostPredictions,
     DisplayTimes,
     ExtractedSessionData,
-    JSONSerializable,
+    ModelStatsRaw,
     NotificationFlags,
     ProcessedDisplayData,
     RawJSONData,
@@ -72,7 +72,7 @@ class DisplayController:
             "tokens_used": active_block["totalTokens"],
             "session_cost": active_block["costUSD"],
             "raw_per_model_stats": cast(
-                dict[str, JSONSerializable], active_block["perModelStats"]
+                dict[str, ModelStatsRaw], active_block["perModelStats"]
             ),
             "sent_messages": active_block["sentMessagesCount"],
             "entries": cast(list[RawJSONData], active_block["entries"]),
@@ -424,7 +424,7 @@ class DisplayController:
         }
 
     def _calculate_model_distribution(
-        self, raw_per_model_stats: dict[str, JSONSerializable]
+        self, raw_per_model_stats: dict[str, ModelStatsRaw]
     ) -> dict[str, float]:
         """Calculate model distribution percentages from current active session only.
 

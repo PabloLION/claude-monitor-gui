@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
-from .common import JSONSerializable, RawJSONData
+from .common import ModelStatsRaw, RawJSONData
 from .sessions import ModelStats
 
 
@@ -40,7 +40,7 @@ class ExtractedSessionData(TypedDict):
 
     tokens_used: int
     session_cost: float
-    raw_per_model_stats: dict[str, JSONSerializable]
+    raw_per_model_stats: dict[str, ModelStatsRaw]
     sent_messages: int
     entries: list[RawJSONData]
     start_time_str: str | None
