@@ -67,17 +67,17 @@ class DisplayController:
     def _extract_session_data(self, active_block: BlockDict) -> ExtractedSessionData:
         """Extract basic session data from active block."""
         # BlockDict has well-defined types, so we can access fields directly
-        return {
-            "tokens_used": active_block["totalTokens"],
-            "session_cost": active_block["costUSD"],
-            "raw_per_model_stats": cast(
+        return ExtractedSessionData(
+            tokens_used=active_block["totalTokens"],
+            session_cost=active_block["costUSD"],
+            raw_per_model_stats=cast(
                 dict[str, ModelStatsRaw], active_block["perModelStats"]
             ),
-            "sent_messages": active_block["sentMessagesCount"],
-            "entries": cast(list[RawJSONData], active_block["entries"]),
-            "start_time_str": active_block["startTime"],
-            "end_time_str": active_block["endTime"],
-        }
+            sent_messages=active_block["sentMessagesCount"],
+            entries=cast(list[RawJSONData], active_block["entries"]),
+            start_time_str=active_block["startTime"],
+            end_time_str=active_block["endTime"],
+        )
 
     def _calculate_token_limits(
         self, args: argparse.Namespace, token_limit: int
@@ -209,11 +209,11 @@ class DisplayController:
             current_time_display, time_format, include_seconds=True
         )
 
-        return {
-            "predicted_end_str": predicted_end_str,
-            "reset_time_str": reset_time_str,
-            "current_time_str": current_time_str,
-        }
+        return DisplayTimes(
+            predicted_end_str=predicted_end_str,
+            reset_time_str=reset_time_str,
+            current_time_str=current_time_str,
+        )
 
     def create_data_display(
         self, data: AnalysisResult, args: argparse.Namespace, token_limit: int
@@ -685,13 +685,13 @@ class SessionCalculator:
             total_session_minutes = 5 * 60  # Default session duration in minutes
             elapsed_session_minutes = max(0, total_session_minutes - minutes_to_reset)
 
-        return {
-            "start_time": start_time,
-            "reset_time": reset_time,
-            "minutes_to_reset": minutes_to_reset,
-            "total_session_minutes": total_session_minutes,
-            "elapsed_session_minutes": elapsed_session_minutes,
-        }
+        return TimeData(
+            start_time=start_time,
+            reset_time=reset_time,
+            minutes_to_reset=minutes_to_reset,
+            total_session_minutes=total_session_minutes,
+            elapsed_session_minutes=elapsed_session_minutes,
+        )
 
     def calculate_cost_predictions(
         self,
@@ -746,9 +746,9 @@ class SessionCalculator:
                 reset_time if isinstance(reset_time, dt_type) else current_time
             )
 
-        return {
-            "cost_per_minute": cost_per_minute,
-            "cost_limit": cost_limit,
-            "cost_remaining": cost_remaining,
-            "predicted_end_time": predicted_end_time,
-        }
+        return CostPredictions(
+            cost_per_minute=cost_per_minute,
+            cost_limit=cost_limit,
+            cost_remaining=cost_remaining,
+            predicted_end_time=predicted_end_time,
+        )
