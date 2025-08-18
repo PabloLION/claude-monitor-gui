@@ -6,9 +6,18 @@ from typing import Required
 from typing import TypedDict
 
 
+class SystemMessageContent(TypedDict, total=False):
+    """Structure for system message content."""
+
+    id: NotRequired[str]
+    content: NotRequired[str]
+    role: NotRequired[str]
+    text: NotRequired[str]
+
+
 class UserMessageContent(TypedDict, total=False):
     """Structure for user message content."""
-    
+
     id: NotRequired[str]
     content: NotRequired[str | list[dict[str, str]]]
     role: NotRequired[str]
@@ -18,13 +27,13 @@ class UserMessageContent(TypedDict, total=False):
 
 class AssistantMessageContent(TypedDict, total=False):
     """Structure for assistant message content."""
-    
+
     id: NotRequired[str]
     model: NotRequired[str]
     usage: NotRequired["TokenUsage"]
     content: NotRequired[str | list[dict[str, str]]]
     role: NotRequired[str]
-    
+
 
 class ClaudeEntryBase(TypedDict, total=False):
     """Base class for all Claude API message entries."""
@@ -39,7 +48,8 @@ class SystemEntry(ClaudeEntryBase, total=False):
     """System messages from Claude (type='system')."""
 
     type: Required[Literal["system"]]
-    content: Required[str]
+    content: NotRequired[str]  # For backward compatibility
+    message: NotRequired[SystemMessageContent]
 
 
 class UserEntry(ClaudeEntryBase, total=False):

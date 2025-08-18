@@ -7,14 +7,14 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import (
-    ClaudeJSONEntry,
-    ExtractedTokens,
-    FlattenedData,
-    JSONSerializable,
-    RawJSONData,
-    TokenSource,
-)
+from claude_monitor.types import AssistantEntry
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import ExtractedTokens
+from claude_monitor.types import FlattenedData
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import RawJSONData
+from claude_monitor.types import TokenSource
+from claude_monitor.types import UserEntry
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -23,7 +23,9 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
+        self.timezone_handler: TimezoneHandler = (
+            timezone_handler or TimezoneHandler()
+        )
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -116,11 +118,13 @@ class TokenExtractor:
             return 0
 
         # Handle new specific types with type narrowing
-        if isinstance(data, dict) and "type" in data:
+        if "type" in data:
             entry_type = data.get("type")
             if entry_type == "system" or entry_type == "user":
                 # System and user messages don't have token usage
-                logger.debug("TokenExtractor: System/user messages have no token usage")
+                logger.debug(
+                    "TokenExtractor: System/user messages have no token usage"
+                )
                 return {
                     "input_tokens": 0,
                     "output_tokens": 0,
@@ -138,21 +142,23 @@ class TokenExtractor:
         is_assistant: bool = data.get("type") == "assistant"
 
         if is_assistant:
+            data = cast(AssistantEntry, data)
             # Assistant message: check message.usage first, then usage, then top-level
-            if message := data.get("message"):
-                if isinstance(message, dict) and (usage := message.get("usage")):
-                    if isinstance(usage, dict):
-                        # TODO: Replace with proper TypedDict when removing JSONSerializable
-                        token_sources.append(cast(TokenSource, usage))
-
-            if usage := data.get("usage"):
+            message = data.get("message")
+            if message is not None:
+                usage = message.get("usage")
                 if isinstance(usage, dict):
                     # TODO: Replace with proper TypedDict when removing JSONSerializable
                     token_sources.append(cast(TokenSource, usage))
 
+            if usage := data.get("usage"):
+                # TODO: Replace with proper TypedDict when removing JSONSerializable
+                token_sources.append(cast(TokenSource, usage))
+
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(TokenSource, data))
         else:
+            data = cast(UserEntry, data)
             # User message: check usage first, then message.usage, then top-level
             if usage := data.get("usage"):
                 if isinstance(usage, dict):
@@ -160,15 +166,17 @@ class TokenExtractor:
                     token_sources.append(cast(TokenSource, usage))
 
             if message := data.get("message"):
-                if isinstance(message, dict) and (usage := message.get("usage")):
-                    if isinstance(usage, dict):
-                        # TODO: Replace with proper TypedDict when removing JSONSerializable
-                        token_sources.append(cast(TokenSource, usage))
+                usage = message.get("usage")
+                if isinstance(usage, dict):
+                    # TODO: Replace with proper TypedDict when removing JSONSerializable
+                    token_sources.append(cast(TokenSource, usage))
 
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(TokenSource, data))
 
-        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
+        logger.debug(
+            f"TokenExtractor: Checking {len(token_sources)} token sources"
+        )
 
         # Extract tokens from first valid source
         for source in token_sources:
@@ -250,7 +258,11 @@ class DataConverter:
             new_key = f"{prefix}.{key}" if prefix else key
 
             if isinstance(value, dict):
-                result.update(DataConverter.flatten_nested_dict(cast(RawJSONData, value), new_key))
+                result.update(
+                    DataConverter.flatten_nested_dict(
+                        cast(RawJSONData, value), new_key
+                    )
+                )
             else:
                 # Use type: ignore for dynamic key assignment in TypedDict
                 result[new_key] = value  # type: ignore[literal-required]
@@ -271,30 +283,29 @@ class DataConverter:
             Extracted model name
         """
         # Check model in priority order with TypedDict fields
-        model_candidates: list[str | None] = [
-            (
-                cast(str, data.get("model"))
-                if isinstance(data.get("model"), str)
-                else None
-            ),  # Direct model field
-            None,
-        ]
+        model_candidates = list[str]()
+
+        # 1. Check direct model field
+        direct_model = data.get("model")
+        if isinstance(direct_model, str):
+            model_candidates.append(direct_model)
 
         # Check nested message.model
-        if message := data.get("message"):
-            if message and isinstance(message, dict):
-                model = message.get("model")
-                if isinstance(model, str):
-                    model_candidates.insert(0, model)
+        message = data.get("message")
+        if isinstance(message, dict):
+            message = cast(dict[str, JSONSerializable], message)
+            model_value = message.get("model")
+            if isinstance(model_value, str):
+                model_candidates.insert(0, model_value)
 
         # Check nested usage.model
-        if usage := data.get("usage"):
-            if usage and isinstance(usage, dict):
-                # Cast to dict to handle additional fields not in TokenUsage
-                usage_dict = dict(usage)
-                model = usage_dict.get("model")
-                if isinstance(model, str):
-                    model_candidates.append(model)
+        usage = data.get("usage")
+        if usage and isinstance(usage, dict):
+            # Cast to dict to handle additional fields not in TokenUsage
+            usage_dict = cast(dict[str, JSONSerializable], usage)
+            model_value = usage_dict.get("model")
+            if isinstance(model_value, str):
+                model_candidates.append(model_value)
 
         for candidate in model_candidates:
             if candidate:
