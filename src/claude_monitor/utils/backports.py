@@ -4,28 +4,41 @@ This module isolates all type: ignore comments for optional imports
 to maintain clean type checking in the main codebase.
 """
 
+__all__ = [
+    "tomllib",
+    "HAS_TOMLLIB",
+    "HAS_BABEL",
+    "termios",
+    "tty",
+    "select",
+    "HAS_TERMINAL_CONTROL",
+    "winreg",
+    "HAS_WINREG",
+]
 import sys
+
 
 # TOML library backport
 try:
     # Python 3.11+
     import tomllib
+
+    HAS_TOMLLIB = True
 except ImportError:
     try:
         # Python < 3.11 fallback
         import tomli as tomllib  # pyright: ignore[reportMissingImports]
     except ImportError:
-        tomllib = None
+        HAS_TOMLLIB = False  # pyright: ignore[reportConstantRedefinition]
 
 
 # Babel library backport
 HAS_BABEL = False
 try:
     # fmt: off
-    from babel.dates import (
-        get_timezone_location,  # pyright: ignore[reportUnknownVariableType]; pyright: ignore[reportMissingImports]
+    from babel.dates import ( # pyright: ignore[reportMissingImports]  # isort: skip
+        get_timezone_location,  # pyright: ignore[reportUnknownVariableType]
     )
-
     # fmt: on
 
     HAS_BABEL = True  # pyright: ignore[reportConstantRedefinition]

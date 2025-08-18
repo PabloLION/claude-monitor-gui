@@ -6,7 +6,11 @@ as the single source of truth, avoiding version duplication across the codebase.
 
 import importlib.metadata
 import sys
+
 from pathlib import Path
+
+from claude_monitor.utils.backports import HAS_TOMLLIB
+from claude_monitor.utils.backports import tomllib
 
 
 def get_version() -> str:
@@ -33,9 +37,8 @@ def _get_version_from_pyproject() -> str:
     Returns:
         Version string or "unknown" if cannot be determined
     """
-    from claude_monitor.utils.backports import tomllib
 
-    if tomllib is None:
+    if not HAS_TOMLLIB:
         # No TOML library available
         return "unknown"
 
@@ -89,7 +92,9 @@ def get_package_info() -> dict[str, str | None]:
         }
 
 
-def get_version_info() -> dict[str, str | dict[str, int] | dict[str, str | None]]:
+def get_version_info() -> (
+    dict[str, str | dict[str, int] | dict[str, str | None]]
+):
     """Get detailed version and system information.
 
     Returns:
