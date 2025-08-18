@@ -68,4 +68,8 @@ __all__ = [
     "MonitoringData",
     "ExtractedTokens",
     "ExtractedMetadata",
+    "RawJSONData",
+    "FlattenedData",
+    "ValidationState",
+    "MonitoringCallbackData",
 ]

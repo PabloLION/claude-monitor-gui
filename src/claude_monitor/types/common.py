@@ -66,3 +66,52 @@ class ExtractedMetadata(TypedDict):
 
     message_id: str
     request_id: str
+
+
+class RawJSONData(TypedDict, total=False):
+    """Type-safe structure for raw JSON data from JSONL files."""
+    
+    # Core fields that may be present in raw Claude data
+    timestamp: NotRequired[str]
+    message: NotRequired[dict[str, JSONSerializable]]
+    request_id: NotRequired[str]
+    type: NotRequired[str]
+    model: NotRequired[str]
+    usage: NotRequired[dict[str, JSONSerializable]]
+    content: NotRequired[str]
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+    # Allow additional unknown fields
+    
+    
+class FlattenedData(TypedDict, total=False):
+    """Type-safe structure for flattened data from data processors."""
+    
+    # All fields are optional since flattening can create various structures
+    timestamp: NotRequired[str]
+    model: NotRequired[str] 
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_tokens: NotRequired[int]
+    cache_read_tokens: NotRequired[int]
+    cost_usd: NotRequired[float]
+    # Allow additional flattened fields
+
+
+class ValidationState(TypedDict, total=False):
+    """Type-safe structure for validation states in notifications."""
+    
+    # Allow any string keys with JSONSerializable values for flexibility
+    pass  # This acts as a flexible dict[str, JSONSerializable] replacement
+
+
+class MonitoringCallbackData(TypedDict):
+    """Type-safe structure for monitoring callback data."""
+    
+    # Core monitoring fields that callbacks expect
+    timestamp: str
+    session_id: str | None
+    token_usage: int
+    cost: float
