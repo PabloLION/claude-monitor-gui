@@ -1,12 +1,16 @@
 """Shared pytest fixtures for Claude Monitor tests."""
 
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from unittest.mock import Mock
 
 import pytest
 
-from claude_monitor.core.models import CostMode, UsageEntry
-from claude_monitor.types import AnalysisResult, JSONSerializable, RawJSONData
+from claude_monitor.core.models import CostMode
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import RawJSONData
 
 
 @pytest.fixture
@@ -24,7 +28,9 @@ def mock_timezone_handler() -> Mock:
     mock.parse_timestamp.return_value = datetime(
         2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
     )
-    mock.ensure_utc.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    mock.ensure_utc.return_value = datetime(
+        2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+    )
     return mock
 
 
@@ -323,7 +329,7 @@ def sample_monitoring_data() -> AnalysisResult:
 
 
 @pytest.fixture
-def sample_session_data() -> dict[str, JSONSerializable]:
+def sample_session_data() -> RawJSONData:
     """Sample session data for testing."""
     return {
         "id": "session_1",

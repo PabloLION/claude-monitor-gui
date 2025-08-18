@@ -23,7 +23,6 @@ from claude_monitor.types import (
     ClaudeJSONEntry,
     EntryData,
     ExtractedMetadata,
-    JSONSerializable,
     RawJSONData,
     SystemEntry,
     UserEntry,
@@ -409,13 +408,11 @@ class UsageEntryMapper:
         self.timezone_handler = timezone_handler
 
     def map(
-        self, data: dict[str, JSONSerializable], mode: CostMode
+        self, data: RawJSONData, mode: CostMode
     ) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
-        # Cast to RawJSONData since this is test compatibility interface
-        from typing import cast
         return _map_to_usage_entry(
-            cast(RawJSONData, data), mode, self.timezone_handler, self.pricing_calculator
+            data, mode, self.timezone_handler, self.pricing_calculator
         )
 
     def _has_valid_tokens(self, tokens: dict[str, int]) -> bool:

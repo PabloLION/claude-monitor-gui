@@ -12,6 +12,7 @@ from claude_monitor.types import (
     ExtractedTokens,
     FlattenedData,
     JSONSerializable,
+    RawJSONData,
     TokenSource,
 )
 from claude_monitor.utils.time_utils import TimezoneHandler
@@ -232,7 +233,7 @@ class DataConverter:
 
     @staticmethod
     def flatten_nested_dict(
-        data: dict[str, JSONSerializable], prefix: str = ""
+        data: RawJSONData, prefix: str = ""
     ) -> FlattenedData:
         """Flatten nested dictionary structure.
 
@@ -249,7 +250,7 @@ class DataConverter:
             new_key = f"{prefix}.{key}" if prefix else key
 
             if isinstance(value, dict):
-                result.update(DataConverter.flatten_nested_dict(value, new_key))
+                result.update(DataConverter.flatten_nested_dict(cast(RawJSONData, value), new_key))
             else:
                 # Use type: ignore for dynamic key assignment in TypedDict
                 result[new_key] = value  # type: ignore[literal-required]

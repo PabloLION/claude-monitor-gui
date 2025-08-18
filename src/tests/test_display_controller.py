@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import BlockDict
 from claude_monitor.ui.display_controller import (
     DisplayController,
     LiveDisplayManager,
@@ -23,23 +23,69 @@ class TestDisplayController:
             return DisplayController()
 
     @pytest.fixture
-    def sample_active_block(self) -> dict[str, JSONSerializable]:
+    def sample_active_block(self) -> BlockDict:
         """Sample active block data."""
         return {
+            "id": "test-block-1",
             "isActive": True,
+            "isGap": False,
             "totalTokens": 15000,
             "costUSD": 0.45,
             "sentMessagesCount": 12,
+            "models": ["claude-3-opus", "claude-3-5-sonnet"],
+            "durationMinutes": 120.0,
+            "entries_count": 2,
+            "tokenCounts": {
+                "inputTokens": 9000,
+                "outputTokens": 6000,
+                "cacheCreationInputTokens": 0,
+                "cacheReadInputTokens": 0,
+            },
             "perModelStats": {
-                "claude-3-opus": {"inputTokens": 5000, "outputTokens": 3000},
-                "claude-3-5-sonnet": {"inputTokens": 4000, "outputTokens": 3000},
+                "claude-3-opus": {
+                    "input_tokens": 5000,
+                    "output_tokens": 3000,
+                    "cache_creation_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "cost_usd": 0.25,
+                    "entries_count": 1,
+                },
+                "claude-3-5-sonnet": {
+                    "input_tokens": 4000,
+                    "output_tokens": 3000,
+                    "cache_creation_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "cost_usd": 0.20,
+                    "entries_count": 1,
+                },
             },
             "entries": [
-                {"timestamp": "2024-01-01T12:00:00Z", "tokens": 5000},
-                {"timestamp": "2024-01-01T12:30:00Z", "tokens": 10000},
+                {
+                    "timestamp": "2024-01-01T12:00:00Z",
+                    "inputTokens": 5000,
+                    "outputTokens": 3000,
+                    "cacheCreationTokens": 0,
+                    "cacheReadInputTokens": 0,
+                    "costUSD": 0.25,
+                    "model": "claude-3-opus",
+                    "messageId": "msg-1",
+                    "requestId": "req-1",
+                },
+                {
+                    "timestamp": "2024-01-01T12:30:00Z",
+                    "inputTokens": 4000,
+                    "outputTokens": 3000,
+                    "cacheCreationTokens": 0,
+                    "cacheReadInputTokens": 0,
+                    "costUSD": 0.20,
+                    "model": "claude-3-5-sonnet",
+                    "messageId": "msg-2",
+                    "requestId": "req-2",
+                },
             ],
             "startTime": "2024-01-01T11:00:00Z",
             "endTime": "2024-01-01T13:00:00Z",
+            "actualEndTime": "2024-01-01T12:45:00Z",
         }
 
     @pytest.fixture
@@ -64,7 +110,7 @@ class TestDisplayController:
     def test_extract_session_data(
         self,
         controller: DisplayController,
-        sample_active_block: dict[str, JSONSerializable],
+        sample_active_block: BlockDict,
     ) -> None:
         """Test session data extraction."""
         result = controller._extract_session_data(sample_active_block)  # type: ignore[misc]
