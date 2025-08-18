@@ -166,6 +166,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         enter_alternate_screen()
 
         live_display_active = False
+        orchestrator = None
 
         try:
             # Enter live context and show loading screen immediately
@@ -261,7 +262,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                     time.sleep(1)
         finally:
             # Stop monitoring first
-            if "orchestrator" in locals():
+            if orchestrator is not None:
                 orchestrator.stop()
 
             # Exit live display context if it was activated
@@ -271,13 +272,13 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
     except KeyboardInterrupt:
         # Clean exit from live display if it's active
-        if "live_display" in locals():
+        if live_display_active:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_cleanup_and_exit(old_terminal_settings)
     except Exception as e:
         # Clean exit from live display if it's active
-        if "live_display" in locals():
+        if live_display_active:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_error_and_exit(old_terminal_settings, e)
