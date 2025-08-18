@@ -22,6 +22,7 @@ from claude_monitor.data.analysis import (
     _process_burn_rates,  # type: ignore[misc]
     analyze_usage,
 )
+from claude_monitor.types import LimitDetectionInfo
 from claude_monitor.types.sessions import PartialBlockDict
 
 
@@ -56,7 +57,7 @@ class TestAnalyzeUsage:
 
         mock_analyzer = Mock()
         mock_analyzer.transform_to_blocks.return_value = [sample_block]
-        mock_analyzer.detect_limits.return_value = []
+        mock_analyzer.detect_limits.return_value = list[LimitDetectionInfo]()
         mock_analyzer_class.return_value = mock_analyzer
 
         mock_calculator = Mock()
@@ -84,8 +85,8 @@ class TestAnalyzeUsage:
         """Test analyze_usage with quick_start=True and hours_back=None."""
         mock_load.return_value = ([], [])
         mock_analyzer = Mock()
-        mock_analyzer.transform_to_blocks.return_value = []
-        mock_analyzer.detect_limits.return_value = []
+        mock_analyzer.transform_to_blocks.return_value = list[SessionBlock]()
+        mock_analyzer.detect_limits.return_value = list[LimitDetectionInfo]()
         mock_analyzer_class.return_value = mock_analyzer
         mock_calc_class.return_value = Mock()
 
@@ -106,8 +107,8 @@ class TestAnalyzeUsage:
         """Test analyze_usage with quick_start=True and specific hours_back."""
         mock_load.return_value = ([], [])
         mock_analyzer = Mock()
-        mock_analyzer.transform_to_blocks.return_value = []
-        mock_analyzer.detect_limits.return_value = []
+        mock_analyzer.transform_to_blocks.return_value = list[SessionBlock]()
+        mock_analyzer.detect_limits.return_value = list[LimitDetectionInfo]()
         mock_analyzer_class.return_value = mock_analyzer
         mock_calc_class.return_value = Mock()
 

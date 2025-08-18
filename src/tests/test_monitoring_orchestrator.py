@@ -549,7 +549,7 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.data_manager.get_data.return_value = test_data
 
         # Setup callback to capture monitoring data
-        captured_data: list[MonitoringData] = []
+        captured_data: list[MonitoringData] = list[MonitoringData]()
 
         def capture_callback(data: MonitoringData) -> None:
             captured_data.append(data)
@@ -638,7 +638,7 @@ class TestMonitoringOrchestratorIntegration:
         orchestrator.session_monitor.update.side_effect = mock_update
 
         # Capture callback data
-        captured_data: list[MonitoringData] = []
+        captured_data: list[MonitoringData] = list[MonitoringData]()
         orchestrator.register_update_callback(lambda data: captured_data.append(data))
 
         with patch(
@@ -718,7 +718,7 @@ class TestMonitoringOrchestratorThreadSafety:
                 orchestrator.register_update_callback(callback)
 
         # Register callbacks from multiple threads
-        threads = []
+        threads = list[threading.Thread]()
         for _ in range(3):
             thread = threading.Thread(target=register_callbacks)
             threads.append(thread)
@@ -741,7 +741,7 @@ class TestMonitoringOrchestratorThreadSafety:
                 time.sleep(0.01)
 
         # Start/stop from multiple threads
-        threads = []
+        threads = list[threading.Thread]()
         for _ in range(3):
             thread = threading.Thread(target=start_stop_loop)
             threads.append(thread)

@@ -289,7 +289,7 @@ class TestUsageAggregator:
     @pytest.fixture
     def sample_entries(self) -> list[UsageEntry]:
         """Create sample usage entries spanning multiple days and months."""
-        entries = []
+        entries = list[UsageEntry]()
 
         # January 2024 entries
         for day in [1, 1, 2, 2, 15, 15, 31]:

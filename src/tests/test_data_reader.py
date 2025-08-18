@@ -72,7 +72,7 @@ class TestLoadUsageEntries:
 
     @patch("claude_monitor.data.reader._find_jsonl_files")
     def test_load_usage_entries_no_files(self, mock_find_files: Mock) -> None:
-        mock_find_files.return_value = []
+        mock_find_files.return_value = list[Path]()
 
         entries, raw_data = load_usage_entries(include_raw=True)
 
@@ -149,7 +149,7 @@ class TestLoadUsageEntries:
 
     def test_load_usage_entries_default_path(self) -> None:
         with patch("claude_monitor.data.reader._find_jsonl_files") as mock_find:
-            mock_find.return_value = []
+            mock_find.return_value = list[Path]()
 
             load_usage_entries()
 
@@ -223,7 +223,7 @@ class TestLoadAllRawEntries:
 
     def test_load_all_raw_entries_default_path(self) -> None:
         with patch("claude_monitor.data.reader._find_jsonl_files") as mock_find:
-            mock_find.return_value = []
+            mock_find.return_value = list[Path]()
 
             load_all_raw_entries()
 

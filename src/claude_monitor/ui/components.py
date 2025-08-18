@@ -196,10 +196,10 @@ class AdvancedCustomLimitDisplay:
     ) -> SessionCollectionDict:
         """Collect session data and identify limit sessions."""
         if not blocks:
-            default_session: SessionDataDict = {"tokens": 0, "cost": 0.0, "messages": 0}
+            default_session = SessionDataDict(tokens=0, cost=0.0, messages=0)
             return {
-                "all_sessions": [],
-                "limit_sessions": [],
+                "all_sessions": list[SessionDataDict](),
+                "limit_sessions": list[SessionDataDict](),
                 "current_session": default_session,
                 "total_sessions": 0,
                 "active_sessions": 0,
@@ -207,7 +207,7 @@ class AdvancedCustomLimitDisplay:
 
         all_sessions = list[SessionDataDict]()
         limit_sessions = list[SessionDataDict]()
-        current_session: SessionDataDict = {"tokens": 0, "cost": 0.0, "messages": 0}
+        current_session = SessionDataDict(tokens=0, cost=0.0, messages=0)
         active_sessions = 0
 
         for block in blocks:
@@ -224,11 +224,11 @@ class AdvancedCustomLimitDisplay:
             cost = float(cost_raw)  # cost_raw is float from BlockDict
             messages = int(messages_raw)  # messages_raw is int from BlockDict
 
-            session: SessionDataDict = {
-                "tokens": tokens,
-                "cost": cost,
-                "messages": messages,
-            }
+            session = SessionDataDict(
+                tokens=tokens,
+                cost=cost,
+                messages=messages,
+            )
 
             if block.get("isActive", False):
                 active_sessions += 1

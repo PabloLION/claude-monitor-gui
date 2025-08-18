@@ -209,7 +209,7 @@ class TestHourlyBurnRateCalculation:
         self, current_time: datetime
     ) -> None:
         """Test hourly burn rate with empty blocks list."""
-        empty_blocks: list[BlockData] = []
+        empty_blocks: list[BlockData] = list[BlockData]()
         burn_rate = calculate_hourly_burn_rate(empty_blocks, current_time)
         assert burn_rate == 0.0
 
