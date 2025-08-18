@@ -7,36 +7,38 @@ import signal
 import sys
 import time
 import traceback
+
 from collections.abc import Callable
 from pathlib import Path
 from typing import NoReturn
 
 from rich.console import Console
+from rich.live import Live
 
 from claude_monitor import __version__
-from claude_monitor.cli.bootstrap import (
-    ensure_directories,
-    init_timezone,
-    setup_environment,
-    setup_logging,
-)
-from claude_monitor.core.plans import Plans, PlanType, get_token_limit
+from claude_monitor.cli.bootstrap import ensure_directories
+from claude_monitor.cli.bootstrap import init_timezone
+from claude_monitor.cli.bootstrap import setup_environment
+from claude_monitor.cli.bootstrap import setup_logging
+from claude_monitor.core.plans import Plans
+from claude_monitor.core.plans import PlanType
+from claude_monitor.core.plans import get_token_limit
 from claude_monitor.core.settings import Settings
 from claude_monitor.data.aggregator import UsageAggregator
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
-from claude_monitor.terminal.manager import (
-    enter_alternate_screen,
-    handle_cleanup_and_exit,
-    handle_error_and_exit,
-    restore_terminal,
-    setup_terminal,
-)
-from claude_monitor.terminal.themes import get_themed_console, print_themed
+from claude_monitor.terminal.manager import enter_alternate_screen
+from claude_monitor.terminal.manager import handle_cleanup_and_exit
+from claude_monitor.terminal.manager import handle_error_and_exit
+from claude_monitor.terminal.manager import restore_terminal
+from claude_monitor.terminal.manager import setup_terminal
+from claude_monitor.terminal.themes import get_themed_console
+from claude_monitor.terminal.themes import print_themed
 from claude_monitor.types import MonitoringData
 from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
+
 
 # Type aliases for CLI callbacks
 DataUpdateCallback = Callable[[MonitoringData], None]
@@ -126,6 +128,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
     old_terminal_settings = setup_terminal()
     live_display_active: bool = False
+    live_display: Live | None = None
 
     try:
         data_paths: list[Path] = discover_claude_data_paths()
@@ -196,15 +199,15 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
                     logger.debug(f"Display data has {len(blocks)} blocks")
                     if blocks:
-                        active_blocks = [
-                            b for b in blocks if b.get("isActive")
-                        ]
+                        active_blocks = [b for b in blocks if b.get("isActive")]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
                         if active_blocks:
                             total_tokens_raw = active_blocks[0].get(
                                 "totalTokens", 0
                             )
-                            total_tokens = int(total_tokens_raw) if total_tokens_raw else 0
+                            total_tokens = (
+                                int(total_tokens_raw) if total_tokens_raw else 0
+                            )
                             logger.debug(f"Active block tokens: {total_tokens}")
 
                     token_limit_val = monitoring_data.get(
@@ -272,13 +275,13 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
     except KeyboardInterrupt:
         # Clean exit from live display if it's active
-        if live_display_active:
+        if live_display_active and live_display is not None:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_cleanup_and_exit(old_terminal_settings)
     except Exception as e:
         # Clean exit from live display if it's active
-        if live_display_active:
+        if live_display_active and live_display is not None:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_error_and_exit(old_terminal_settings, e)
