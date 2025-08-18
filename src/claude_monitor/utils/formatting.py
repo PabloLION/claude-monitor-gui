@@ -5,10 +5,14 @@ This module provides formatting functions for currency, time, and display output
 
 import argparse
 import logging
+
 from datetime import datetime
 
-from claude_monitor.utils.time_utils import format_display_time as _format_display_time
+from claude_monitor.utils.time_utils import (
+    format_display_time as _format_display_time,
+)
 from claude_monitor.utils.time_utils import get_time_format_preference
+
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +87,10 @@ def format_display_time(
     return _format_display_time(dt_obj, use_12h_format, include_seconds)
 
 
-def _get_pref(args: argparse.Namespace | None) -> bool:
+# #TODO: make use of this function
+def _get_pref(  # pyright: ignore[reportUnusedFunction]
+    args: argparse.Namespace | None,
+) -> bool:
     """Internal helper function for getting time format preference.
 
     Args:
