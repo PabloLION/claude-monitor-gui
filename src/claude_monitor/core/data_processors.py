@@ -282,34 +282,28 @@ class DataConverter:
         Returns:
             Extracted model name
         """
-        # Check model in priority order with TypedDict fields
-        model_candidates = list[str]()
+        # Check model in priority order - return first valid match
 
-        # 1. Check direct model field
-        direct_model = data.get("model")
-        if isinstance(direct_model, str):
-            model_candidates.append(direct_model)
-
-        # Check nested message.model
+        # 1. Check nested message.model (highest priority)
         message = data.get("message")
         if isinstance(message, dict):
             message = cast(dict[str, JSONSerializable], message)
             model_value = message.get("model")
-            if isinstance(model_value, str):
-                model_candidates.insert(0, model_value)
+            if isinstance(model_value, str) and model_value:
+                return model_value
 
-        # Check nested usage.model
+        # 2. Check direct model field
+        direct_model = data.get("model")
+        if isinstance(direct_model, str) and direct_model:
+            return direct_model
+
+        # 3. Check nested usage.model (fallback)
         usage = data.get("usage")
         if usage and isinstance(usage, dict):
-            # Cast to dict to handle additional fields not in TokenUsage
             usage_dict = cast(dict[str, JSONSerializable], usage)
             model_value = usage_dict.get("model")
-            if isinstance(model_value, str):
-                model_candidates.append(model_value)
-
-        for candidate in model_candidates:
-            if candidate:
-                return candidate
+            if isinstance(model_value, str) and model_value:
+                return model_value
 
         return default
 
