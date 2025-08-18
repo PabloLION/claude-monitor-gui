@@ -33,10 +33,9 @@ class SessionMonitor:
             logger.warning(f"Data validation failed: {errors}")
             return is_valid, errors
 
-        blocks_raw = data.get("blocks", [])
-        if not isinstance(blocks_raw, list):
-            return False, ["blocks must be a list"]
-        blocks: list[BlockDict] = blocks_raw
+        blocks: list[BlockDict] = data.get("blocks", [])
+        if "blocks" not in data:
+            return False, ["blocks field missing"]
 
         active_session: BlockDict | None = None
         for block in blocks:
@@ -46,10 +45,7 @@ class SessionMonitor:
 
         if active_session:
             session_id_raw = active_session.get("id")
-            if (
-                isinstance(session_id_raw, str)
-                and session_id_raw != self._current_session_id
-            ):
+            if session_id_raw and session_id_raw != self._current_session_id:
                 self._on_session_change(
                     self._current_session_id, session_id_raw, active_session
                 )
@@ -71,8 +67,8 @@ class SessionMonitor:
         """
         errors: list[str] = list[str]()
 
-        if not isinstance(data, dict):
-            errors.append("Data must be a dictionary")
+        if not data:
+            errors.append("Data must be provided")
             return False, errors
 
         if "blocks" not in data:
@@ -80,8 +76,8 @@ class SessionMonitor:
 
         if "blocks" in data:
             blocks_raw = data["blocks"]
-            if not isinstance(blocks_raw, list):
-                errors.append("blocks must be a list")
+            if not blocks_raw:
+                errors.append("blocks must be non-empty")
             else:
                 for i, block in enumerate(blocks_raw):
                     block_errors: list[str] = self._validate_block(block, i)
@@ -101,8 +97,8 @@ class SessionMonitor:
         """
         errors: list[str] = list[str]()
 
-        if not isinstance(block, dict):
-            errors.append(f"Block {index} must be a dictionary")
+        if not block:
+            errors.append(f"Block {index} must be non-empty")
             return errors
 
         required_fields: list[str] = ["id", "isActive", "totalTokens", "costUSD"]
@@ -110,15 +106,19 @@ class SessionMonitor:
             if field not in block:
                 errors.append(f"Block {index} missing required field: {field}")
 
-        if "totalTokens" in block and not isinstance(
-            block["totalTokens"], (int, float)
-        ):
-            errors.append(f"Block {index} totalTokens must be numeric")
+        if "totalTokens" in block:
+            try:
+                float(block["totalTokens"])
+            except (ValueError, TypeError):
+                errors.append(f"Block {index} totalTokens must be numeric")
 
-        if "costUSD" in block and not isinstance(block["costUSD"], (int, float)):
-            errors.append(f"Block {index} costUSD must be numeric")
+        if "costUSD" in block:
+            try:
+                float(block["costUSD"])
+            except (ValueError, TypeError):
+                errors.append(f"Block {index} costUSD must be numeric")
 
-        if "isActive" in block and not isinstance(block["isActive"], bool):
+        if "isActive" in block and block["isActive"] not in (True, False):
             errors.append(f"Block {index} isActive must be boolean")
 
         return errors
@@ -142,7 +142,7 @@ class SessionMonitor:
         self._session_history.append(
             {
                 "id": new_id,
-                "started_at": start_time if start_time is not None else "",
+                "started_at": start_time or "",
                 "tokens": session_data.get("totalTokens", 0),
                 "cost": session_data.get("costUSD", 0),
             }
