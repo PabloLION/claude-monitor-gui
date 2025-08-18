@@ -162,7 +162,7 @@ class UsageAggregator:
             period_data[period_key].add_entry(entry)
 
         # Convert to list and sort
-        result = []
+        result = list[AggregatedData]()
         for period_key in sorted(period_data.keys()):
             period = period_data[period_key]
             result.append(period.to_dict(period_type))
@@ -236,7 +236,7 @@ class UsageAggregator:
             )
 
         # Extract all entries from blocks
-        all_entries = []
+        all_entries = list[UsageEntry]()
         for block in blocks:
             if not block.is_gap:
                 all_entries.extend(block.entries)

@@ -14,8 +14,8 @@ class SessionMonitor:
     def __init__(self) -> None:
         """Initialize session monitor."""
         self._current_session_id: str | None = None
-        self._session_callbacks: list[Callable[[str, str, BlockDict | None], None]] = []
-        self._session_history: list[dict[str, str | int | float]] = []
+        self._session_callbacks = list[Callable[[str, str, BlockDict | None], None]]()
+        self._session_history = list[dict[str, str | int | float]]()
 
     def update(self, data: AnalysisResult) -> tuple[bool, list[str]]:
         """Update session tracking with new data and validate.

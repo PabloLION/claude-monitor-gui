@@ -44,7 +44,7 @@ class SessionAnalyzer:
         if not entries:
             return []
 
-        blocks = []
+        blocks = list[SessionBlock]()
         current_block = None
 
         for entry in entries:
@@ -87,7 +87,7 @@ class SessionAnalyzer:
         Returns:
             List of detected limit information
         """
-        limits: list[LimitDetectionInfo] = []
+        limits = list[LimitDetectionInfo]()
 
         for entry in entries:
             limit_info = self._detect_single_limit(entry)

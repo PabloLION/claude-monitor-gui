@@ -137,7 +137,7 @@ class Plans:
             from claude_monitor.core.p90_calculator import P90Calculator
 
             # Convert BlockDict to BlockData if needed
-            block_data: list[BlockData] = []
+            block_data = list[BlockData]()
             for block in blocks:
                 if isinstance(block, dict) and "isActive" in block:
                     # This is a BlockDict, convert to BlockData

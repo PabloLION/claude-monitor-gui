@@ -6,11 +6,9 @@ Provides token usage, time progress, and model usage progress bars.
 from __future__ import annotations
 
 from abc import ABC
-from abc import abstractmethod
 from typing import Final
 from typing import Protocol
 from typing import TypedDict
-from typing import overload
 
 from claude_monitor.utils.time_utils import percentage
 
@@ -43,11 +41,25 @@ class ThresholdConfig(TypedDict):
     style: str
 
 
-class ProgressBarRenderer(Protocol):
-    """Protocol for progress bar rendering."""
+class TokenProgressRenderer(Protocol):
+    """Protocol for token progress bar rendering."""
+    
+    def render(self, percentage: float) -> str:
+        """Render token progress bar."""
+        ...
 
-    def render(self, *args: object, **kwargs: object) -> str:
-        """Render the progress bar."""
+class TimeProgressRenderer(Protocol):
+    """Protocol for time progress bar rendering."""
+    
+    def render(self, elapsed_minutes: float, total_minutes: float) -> str:
+        """Render time progress bar."""
+        ...
+
+class ModelProgressRenderer(Protocol):
+    """Protocol for model progress bar rendering."""
+    
+    def render(self, per_model_stats: dict[str, ModelStats]) -> str:
+        """Render model progress bar."""
         ...
 
 
@@ -159,16 +171,6 @@ class BaseProgressBar(ABC):
         return thresholds[-1][1] if thresholds else ""
 
 
-    @abstractmethod
-    def render(self, *args: object, **kwargs: object) -> str:
-        """Render the progress bar.
-
-        This method must be implemented by subclasses.
-
-        Returns:
-            Formatted progress bar string
-        """
-        ...
 
 
 class TokenProgressBar(BaseProgressBar):
@@ -368,7 +370,7 @@ class ModelUsageBar(BaseProgressBar):
         sonnet_bar = "█" * sonnet_filled
         opus_bar = "█" * opus_filled
 
-        bar_segments = []
+        bar_segments = list[str]()
         if sonnet_filled > 0:
             bar_segments.append(f"[info]{sonnet_bar}[/]")
         if opus_filled > 0:

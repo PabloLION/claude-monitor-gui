@@ -594,7 +594,7 @@ class ScreenBufferManager:
         if self.console is None:
             self.console = get_themed_console()
 
-        text_objects = []
+        text_objects = list[RenderableType]()
         for line in screen_buffer:
             if isinstance(line, str):
                 # Use console to render markup properly

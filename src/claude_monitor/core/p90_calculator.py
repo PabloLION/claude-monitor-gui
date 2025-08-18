@@ -22,7 +22,7 @@ def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) 
 def _extract_sessions(
     blocks: Sequence[BlockData], filter_fn: Callable[[BlockData], bool]
 ) -> list[int]:
-    tokens: list[int] = []
+    tokens = list[int]()
     for block in blocks:
         if filter_fn(block):
             total_tokens = block.get("totalTokens", 0)

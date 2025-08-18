@@ -32,7 +32,7 @@ class MonitoringOrchestrator:
         self._monitoring: bool = False
         self._monitor_thread: threading.Thread | None = None
         self._stop_event: threading.Event = threading.Event()
-        self._update_callbacks: list[Callable[[MonitoringData], None]] = []
+        self._update_callbacks = list[Callable[[MonitoringData], None]]()
         self._last_valid_data: MonitoringData | None = None
         self._args: object | None = None
         self._first_data_event: threading.Event = threading.Event()

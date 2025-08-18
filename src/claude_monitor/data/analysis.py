@@ -182,7 +182,7 @@ def _convert_blocks_to_dict_format(
     blocks: list[SessionBlock],
 ) -> list[BlockDict]:
     """Convert blocks to dictionary format for JSON output."""
-    blocks_data: list[BlockDict] = []
+    blocks_data = list[BlockDict]()
 
     for block in blocks:
         block_dict = _create_base_block_dict(block)

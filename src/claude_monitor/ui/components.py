@@ -205,8 +205,8 @@ class AdvancedCustomLimitDisplay:
                 "active_sessions": 0,
             }
 
-        all_sessions: list[SessionDataDict] = []
-        limit_sessions: list[SessionDataDict] = []
+        all_sessions = list[SessionDataDict]()
+        limit_sessions = list[SessionDataDict]()
         current_session: SessionDataDict = {"tokens": 0, "cost": 0.0, "messages": 0}
         active_sessions = 0
 

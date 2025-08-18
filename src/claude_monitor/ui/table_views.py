@@ -104,7 +104,7 @@ class TableViewsController:
             if isinstance(models_used, list):
                 models_list = [str(model) for model in models_used if model]
             else:
-                models_list = []
+                models_list = list[str]()
             models_text = self._format_models(models_list)
 
             # Safely extract numeric values

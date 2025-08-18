@@ -436,7 +436,7 @@ def _run_table_view(
             return
 
         # Display the table with type validation
-        validated_data: list[dict[str, JSONSerializable]] = []
+        validated_data = list[dict[str, JSONSerializable]]()
         for item in aggregated_data:
             # Convert dict values to JSONSerializable types
             validated_item: dict[str, JSONSerializable] = {}
