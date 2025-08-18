@@ -229,6 +229,8 @@ class DisplayController:
         Returns:
             Rich renderable for display
         """
+        from typing import cast
+        
         if not data or "blocks" not in data:
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
@@ -238,7 +240,7 @@ class DisplayController:
         # Find the active block
         active_block = None
         for block in data["blocks"]:
-            if isinstance(block, dict) and block.get("isActive", False):
+            if block.get("isActive", False):
                 active_block = block
                 break
 
@@ -299,12 +301,15 @@ class DisplayController:
             logger = logging.getLogger(__name__)
             logger.error(f"Error in format_active_session_screen: {e}", exc_info=True)
             logger.exception(f"processed_data type: {type(processed_data)}")
-            if isinstance(processed_data, dict):
+            if processed_data:
                 for key, value in processed_data.items():
                     if key == "per_model_stats":
                         logger.exception(f"  {key}: {type(value).__name__}")
-                        if isinstance(value, dict):
-                            for model, stats in value.items():
+                        if value:
+                            # Cast to proper type for iteration
+                            from typing import cast
+                            model_stats = cast(dict[str, dict[str, str | int | float]], value)
+                            for model, stats in model_stats.items():
                                 logger.exception(
                                     f"    {model}: {type(stats).__name__} = {stats}"
                                 )
@@ -312,7 +317,7 @@ class DisplayController:
                             logger.exception(f"    value = {value}")
                     elif key == "entries":
                         logger.exception(
-                            f"  {key}: {type(value).__name__} with {len(value) if isinstance(value, list) else 'N/A'} items"
+                            f"  {key}: {type(value).__name__} with {len(value) if value else 'N/A'} items"
                         )
                     else:
                         logger.exception(f"  {key}: {type(value).__name__} = {value}")
@@ -413,7 +418,7 @@ class DisplayController:
             ),
             "model_distribution": model_distribution,
             "sent_messages": session_data["sent_messages"],
-            "entries": cast(list[RawJSONData], session_data["entries"]),
+            "entries": session_data["entries"],
             "predicted_end_str": display_times["predicted_end_str"],
             "reset_time_str": display_times["reset_time_str"],
             "current_time_str": display_times["current_time_str"],
@@ -440,7 +445,7 @@ class DisplayController:
         # Calculate total tokens per model for THIS SESSION ONLY
         model_tokens: dict[str, int] = {}
         for model, stats in raw_per_model_stats.items():
-            if isinstance(stats, dict):
+            if stats:
                 # Normalize model name
                 normalized_model = normalize_model_name(model)
                 if normalized_model and normalized_model != "unknown":
@@ -448,12 +453,10 @@ class DisplayController:
                     input_tokens = stats.get("input_tokens", 0)
                     output_tokens = stats.get("output_tokens", 0)
 
-                    # Ensure we have numeric values for arithmetic
-                    if isinstance(input_tokens, (int, float)) and isinstance(
-                        output_tokens, (int, float)
-                    ):
+                    # Convert to int, defaulting to 0 for non-numeric values
+                    try:
                         total_tokens = int(input_tokens) + int(output_tokens)
-                    else:
+                    except (ValueError, TypeError):
                         continue
                     if total_tokens > 0:
                         if normalized_model in model_tokens:
@@ -466,7 +469,7 @@ class DisplayController:
         if session_total_tokens == 0:
             return {}
 
-        model_distribution = {}
+        model_distribution: dict[str, float] = {}
         for model, tokens in model_tokens.items():
             model_percentage = percentage(tokens, session_total_tokens)
             model_distribution[model] = model_percentage
@@ -597,7 +600,7 @@ class ScreenBufferManager:
 
         text_objects = list[RenderableType]()
         for line in screen_buffer:
-            if isinstance(line, str):
+            if line:
                 # Use console to render markup properly
                 text_obj = Text.from_markup(line)
                 text_objects.append(text_obj)
@@ -702,24 +705,22 @@ class SessionCalculator:
         current_time = datetime.now(timezone.utc)
 
         # Calculate cost per minute
-        if isinstance(session_cost, (int, float)) and isinstance(
-            elapsed_minutes, (int, float)
-        ):
+        try:
             cost_per_minute = (
                 float(session_cost) / max(1, float(elapsed_minutes))
                 if elapsed_minutes > 0
                 else 0
             )
-        else:
+        except (ValueError, TypeError):
             cost_per_minute = 0.0
 
         # Use provided cost limit or default
         if cost_limit is None:
             cost_limit = 100.0
 
-        if isinstance(session_cost, (int, float)):
+        try:
             cost_remaining = max(0, cost_limit - float(session_cost))
-        else:
+        except (ValueError, TypeError):
             cost_remaining = cost_limit
 
         # Calculate predicted end time
