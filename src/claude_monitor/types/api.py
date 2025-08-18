@@ -1,35 +1,40 @@
 """Claude API message types and related structures."""
 
-from typing import Literal, NotRequired, Required, TypedDict
+from typing import Literal
+from typing import NotRequired
+from typing import Required
+from typing import TypedDict
 
 
-class SystemEntry(TypedDict, total=False):
+class ClaudeEntryBase(TypedDict, total=False):
+    """Base class for all Claude API message entries."""
+
+    timestamp: Required[str]
+    message_id: NotRequired[str]
+    request_id: NotRequired[str]
+    requestId: NotRequired[str]  # Alternative field name
+
+
+class SystemEntry(ClaudeEntryBase, total=False):
     """System messages from Claude (type='system')."""
 
     type: Required[Literal["system"]]
-    timestamp: Required[str]
     content: Required[str]
-    message_id: NotRequired[str]
-    request_id: NotRequired[str]
-    requestId: NotRequired[str]  # Alternative field name
 
 
-class UserEntry(TypedDict, total=False):
+class UserEntry(ClaudeEntryBase, total=False):
     """User messages (type='user')."""
 
     type: Required[Literal["user"]]
-    timestamp: Required[str]
-    message: Required[dict[str, str | int | list[dict[str, str]] | dict[str, str]]]
-    message_id: NotRequired[str]
-    request_id: NotRequired[str]
-    requestId: NotRequired[str]  # Alternative field name
+    message: Required[
+        dict[str, str | int | list[dict[str, str]] | dict[str, str]]
+    ]
 
 
-class AssistantEntry(TypedDict, total=False):
+class AssistantEntry(ClaudeEntryBase, total=False):
     """Assistant responses with token usage (type='assistant')."""
 
     type: Required[Literal["assistant"]]
-    timestamp: Required[str]
     model: NotRequired[str]  # Model might not always be present
     message: NotRequired[dict[str, "str | int | TokenUsage"]]
     usage: NotRequired[dict[str, int]]
@@ -39,9 +44,6 @@ class AssistantEntry(TypedDict, total=False):
     cache_read_tokens: NotRequired[int]
     cost: NotRequired[float]
     cost_usd: NotRequired[float]
-    message_id: NotRequired[str]
-    request_id: NotRequired[str]
-    requestId: NotRequired[str]  # Alternative field name
 
 
 # Discriminated union for all Claude JSONL entry types
@@ -59,8 +61,12 @@ class TokenUsage(TypedDict, total=False):
     cache_read_input_tokens: NotRequired[int]  # Alternative field name
     inputTokens: NotRequired[int]  # Alternative field name (camelCase)
     outputTokens: NotRequired[int]  # Alternative field name (camelCase)
-    cacheCreationInputTokens: NotRequired[int]  # Alternative field name (camelCase)
+    cacheCreationInputTokens: NotRequired[
+        int
+    ]  # Alternative field name (camelCase)
     cacheReadInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     prompt_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
-    completion_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
+    completion_tokens: NotRequired[
+        int
+    ]  # Alternative field name (OpenAI format)
     total_tokens: NotRequired[int]
