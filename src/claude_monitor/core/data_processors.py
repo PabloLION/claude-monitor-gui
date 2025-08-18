@@ -7,7 +7,12 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import ClaudeJSONEntry, ExtractedTokens, JSONSerializable
+from claude_monitor.types import (
+    ClaudeJSONEntry,
+    ExtractedTokens,
+    FlattenedData,
+    JSONSerializable,
+)
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -227,7 +232,7 @@ class DataConverter:
     @staticmethod
     def flatten_nested_dict(
         data: dict[str, JSONSerializable], prefix: str = ""
-    ) -> dict[str, JSONSerializable]:
+    ) -> FlattenedData:
         """Flatten nested dictionary structure.
 
         Args:
@@ -237,7 +242,7 @@ class DataConverter:
         Returns:
             Flattened dictionary
         """
-        result: dict[str, JSONSerializable] = {}
+        result: FlattenedData = {}
 
         for key, value in data.items():
             new_key = f"{prefix}.{key}" if prefix else key
@@ -245,7 +250,8 @@ class DataConverter:
             if isinstance(value, dict):
                 result.update(DataConverter.flatten_nested_dict(value, new_key))
             else:
-                result[new_key] = value
+                # Use type: ignore for dynamic key assignment in TypedDict
+                result[new_key] = value  # type: ignore[literal-required]
 
         return result
 

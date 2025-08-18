@@ -6,7 +6,6 @@ to maintain clean type checking in the main codebase.
 
 import sys
 
-
 # TOML library backport
 try:
     # Python 3.11+

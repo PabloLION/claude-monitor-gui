@@ -27,6 +27,7 @@ from claude_monitor.types import (
     JSONSerializable,
     NotificationFlags,
     ProcessedDisplayData,
+    RawJSONData,
     TimeData,
 )
 from claude_monitor.ui.components import (
@@ -74,7 +75,7 @@ class DisplayController:
                 dict[str, JSONSerializable], active_block["perModelStats"]
             ),
             "sent_messages": active_block["sentMessagesCount"],
-            "entries": cast(list[JSONSerializable], active_block["entries"]),
+            "entries": cast(list[RawJSONData], active_block["entries"]),
             "start_time_str": active_block["startTime"],
             "end_time_str": active_block["endTime"],
         }
@@ -412,7 +413,7 @@ class DisplayController:
             ),
             "model_distribution": model_distribution,
             "sent_messages": session_data["sent_messages"],
-            "entries": cast(list[dict[str, JSONSerializable]], session_data["entries"]),
+            "entries": cast(list[RawJSONData], session_data["entries"]),
             "predicted_end_str": display_times["predicted_end_str"],
             "reset_time_str": display_times["reset_time_str"],
             "current_time_str": display_times["current_time_str"],

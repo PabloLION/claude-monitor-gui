@@ -34,7 +34,7 @@ from claude_monitor.terminal.manager import (
     setup_terminal,
 )
 from claude_monitor.terminal.themes import get_themed_console, print_themed
-from claude_monitor.types import JSONSerializable, MonitoringData
+from claude_monitor.types import MonitoringData
 from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
 
@@ -436,16 +436,8 @@ def _run_table_view(
             return
 
         # Display the table with type validation
-        validated_data = list[dict[str, JSONSerializable]]()
-        for item in aggregated_data:
-            # Convert dict values to JSONSerializable types
-            validated_item: dict[str, JSONSerializable] = {}
-            for key, value in item.items():
-                if isinstance(value, (str, int, float, bool, type(None))):
-                    validated_item[key] = value
-                else:
-                    validated_item[key] = str(value)
-            validated_data.append(validated_item)
+        # aggregated_data is already properly typed as AggregatedData from aggregator
+        validated_data = aggregated_data
 
         controller.display_aggregated_view(
             data=validated_data,

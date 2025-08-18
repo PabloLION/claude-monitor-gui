@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import ValidationState
 
 
 class NotificationManager:
@@ -31,7 +31,7 @@ class NotificationManager:
 
         try:
             with open(self.notification_file) as f:
-                states: dict[str, dict[str, JSONSerializable]] = json.load(f)
+                states: dict[str, ValidationState] = json.load(f)
                 # Convert timestamp strings back to datetime objects
                 parsed_states: dict[str, dict[str, bool | datetime | None]] = {}
                 for key, state in states.items():

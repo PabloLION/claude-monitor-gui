@@ -13,7 +13,11 @@ from claude_monitor.core.models import (
     UsageEntry,
     normalize_model_name,
 )
-from claude_monitor.types import ClaudeJSONEntry, JSONSerializable, LimitDetectionInfo
+from claude_monitor.types import (
+    ClaudeJSONEntry,
+    LimitDetectionInfo,
+    RawJSONData,
+)
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 logger = logging.getLogger(__name__)
@@ -287,7 +291,9 @@ class SessionAnalyzer:
 
         for item in content_list:
             if isinstance(item, dict) and item.get("type") == "tool_result":
-                limit_info = self._process_tool_result(item, entry, message)
+                # Cast to RawJSONData since we verified it's a dict with the expected structure
+                from typing import cast
+                limit_info = self._process_tool_result(cast(RawJSONData, item), entry, message)
                 if limit_info:
                     return limit_info
 
@@ -295,7 +301,7 @@ class SessionAnalyzer:
 
     def _process_tool_result(
         self,
-        item: dict[str, JSONSerializable],
+        item: RawJSONData,
         entry: ClaudeJSONEntry,
         message: dict[str, str | int],
     ) -> LimitDetectionInfo | None:

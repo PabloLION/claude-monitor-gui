@@ -23,6 +23,7 @@ from claude_monitor.utils.time_utils import (
     percentage,
 )
 
+from ..types.common import RawJSONData
 from ..types.sessions import ModelStats
 
 
@@ -45,7 +46,7 @@ class SessionDisplayData:
     session_cost: float
     per_model_stats: dict[str, ModelStats]
     sent_messages: int
-    entries: list[dict[str, Any]]
+    entries: list[RawJSONData]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
@@ -139,7 +140,7 @@ class SessionDisplayComponent:
         session_cost: float,
         per_model_stats: dict[str, ModelStats],
         sent_messages: int,
-        entries: list[dict[str, Any]],
+        entries: list[RawJSONData],
         predicted_end_str: str,
         reset_time_str: str,
         current_time_str: str,

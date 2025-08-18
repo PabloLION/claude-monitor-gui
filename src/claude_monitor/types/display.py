@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
-from .common import JSONSerializable
+from .common import JSONSerializable, RawJSONData
 from .sessions import ModelStats
 
 
@@ -42,7 +42,7 @@ class ExtractedSessionData(TypedDict):
     session_cost: float
     raw_per_model_stats: dict[str, JSONSerializable]
     sent_messages: int
-    entries: list[JSONSerializable]
+    entries: list[RawJSONData]
     start_time_str: str | None
     end_time_str: str | None
 
@@ -63,7 +63,7 @@ class ProcessedDisplayData(TypedDict):
     per_model_stats: dict[str, ModelStats]
     model_distribution: dict[str, float]
     sent_messages: int
-    entries: list[dict[str, JSONSerializable]]
+    entries: list[RawJSONData]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str

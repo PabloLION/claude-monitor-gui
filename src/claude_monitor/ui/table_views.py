@@ -12,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import AggregatedData, AggregatedTotals, JSONSerializable
 
 # Removed theme import - using direct styles
 from claude_monitor.utils.formatting import format_currency, format_number
@@ -68,8 +68,12 @@ class TableViewsController:
             period_column_name, style=self.key_style, width=period_column_width
         )
         table.add_column("Models", style=self.value_style, width=20)
-        table.add_column("Input", style=self.value_style, justify="right", width=12)
-        table.add_column("Output", style=self.value_style, justify="right", width=12)
+        table.add_column(
+            "Input", style=self.value_style, justify="right", width=12
+        )
+        table.add_column(
+            "Output", style=self.value_style, justify="right", width=12
+        )
         table.add_column(
             "Cache Create", style=self.value_style, justify="right", width=12
         )
@@ -88,7 +92,7 @@ class TableViewsController:
     def _add_data_rows(
         self,
         table: Table,
-        data_list: list[dict[str, JSONSerializable]],
+        data_list: list[AggregatedData],
         period_key: str,
     ) -> None:
         """Add data rows to the table.
@@ -141,9 +145,7 @@ class TableViewsController:
                 format_currency(safe_float(data.get("total_cost", 0.0))),
             )
 
-    def _add_totals_row(
-        self, table: Table, totals: dict[str, JSONSerializable]
-    ) -> None:
+    def _add_totals_row(self, table: Table, totals: AggregatedTotals) -> None:
         """Add totals row to the table.
 
         Args:
@@ -197,8 +199,8 @@ class TableViewsController:
 
     def create_daily_table(
         self,
-        daily_data: list[dict[str, JSONSerializable]],
-        totals: dict[str, JSONSerializable],
+        daily_data: list[AggregatedData],
+        totals: AggregatedTotals,
         timezone: str = "UTC",
     ) -> Table:
         """Create a daily statistics table.
@@ -228,8 +230,8 @@ class TableViewsController:
 
     def create_monthly_table(
         self,
-        monthly_data: list[dict[str, JSONSerializable]],
-        totals: dict[str, JSONSerializable],
+        monthly_data: list[AggregatedData],
+        totals: AggregatedTotals,
         timezone: str = "UTC",
     ) -> Table:
         """Create a monthly statistics table.
@@ -258,7 +260,7 @@ class TableViewsController:
         return table
 
     def create_summary_panel(
-        self, view_type: str, totals: dict[str, JSONSerializable], period: str
+        self, view_type: str, totals: AggregatedTotals, period: str
     ) -> Panel:
         """Create a summary panel for the table view.
 
@@ -358,8 +360,8 @@ class TableViewsController:
 
     def create_aggregate_table(
         self,
-        aggregate_data: list[dict[str, JSONSerializable]],
-        totals: dict[str, JSONSerializable],
+        aggregate_data: list[AggregatedData],
+        totals: AggregatedTotals,
         view_type: str,
         timezone: str = "UTC",
     ) -> Table:
@@ -386,7 +388,7 @@ class TableViewsController:
 
     def display_aggregated_view(
         self,
-        data: list[dict[str, JSONSerializable]],
+        data: list[AggregatedData],
         view_mode: str,
         timezone: str,
         plan: str,
@@ -418,9 +420,14 @@ class TableViewsController:
             return 0.0
 
         # Calculate totals with safe type conversion
+        # #TODO-ref: use a clearer approach for calculating totals
         totals = {
-            "input_tokens": sum(safe_numeric(d.get("input_tokens", 0)) for d in data),
-            "output_tokens": sum(safe_numeric(d.get("output_tokens", 0)) for d in data),
+            "input_tokens": sum(
+                safe_numeric(d.get("input_tokens", 0)) for d in data
+            ),
+            "output_tokens": sum(
+                safe_numeric(d.get("output_tokens", 0)) for d in data
+            ),
             "cache_creation_tokens": sum(
                 safe_numeric(d.get("cache_creation_tokens", 0)) for d in data
             ),
@@ -434,8 +441,12 @@ class TableViewsController:
                 + safe_numeric(d.get("cache_read_tokens", 0))
                 for d in data
             ),
-            "total_cost": sum(safe_numeric(d.get("total_cost", 0)) for d in data),
-            "entries_count": sum(safe_numeric(d.get("entries_count", 0)) for d in data),
+            "total_cost": sum(
+                safe_numeric(d.get("total_cost", 0)) for d in data
+            ),
+            "entries_count": sum(
+                safe_numeric(d.get("entries_count", 0)) for d in data
+            ),
         }
 
         # Determine period for summary
@@ -455,12 +466,26 @@ class TableViewsController:
                 period = "No data"
 
         # Create and display summary panel
-        # Cast totals to JSONSerializable since float/int are part of JSONSerializable
-        json_totals: dict[str, JSONSerializable] = dict(totals)
-        summary_panel = self.create_summary_panel(view_mode, json_totals, period)
+        # Cast totals to AggregatedTotals
+        json_totals = AggregatedTotals(
+            {
+                "input_tokens": int(totals["input_tokens"]),
+                "output_tokens": int(totals["output_tokens"]),
+                "cache_creation_tokens": int(totals["cache_creation_tokens"]),
+                "cache_read_tokens": int(totals["cache_read_tokens"]),
+                "total_tokens": int(totals["total_tokens"]),
+                "total_cost": float(totals["total_cost"]),
+                "entries_count": int(totals["entries_count"]),
+            }
+        )
+        summary_panel = self.create_summary_panel(
+            view_mode, json_totals, period
+        )
 
         # Create and display table
-        table = self.create_aggregate_table(data, json_totals, view_mode, timezone)
+        table = self.create_aggregate_table(
+            data, json_totals, view_mode, timezone
+        )
 
         # Display using console if provided
         if console:

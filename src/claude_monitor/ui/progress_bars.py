@@ -6,9 +6,7 @@ Provides token usage, time progress, and model usage progress bars.
 from __future__ import annotations
 
 from abc import ABC
-from typing import Final
-from typing import Protocol
-from typing import TypedDict
+from typing import Final, Protocol, TypedDict
 
 from claude_monitor.utils.time_utils import percentage
 
@@ -43,21 +41,21 @@ class ThresholdConfig(TypedDict):
 
 class TokenProgressRenderer(Protocol):
     """Protocol for token progress bar rendering."""
-    
+
     def render(self, percentage: float) -> str:
         """Render token progress bar."""
         ...
 
 class TimeProgressRenderer(Protocol):
     """Protocol for time progress bar rendering."""
-    
+
     def render(self, elapsed_minutes: float, total_minutes: float) -> str:
         """Render time progress bar."""
         ...
 
 class ModelProgressRenderer(Protocol):
     """Protocol for model progress bar rendering."""
-    
+
     def render(self, per_model_stats: dict[str, ModelStats]) -> str:
         """Render model progress bar."""
         ...

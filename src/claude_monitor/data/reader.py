@@ -24,6 +24,7 @@ from claude_monitor.types import (
     EntryData,
     ExtractedMetadata,
     JSONSerializable,
+    RawJSONData,
     SystemEntry,
     UserEntry,
 )
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_claude_entry(
-    raw_data: dict[str, JSONSerializable],
+    raw_data: RawJSONData,
 ) -> ClaudeJSONEntry | None:
     """Parse raw JSON dict into specific ClaudeJSONEntry type by inferring from structure.
 
@@ -274,7 +275,7 @@ def _process_single_file(
 
 
 def _should_process_entry(
-    data: dict[str, JSONSerializable],
+    data: RawJSONData,
     cutoff_time: datetime | None,
     processed_hashes: set[str],
     timezone_handler: TimezoneHandler,
@@ -292,7 +293,7 @@ def _should_process_entry(
     return not (unique_hash and unique_hash in processed_hashes)
 
 
-def _create_unique_hash(data: dict[str, JSONSerializable]) -> str | None:
+def _create_unique_hash(data: RawJSONData) -> str | None:
     """Create unique hash for deduplication."""
     # Extract message_id with type checking
     message_id = data.get("message_id")
@@ -313,7 +314,7 @@ def _create_unique_hash(data: dict[str, JSONSerializable]) -> str | None:
 
 
 def _update_processed_hashes(
-    data: dict[str, JSONSerializable], processed_hashes: set[str]
+    data: RawJSONData, processed_hashes: set[str]
 ) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
@@ -322,7 +323,7 @@ def _update_processed_hashes(
 
 
 def _map_to_usage_entry(
-    raw_data: dict[str, JSONSerializable],
+    raw_data: RawJSONData,
     mode: CostMode,
     timezone_handler: TimezoneHandler,
     pricing_calculator: PricingCalculator,
@@ -411,15 +412,17 @@ class UsageEntryMapper:
         self, data: dict[str, JSONSerializable], mode: CostMode
     ) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
+        # Cast to RawJSONData since this is test compatibility interface
+        from typing import cast
         return _map_to_usage_entry(
-            data, mode, self.timezone_handler, self.pricing_calculator
+            cast(RawJSONData, data), mode, self.timezone_handler, self.pricing_calculator
         )
 
     def _has_valid_tokens(self, tokens: dict[str, int]) -> bool:
         """Check if tokens are valid (for test compatibility)."""
         return any(v > 0 for v in tokens.values())
 
-    def _extract_timestamp(self, data: dict[str, JSONSerializable]) -> datetime | None:
+    def _extract_timestamp(self, data: RawJSONData) -> datetime | None:
         """Extract timestamp (for test compatibility)."""
         timestamp = data.get("timestamp")
         if not timestamp or not isinstance(timestamp, (str, int, float)):
@@ -427,7 +430,7 @@ class UsageEntryMapper:
         processor = TimestampProcessor(self.timezone_handler)
         return processor.parse_timestamp(timestamp)
 
-    def _extract_model(self, data: dict[str, JSONSerializable]) -> str:
+    def _extract_model(self, data: RawJSONData) -> str:
         """Extract model name (for test compatibility)."""
         # Convert to ClaudeJSONEntry for compatibility
         parsed_data = _parse_claude_entry(data)
@@ -435,7 +438,7 @@ class UsageEntryMapper:
             return DataConverter.extract_model_name(parsed_data, default="unknown")
         return "unknown"
 
-    def _extract_metadata(self, data: dict[str, JSONSerializable]) -> ExtractedMetadata:
+    def _extract_metadata(self, data: RawJSONData) -> ExtractedMetadata:
         """Extract metadata (for test compatibility)."""
         message = data.get("message", {})
 

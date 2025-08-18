@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from claude_monitor.core.models import CostMode, UsageEntry
-from claude_monitor.types import JSONSerializable
+from claude_monitor.types import JSONSerializable, RawJSONData
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def sample_usage_entry() -> UsageEntry:
 
 
 @pytest.fixture
-def sample_valid_data() -> dict[str, JSONSerializable]:
+def sample_valid_data() -> RawJSONData:
     """Sample valid data structure for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -65,7 +65,7 @@ def sample_valid_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_assistant_data() -> dict[str, JSONSerializable]:
+def sample_assistant_data() -> RawJSONData:
     """Sample assistant-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -85,7 +85,7 @@ def sample_assistant_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_user_data() -> dict[str, JSONSerializable]:
+def sample_user_data() -> RawJSONData:
     """Sample user-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -103,7 +103,7 @@ def sample_user_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_malformed_data() -> dict[str, JSONSerializable]:
+def sample_malformed_data() -> RawJSONData:
     """Sample malformed data for testing error handling."""
     return {
         "timestamp": "invalid_timestamp",
@@ -113,7 +113,7 @@ def sample_malformed_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_minimal_data() -> dict[str, JSONSerializable]:
+def sample_minimal_data() -> RawJSONData:
     """Sample minimal valid data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -123,7 +123,7 @@ def sample_minimal_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_empty_tokens_data() -> dict[str, JSONSerializable]:
+def sample_empty_tokens_data() -> RawJSONData:
     """Sample data with empty/zero tokens for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -138,7 +138,7 @@ def sample_empty_tokens_data() -> dict[str, JSONSerializable]:
 
 
 @pytest.fixture
-def sample_duplicate_data() -> list[dict[str, JSONSerializable]]:
+def sample_duplicate_data() -> list[RawJSONData]:
     """Sample data for testing duplicate detection."""
     return [
         {
