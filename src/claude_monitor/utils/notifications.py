@@ -33,7 +33,9 @@ class NotificationManager:
             with open(self.notification_file) as f:
                 states: dict[str, ValidationState] = json.load(f)
                 # Convert timestamp strings back to datetime objects
-                parsed_states: dict[str, dict[str, bool | datetime | None]] = {}
+                parsed_states: dict[str, dict[str, bool | datetime | None]] = dict[
+                    str, dict[str, bool | datetime | None]
+                ]()
                 for key, state in states.items():
                     parsed_state: dict[str, bool | datetime | None] = {
                         "triggered": bool(state.get("triggered", False)),
@@ -52,7 +54,7 @@ class NotificationManager:
     def _save_states(self) -> None:
         """Save notification states to file."""
         try:
-            states_to_save: dict[str, dict[str, bool | str | None]] = {}
+            states_to_save = dict[str, dict[str, bool | str | None]]()
             for key, state in self.states.items():
                 timestamp_str: str | None = None
                 timestamp_value = state["timestamp"]

@@ -221,7 +221,7 @@ class AdvancedCustomLimitDisplay:
 
             # Convert to required types (BlockDict already guarantees compatible types)
             tokens = int(tokens_raw)  # tokens_raw is int from BlockDict
-            cost = float(cost_raw)    # cost_raw is float from BlockDict  
+            cost = float(cost_raw)  # cost_raw is float from BlockDict
             messages = int(messages_raw)  # messages_raw is int from BlockDict
 
             session: SessionDataDict = {

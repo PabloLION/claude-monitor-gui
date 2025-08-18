@@ -144,7 +144,7 @@ class UsageAggregator:
         Returns:
             List of aggregated data dictionaries
         """
-        period_data: dict[str, AggregatedPeriod] = {}
+        period_data = dict[str, AggregatedPeriod]()
 
         for entry in entries:
             # Apply date filters

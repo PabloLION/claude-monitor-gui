@@ -5,47 +5,46 @@ Orchestrates UI components and coordinates display updates.
 
 import argparse
 import logging
-
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import pytz
-
-from rich.console import Console
-from rich.console import Group
-from rich.console import RenderableType
+from rich.console import Console, Group, RenderableType
 from rich.live import Live
 from rich.text import Text
 
 from claude_monitor.core.calculations import calculate_hourly_burn_rate
 from claude_monitor.core.models import normalize_model_name
 from claude_monitor.core.plans import Plans
-from claude_monitor.types import AnalysisResult
-from claude_monitor.types import BlockData
-from claude_monitor.types import BlockDict
-from claude_monitor.types import CostPredictions
-from claude_monitor.types import DisplayTimes
-from claude_monitor.types import ExtractedSessionData
-from claude_monitor.types import ModelStats
-from claude_monitor.types import ModelStatsRaw
-from claude_monitor.types import NotificationFlags
-from claude_monitor.types import ProcessedDisplayData
-from claude_monitor.types import RawJSONData
-from claude_monitor.types import TimeData
-from claude_monitor.ui.components import AdvancedCustomLimitDisplay
-from claude_monitor.ui.components import ErrorDisplayComponent
-from claude_monitor.ui.components import LoadingScreenComponent
+from claude_monitor.types import (
+    AnalysisResult,
+    BlockData,
+    BlockDict,
+    CostPredictions,
+    DisplayTimes,
+    ExtractedSessionData,
+    ModelStats,
+    ModelStatsRaw,
+    NotificationFlags,
+    ProcessedDisplayData,
+    RawJSONData,
+    TimeData,
+)
+from claude_monitor.ui.components import (
+    AdvancedCustomLimitDisplay,
+    ErrorDisplayComponent,
+    LoadingScreenComponent,
+)
 from claude_monitor.ui.layouts import ScreenManager
 from claude_monitor.ui.session_display import SessionDisplayComponent
 from claude_monitor.utils.notifications import NotificationManager
-from claude_monitor.utils.time_utils import TimezoneHandler
-from claude_monitor.utils.time_utils import format_display_time
-from claude_monitor.utils.time_utils import get_time_format_preference
-from claude_monitor.utils.time_utils import percentage
+from claude_monitor.utils.time_utils import (
+    TimezoneHandler,
+    format_display_time,
+    get_time_format_preference,
+    percentage,
+)
 
 
 class DisplayController:
@@ -65,9 +64,7 @@ class DisplayController:
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
 
-    def _extract_session_data(
-        self, active_block: BlockDict
-    ) -> ExtractedSessionData:
+    def _extract_session_data(self, active_block: BlockDict) -> ExtractedSessionData:
         """Extract basic session data from active block."""
         # BlockDict has well-defined types, so we can access fields directly
         return {
@@ -98,9 +95,7 @@ class DisplayController:
         self, session_data: ExtractedSessionData, current_time: datetime
     ) -> TimeData:
         """Calculate time-related data for the session."""
-        return self.session_calculator.calculate_time_data(
-            session_data, current_time
-        )
+        return self.session_calculator.calculate_time_data(session_data, current_time)
 
     def _calculate_cost_predictions(
         self,
@@ -130,7 +125,7 @@ class DisplayController:
         reset_time: datetime,
     ) -> NotificationFlags:
         """Check and update notification states."""
-        notifications = {}
+        notifications = dict[str, bool]()
 
         # Switch to custom notification
         switch_condition = token_limit > original_limit
@@ -142,9 +137,7 @@ class DisplayController:
         else:
             notifications["show_switch_notification"] = (
                 switch_condition
-                and self.notification_manager.is_notification_active(
-                    "switch_to_custom"
-                )
+                and self.notification_manager.is_notification_active("switch_to_custom")
             )
 
         # Exceed limit notification
@@ -157,9 +150,7 @@ class DisplayController:
         else:
             notifications["show_exceed_notification"] = (
                 exceed_condition
-                and self.notification_manager.is_notification_active(
-                    "exceed_max_limit"
-                )
+                and self.notification_manager.is_notification_active("exceed_max_limit")
             )
 
         # Cost will exceed notification
@@ -172,9 +163,7 @@ class DisplayController:
         else:
             notifications["show_cost_will_exceed"] = (
                 run_out_condition
-                and self.notification_manager.is_notification_active(
-                    "cost_will_exceed"
-                )
+                and self.notification_manager.is_notification_active("cost_will_exceed")
             )
 
         return cast(NotificationFlags, notifications)
@@ -198,9 +187,7 @@ class DisplayController:
         predicted_end_local = tz_handler.convert_to_timezone(
             predicted_end_time, timezone_to_use
         )
-        reset_time_local = tz_handler.convert_to_timezone(
-            reset_time, timezone_to_use
-        )
+        reset_time_local = tz_handler.convert_to_timezone(reset_time, timezone_to_use)
 
         # Format times
         time_format = get_time_format_preference(args)
@@ -260,10 +247,8 @@ class DisplayController:
         current_time = datetime.now(pytz.UTC)
 
         if not active_block:
-            screen_buffer = (
-                self.session_display.format_no_active_session_screen(
-                    args.plan, args.timezone, token_limit, current_time, args
-                )
+            screen_buffer = self.session_display.format_no_active_session_screen(
+                args.plan, args.timezone, token_limit, current_time, args
             )
             return self.buffer_manager.create_screen_renderable(screen_buffer)
 
@@ -299,9 +284,7 @@ class DisplayController:
         except Exception as e:
             # Log the error and show error screen
             logger = logging.getLogger(__name__)
-            logger.error(
-                f"Error processing active session data: {e}", exc_info=True
-            )
+            logger.error(f"Error processing active session data: {e}", exc_info=True)
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
             )
@@ -320,9 +303,7 @@ class DisplayController:
         except Exception as e:
             # Log the error with more details
             logger = logging.getLogger(__name__)
-            logger.error(
-                f"Error in format_active_session_screen: {e}", exc_info=True
-            )
+            logger.error(f"Error in format_active_session_screen: {e}", exc_info=True)
             logger.exception(f"processed_data type: {type(processed_data)}")
             if processed_data:
                 for key, value in processed_data.items():
@@ -346,9 +327,7 @@ class DisplayController:
                             f"  {key}: {type(value).__name__} with {len(value) if value else 'N/A'} items"
                         )
                     else:
-                        logger.exception(
-                            f"  {key}: {type(value).__name__} = {value}"
-                        )
+                        logger.exception(f"  {key}: {type(value).__name__} = {value}")
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
             )
@@ -387,9 +366,7 @@ class DisplayController:
         )
 
         # Calculate token limits
-        token_limit, original_limit = self._calculate_token_limits(
-            args, token_limit
-        )
+        token_limit, original_limit = self._calculate_token_limits(args, token_limit)
 
         # Calculate usage metrics
         tokens_used = session_data["tokens_used"]
@@ -452,12 +429,8 @@ class DisplayController:
             "predicted_end_str": display_times["predicted_end_str"],
             "reset_time_str": display_times["reset_time_str"],
             "current_time_str": display_times["current_time_str"],
-            "show_switch_notification": notifications[
-                "show_switch_notification"
-            ],
-            "show_exceed_notification": notifications[
-                "show_exceed_notification"
-            ],
+            "show_switch_notification": notifications["show_switch_notification"],
+            "show_exceed_notification": notifications["show_exceed_notification"],
             "show_tokens_will_run_out": notifications["show_cost_will_exceed"],
             "original_limit": original_limit,
         }
@@ -477,7 +450,7 @@ class DisplayController:
             return {}
 
         # Calculate total tokens per model for THIS SESSION ONLY
-        model_tokens: dict[str, int] = {}
+        model_tokens = dict[str, int]()
         for model, stats in raw_per_model_stats.items():
             # Runtime check needed for test compatibility and invalid data
             if isinstance(stats, dict):  # type: ignore[misc]
@@ -504,7 +477,7 @@ class DisplayController:
         if session_total_tokens == 0:
             return {}
 
-        model_distribution: dict[str, float] = {}
+        model_distribution: dict[str, float] = dict[str, float]()
         for model, tokens in model_tokens.items():
             model_percentage = percentage(tokens, session_total_tokens)
             model_distribution[model] = model_percentage
@@ -694,8 +667,7 @@ class SessionCalculator:
             reset_time = (
                 start_time + timedelta(hours=5)  # Default session duration
                 if start_time
-                else current_time
-                + timedelta(hours=5)  # Default session duration
+                else current_time + timedelta(hours=5)  # Default session duration
             )
 
         # Calculate session times
@@ -706,20 +678,12 @@ class SessionCalculator:
             minutes_to_reset = 0.0
 
         if start_time and reset_time and session_data.get("end_time_str"):
-            total_session_minutes = (
-                reset_time - start_time
-            ).total_seconds() / 60
-            elapsed_session_minutes = (
-                current_time - start_time
-            ).total_seconds() / 60
+            total_session_minutes = (reset_time - start_time).total_seconds() / 60
+            elapsed_session_minutes = (current_time - start_time).total_seconds() / 60
             elapsed_session_minutes = max(0, elapsed_session_minutes)
         else:
-            total_session_minutes = (
-                5 * 60
-            )  # Default session duration in minutes
-            elapsed_session_minutes = max(
-                0, total_session_minutes - minutes_to_reset
-            )
+            total_session_minutes = 5 * 60  # Default session duration in minutes
+            elapsed_session_minutes = max(0, total_session_minutes - minutes_to_reset)
 
         return {
             "start_time": start_time,

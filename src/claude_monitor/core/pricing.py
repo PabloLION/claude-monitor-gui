@@ -65,7 +65,7 @@ class PricingCalculator:
             "claude-sonnet-4-20250514": self.FALLBACK_PRICING["sonnet"],
             "claude-opus-4-20250514": self.FALLBACK_PRICING["opus"],
         }
-        self._cost_cache: dict[str, float] = {}
+        self._cost_cache = dict[str, float]()
 
     def calculate_cost(
         self,

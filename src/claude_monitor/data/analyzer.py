@@ -372,7 +372,7 @@ class SessionAnalyzer:
         | None = None,
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
-        context: dict[str, str | int] = {}
+        context = dict[str, str | int]()
 
         # Safe extraction with defaults
         message_id = entry.get("messageId") or entry.get("message_id")

@@ -8,9 +8,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import Final, Protocol, TypedDict
 
-from claude_monitor.utils.time_utils import percentage
-
 from claude_monitor.types.sessions import ModelStats
+from claude_monitor.utils.time_utils import percentage
 
 
 # Type definitions for progress bar components

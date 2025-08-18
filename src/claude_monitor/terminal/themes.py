@@ -425,8 +425,10 @@ class BackgroundDetector:
                             else BackgroundType.DARK
                         )
 
-            # Restore terminal settings  
-            if old_settings:  # old_settings is list[Any] if set, None if tcgetattr failed
+            # Restore terminal settings
+            if (
+                old_settings
+            ):  # old_settings is list[Any] if set, None if tcgetattr failed
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
         except (OSError, termios.error, AttributeError):
@@ -463,7 +465,7 @@ class ThemeManager:
         Returns:
             Dictionary mapping theme names to ThemeConfig objects.
         """
-        themes: dict[str, ThemeConfig] = {}
+        themes = dict[str, ThemeConfig]()
 
         # Load themes with Rich theme objects
         light_rich: Theme = AdaptiveColorScheme.get_light_background_theme()

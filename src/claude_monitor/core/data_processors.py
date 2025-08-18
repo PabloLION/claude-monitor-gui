@@ -246,7 +246,7 @@ class DataConverter:
         Returns:
             Flattened dictionary
         """
-        result: FlattenedData = {}
+        result: FlattenedData = FlattenedData()
 
         for key, value in data.items():
             new_key = f"{prefix}.{key}" if prefix else key
