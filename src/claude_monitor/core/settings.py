@@ -60,7 +60,7 @@ class LastUsedParams:
     def load(self) -> LastUsedParamsDict:
         """Load last used parameters."""
         if not self.params_file.exists():
-            return {}
+            return LastUsedParamsDict()
 
         try:
             with open(self.params_file) as f:
@@ -73,7 +73,7 @@ class LastUsedParams:
 
         except Exception as e:
             logger.warning(f"Failed to load last used params: {e}")
-            return {}
+            return LastUsedParamsDict()
 
     def clear(self) -> None:
         """Clear last used parameters."""

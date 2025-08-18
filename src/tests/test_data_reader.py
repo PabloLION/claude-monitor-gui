@@ -9,6 +9,7 @@ import json
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -602,7 +603,7 @@ class TestCreateUniqueHash:
         assert result is None
 
     def test_create_unique_hash_empty_data(self) -> None:
-        data = {}
+        data = dict[str, Any]()
 
         result = _create_unique_hash(data)
         assert result is None
@@ -1240,7 +1241,7 @@ class TestUsageEntryMapper:
         mapper, _, _ = mapper_components
 
         # Test with missing data
-        data = {}
+        data = dict[str, Any]()
 
         result = mapper._extract_metadata(data)
         expected = {"message_id": "", "request_id": "unknown"}
@@ -1674,7 +1675,7 @@ class TestDataProcessors:
         assert DataConverter.extract_model_name(data) == "claude-3-sonnet"
 
         # Test with default
-        data = {}
+        data = dict[str, Any]()
         assert (
             DataConverter.extract_model_name(data, "default-model") == "default-model"
         )

@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from claude_monitor.core.settings import LastUsedParams, Settings
+from claude_monitor.types import LastUsedParamsDict
 
 
 class TestLastUsedParams:
@@ -181,7 +182,7 @@ class TestLastUsedParams:
     def test_load_file_not_exists(self) -> None:
         """Test loading when file doesn't exist."""
         result = self.last_used.load()
-        assert result == {}
+        assert result == LastUsedParamsDict()
 
     @patch("claude_monitor.core.settings.logger")
     def test_load_error_handling(self, mock_logger: Mock) -> None:
@@ -192,7 +193,7 @@ class TestLastUsedParams:
 
         result = self.last_used.load()
 
-        assert result == {}
+        assert result == LastUsedParamsDict()
         mock_logger.warning.assert_called_once()
 
     def test_clear_success(self) -> None:
@@ -496,7 +497,7 @@ class TestSettings:
 
         with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = {}
+            mock_instance.load.return_value = LastUsedParamsDict()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used([])
@@ -515,7 +516,7 @@ class TestSettings:
 
         with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = {}
+            mock_instance.load.return_value = LastUsedParamsDict()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used(["--debug"])
@@ -543,7 +544,7 @@ class TestSettings:
 
         with patch("claude_monitor.core.settings.LastUsedParams") as MockLastUsed:
             mock_instance = Mock()
-            mock_instance.load.return_value = {}
+            mock_instance.load.return_value = LastUsedParamsDict()
             MockLastUsed.return_value = mock_instance
 
             settings = Settings.load_with_last_used([])

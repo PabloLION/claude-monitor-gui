@@ -946,7 +946,7 @@ class TestSessionCalculator:
 
     def test_calculate_time_data_no_start_time(self, calculator):
         """Test calculate_time_data without start time."""
-        session_data = {}
+        session_data = dict[str, str | None]()
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
         result = calculator.calculate_time_data(session_data, current_time)

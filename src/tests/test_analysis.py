@@ -22,6 +22,7 @@ from claude_monitor.data.analysis import (
     _process_burn_rates,  # type: ignore[misc]
     analyze_usage,
 )
+from claude_monitor.types.sessions import PartialBlockDict
 
 
 class TestAnalyzeUsage:
@@ -519,7 +520,7 @@ class TestBlockConversion:
         }
         block.limit_messages = [{"type": "rate_limit", "content": "Limit reached"}]
 
-        block_dict = {}
+        block_dict = PartialBlockDict()
         _add_optional_block_data(block, block_dict)
 
         assert "burnRate" in block_dict
@@ -548,7 +549,7 @@ class TestBlockConversion:
         if hasattr(block, "limit_messages"):
             del block.limit_messages
 
-        block_dict = {}
+        block_dict = PartialBlockDict()
         _add_optional_block_data(block, block_dict)
 
         assert "burnRate" not in block_dict

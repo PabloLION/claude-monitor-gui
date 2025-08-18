@@ -447,7 +447,7 @@ class DisplayController:
             Dictionary mapping model names to usage percentages for the current session
         """
         if not raw_per_model_stats:
-            return {}
+            return dict[str, float]()
 
         # Calculate total tokens per model for THIS SESSION ONLY
         model_tokens = dict[str, int]()
@@ -475,7 +475,7 @@ class DisplayController:
         # Calculate percentages based on current session total only
         session_total_tokens = sum(model_tokens.values())
         if session_total_tokens == 0:
-            return {}
+            return dict[str, float]()
 
         model_distribution: dict[str, float] = dict[str, float]()
         for model, tokens in model_tokens.items():
