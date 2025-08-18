@@ -479,7 +479,8 @@ class DisplayController:
         # Calculate total tokens per model for THIS SESSION ONLY
         model_tokens: dict[str, int] = {}
         for model, stats in raw_per_model_stats.items():
-            if isinstance(stats, dict):
+            # Runtime check needed for test compatibility and invalid data
+            if isinstance(stats, dict):  # type: ignore[misc]
                 # Normalize model name
                 normalized_model = normalize_model_name(model)
                 if normalized_model and normalized_model != "unknown":
@@ -634,7 +635,8 @@ class ScreenBufferManager:
 
         text_objects = list[RenderableType]()
         for line in screen_buffer:
-            if isinstance(line, str):
+            # Runtime check needed to handle Mock objects in tests
+            if isinstance(line, str):  # type: ignore[misc]
                 # Use console to render markup properly
                 text_obj = Text.from_markup(line)
                 text_objects.append(text_obj)
