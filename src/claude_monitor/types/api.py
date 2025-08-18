@@ -6,6 +6,26 @@ from typing import Required
 from typing import TypedDict
 
 
+class UserMessageContent(TypedDict, total=False):
+    """Structure for user message content."""
+    
+    id: NotRequired[str]
+    content: NotRequired[str | list[dict[str, str]]]
+    role: NotRequired[str]
+    text: NotRequired[str]
+    attachments: NotRequired[list[dict[str, str]]]
+
+
+class AssistantMessageContent(TypedDict, total=False):
+    """Structure for assistant message content."""
+    
+    id: NotRequired[str]
+    model: NotRequired[str]
+    usage: NotRequired["TokenUsage"]
+    content: NotRequired[str | list[dict[str, str]]]
+    role: NotRequired[str]
+    
+
 class ClaudeEntryBase(TypedDict, total=False):
     """Base class for all Claude API message entries."""
 
@@ -26,9 +46,7 @@ class UserEntry(ClaudeEntryBase, total=False):
     """User messages (type='user')."""
 
     type: Required[Literal["user"]]
-    message: Required[
-        dict[str, str | int | list[dict[str, str]] | dict[str, str]]
-    ]
+    message: Required[UserMessageContent]
 
 
 class AssistantEntry(ClaudeEntryBase, total=False):
@@ -36,7 +54,7 @@ class AssistantEntry(ClaudeEntryBase, total=False):
 
     type: Required[Literal["assistant"]]
     model: NotRequired[str]  # Model might not always be present
-    message: NotRequired[dict[str, "str | int | TokenUsage"]]
+    message: NotRequired[AssistantMessageContent]
     usage: NotRequired[dict[str, int]]
     input_tokens: NotRequired[int]
     output_tokens: NotRequired[int]
