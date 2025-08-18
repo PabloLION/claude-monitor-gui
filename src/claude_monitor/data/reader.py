@@ -282,7 +282,7 @@ def _should_process_entry(
     """Check if entry should be processed based on time and uniqueness."""
     if cutoff_time:
         timestamp_str = data.get("timestamp")
-        if timestamp_str and isinstance(timestamp_str, (str, int, float)):
+        if timestamp_str:
             processor = TimestampProcessor(timezone_handler)
             timestamp = processor.parse_timestamp(timestamp_str)
             if timestamp and timestamp < cutoff_time:
@@ -364,7 +364,7 @@ def _map_to_usage_entry(
 
         # Extract message_id with proper type handling
         msg_id_raw = claude_entry.get("message_id")
-        msg_id_from_message = message.get("id") if isinstance(message, dict) else ""
+        msg_id_from_message = message.get("id") if message else ""
         message_id = (
             (msg_id_raw if isinstance(msg_id_raw, str) else "")
             or (msg_id_from_message if isinstance(msg_id_from_message, str) else "")
@@ -422,7 +422,7 @@ class UsageEntryMapper:
     def _extract_timestamp(self, data: RawJSONData) -> datetime | None:
         """Extract timestamp (for test compatibility)."""
         timestamp = data.get("timestamp")
-        if not timestamp or not isinstance(timestamp, (str, int, float)):
+        if not timestamp:
             return None
         processor = TimestampProcessor(self.timezone_handler)
         return processor.parse_timestamp(timestamp)
@@ -442,7 +442,7 @@ class UsageEntryMapper:
         # Extract message_id with type checking
         message_id = data.get("message_id")
         if not isinstance(message_id, str):
-            if isinstance(message, dict):
+            if message:
                 msg_id = message.get("id", "")
                 message_id = msg_id if isinstance(msg_id, str) else ""
             else:
