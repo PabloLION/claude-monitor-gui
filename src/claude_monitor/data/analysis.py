@@ -166,15 +166,12 @@ def _is_limit_in_block_timerange(
 
 def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:
     """Format limit info for block assignment."""
+    reset_time = limit_info.get("reset_time")
     return {
         "type": limit_info["type"],
         "timestamp": limit_info["timestamp"].isoformat(),
         "content": limit_info["content"],
-        "reset_time": (
-            limit_info["reset_time"].isoformat()
-            if limit_info.get("reset_time")
-            else None
-        ),
+        "reset_time": reset_time.isoformat() if reset_time else None,
     }
 
 
