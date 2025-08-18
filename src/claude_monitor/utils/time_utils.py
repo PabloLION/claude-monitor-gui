@@ -13,113 +13,105 @@ from datetime import datetime
 import pytz
 from pytz import BaseTzInfo
 
-from claude_monitor.utils.backports import HAS_BABEL
+from claude_monitor.utils.backports import HAS_BABEL, get_timezone_location
 
-# Keep the existing fallback implementation
-try:
-    from babel.dates import get_timezone_location
-except ImportError:
-    def get_timezone_location(
-        timezone_name: str, locale_name: str = "en_US"
-    ) -> str | None:
-        """Fallback implementation for get_timezone_location when Babel is not available."""
-        # Mapping of timezone names to their locations/countries
-        timezone_to_location: dict[str, str] = {
-            # United States
-            "America/New_York": "United States",
-            "America/Chicago": "United States",
-            "America/Denver": "United States",
-            "America/Los_Angeles": "United States",
-            "America/Phoenix": "United States",
-            "America/Anchorage": "United States",
-            "America/Honolulu": "United States",
-            "US/Eastern": "United States",
-            "US/Central": "United States",
-            "US/Mountain": "United States",
-            "US/Pacific": "United States",
-            # Canada
-            "America/Toronto": "Canada",
-            "America/Montreal": "Canada",
-            "America/Vancouver": "Canada",
-            "America/Edmonton": "Canada",
-            "America/Winnipeg": "Canada",
-            "America/Halifax": "Canada",
-            "Canada/Eastern": "Canada",
-            "Canada/Central": "Canada",
-            "Canada/Mountain": "Canada",
-            "Canada/Pacific": "Canada",
-            # Australia
-            "Australia/Sydney": "Australia",
-            "Australia/Melbourne": "Australia",
-            "Australia/Brisbane": "Australia",
-            "Australia/Perth": "Australia",
-            "Australia/Adelaide": "Australia",
-            "Australia/Darwin": "Australia",
-            "Australia/Hobart": "Australia",
-            # United Kingdom
-            "Europe/London": "United Kingdom",
-            "GMT": "United Kingdom",
-            "Europe/Belfast": "United Kingdom",
-            # Germany (24h example)
-            "Europe/Berlin": "Germany",
-            "Europe/Munich": "Germany",
-            # Other common timezones for 12h countries
-            "Pacific/Auckland": "New Zealand",
-            "Asia/Manila": "Philippines",
-            "Asia/Kolkata": "India",
-            "Africa/Cairo": "Egypt",
-            "Asia/Riyadh": "Saudi Arabia",
-            "America/Bogota": "Colombia",
-            "Asia/Karachi": "Pakistan",
-            "Asia/Kuala_Lumpur": "Malaysia",
-            "Africa/Accra": "Ghana",
-            "Africa/Nairobi": "Kenya",
-            "Africa/Lagos": "Nigeria",
-            "America/Lima": "Peru",
-            "Africa/Johannesburg": "South Africa",
-            "Asia/Colombo": "Sri Lanka",
-            "Asia/Dhaka": "Bangladesh",
-            "Asia/Amman": "Jordan",
-            "Asia/Singapore": "Singapore",
-            "Europe/Dublin": "Ireland",
-            "Europe/Malta": "Malta",
-        }
+# Comprehensive timezone to location mapping for fallback when babel returns None
+_TIMEZONE_TO_LOCATION: dict[str, str] = {
+    # United States
+    "America/New_York": "United States",
+    "America/Chicago": "United States", 
+    "America/Denver": "United States",
+    "America/Los_Angeles": "United States",
+    "America/Phoenix": "United States",
+    "America/Anchorage": "United States", 
+    "America/Honolulu": "United States",
+    "US/Eastern": "United States",
+    "US/Central": "United States",
+    "US/Mountain": "United States",
+    "US/Pacific": "United States",
+    # Canada
+    "America/Toronto": "Canada",
+    "America/Montreal": "Canada",
+    "America/Vancouver": "Canada",
+    "America/Edmonton": "Canada",
+    "America/Winnipeg": "Canada",
+    "America/Halifax": "Canada",
+    "Canada/Eastern": "Canada",
+    "Canada/Central": "Canada",
+    "Canada/Mountain": "Canada", 
+    "Canada/Pacific": "Canada",
+    # Australia
+    "Australia/Sydney": "Australia",
+    "Australia/Melbourne": "Australia",
+    "Australia/Brisbane": "Australia",
+    "Australia/Perth": "Australia",
+    "Australia/Adelaide": "Australia",
+    "Australia/Darwin": "Australia",
+    "Australia/Hobart": "Australia",
+    # United Kingdom
+    "Europe/London": "United Kingdom",
+    "GMT": "United Kingdom",
+    "Europe/Belfast": "United Kingdom",
+    # Germany (24h example)
+    "Europe/Berlin": "Germany", 
+    "Europe/Munich": "Germany",
+    # Other common timezones for 12h countries
+    "Pacific/Auckland": "New Zealand",
+    "Asia/Manila": "Philippines",
+    "Asia/Kolkata": "India",
+    "Africa/Cairo": "Egypt",
+    "Asia/Riyadh": "Saudi Arabia",
+    "America/Bogota": "Colombia",
+    "Asia/Karachi": "Pakistan",
+    "Asia/Kuala_Lumpur": "Malaysia",
+    "Africa/Accra": "Ghana",
+    "Africa/Nairobi": "Kenya",
+    "Africa/Lagos": "Nigeria", 
+    "America/Lima": "Peru",
+    "Africa/Johannesburg": "South Africa",
+    "Asia/Colombo": "Sri Lanka",
+    "Asia/Dhaka": "Bangladesh",
+    "Asia/Amman": "Jordan",
+    "Asia/Singapore": "Singapore",
+    "Europe/Dublin": "Ireland",
+    "Europe/Malta": "Malta",
+}
 
-        location: str | None = timezone_to_location.get(timezone_name)
-        if location:
-            # Add country codes for 12h countries to match expected test behavior
-            country_codes: dict[str, str] = {
-                "United States": "US",
-                "Canada": "CA",
-                "Australia": "AU",
-                "United Kingdom": "GB",
-                "New Zealand": "NZ",
-                "Philippines": "PH",
-                "India": "IN",
-                "Egypt": "EG",
-                "Saudi Arabia": "SA",
-                "Colombia": "CO",
-                "Pakistan": "PK",
-                "Malaysia": "MY",
-                "Ghana": "GH",
-                "Kenya": "KE",
-                "Nigeria": "NG",
-                "Peru": "PE",
-                "South Africa": "ZA",
-                "Sri Lanka": "LK",
-                "Bangladesh": "BD",
-                "Jordan": "JO",
-                "Singapore": "SG",
-                "Ireland": "IE",
-                "Malta": "MT",
-            }
+_COUNTRY_CODES: dict[str, str] = {
+    "United States": "US",
+    "Canada": "CA", 
+    "Australia": "AU",
+    "United Kingdom": "GB",
+    "New Zealand": "NZ",
+    "Philippines": "PH",
+    "India": "IN",
+    "Egypt": "EG",
+    "Saudi Arabia": "SA",
+    "Colombia": "CO",
+    "Pakistan": "PK",
+    "Malaysia": "MY",
+    "Ghana": "GH",
+    "Kenya": "KE",
+    "Nigeria": "NG",
+    "Peru": "PE",
+    "South Africa": "ZA",
+    "Sri Lanka": "LK",
+    "Bangladesh": "BD",
+    "Jordan": "JO",
+    "Singapore": "SG", 
+    "Ireland": "IE",
+    "Malta": "MT",
+}
 
-            country_code: str | None = country_codes.get(location)
-            if country_code:
-                return f"{location} {country_code}"
-            return location
-
-        return None
+def _get_timezone_location_fallback(timezone_name: str) -> str | None:
+    """Enhanced fallback when babel is not available or returns None."""
+    location = _TIMEZONE_TO_LOCATION.get(timezone_name)
+    if location:
+        country_code = _COUNTRY_CODES.get(location)
+        if country_code:
+            return f"{location} {country_code}"
+        return location
+    return None
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -182,9 +174,13 @@ class TimeFormatDetector:
             location: str | None = get_timezone_location(
                 timezone_name, locale_name="en_US"
             )
+            # Use fallback if babel returns None
+            if location is None:
+                location = _get_timezone_location_fallback(timezone_name)
+            
             if location:
                 for country_code in cls.TWELVE_HOUR_COUNTRIES:
-                    if country_code in location or location.endswith(country_code):
+                    if country_code in location or location.endswith(country_code):  # type: ignore[misc]
                         return True
             return False
         except Exception:
@@ -261,10 +257,10 @@ class TimeFormatDetector:
                 from claude_monitor.utils.backports import winreg
 
                 if winreg is not None:
-                    with winreg.OpenKey(
+                    with winreg.OpenKey(  # type: ignore[misc]
                         winreg.HKEY_CURRENT_USER, r"Control Panel\International"
-                    ) as key:
-                        time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]
+                    ) as key:  # type: ignore[misc]
+                        time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]  # type: ignore[misc]
                         if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
                             return "12h"
             except Exception:
@@ -395,9 +391,9 @@ class TimezoneHandler:
                     return dt.replace(tzinfo=pytz.UTC)
                 if tz_str:
                     result = datetime.fromisoformat(timestamp_str)
-                    return result if isinstance(result, datetime) else None
+                    return result
                 result = self.default_tz.localize(dt)
-                return result if isinstance(result, datetime) else None
+                return result
             except Exception as e:
                 logger.debug(f"Failed to parse ISO timestamp: {e}")
 
@@ -459,14 +455,19 @@ class TimezoneHandler:
     def to_timezone(self, dt: datetime, tz_name: str | None = None) -> datetime:
         """Convert to timezone (defaults to default_tz)."""
         if tz_name is None:
-            tz_name = self.default_tz.zone
+            # Use string representation instead of accessing .zone attribute
+            tz_name = str(self.default_tz)
         return self.convert_to_timezone(dt, tz_name)
 
     def format_datetime(self, dt: datetime, use_12_hour: bool | None = None) -> str:
         """Format datetime with timezone info."""
         if use_12_hour is None:
+            # Handle timezone name safely
+            tz_name = None
+            if dt.tzinfo and hasattr(dt.tzinfo, 'zone'):
+                tz_name = getattr(dt.tzinfo, 'zone', None)
             use_12_hour = TimeFormatDetector.get_preference(
-                timezone_name=dt.tzinfo.zone if dt.tzinfo else None
+                timezone_name=tz_name
             )
 
         dt = self.ensure_timezone(dt)

@@ -4,6 +4,14 @@ This module isolates all type: ignore comments for optional imports
 to maintain clean type checking in the main codebase.
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Define the signature for get_timezone_location for type checking
+    def get_timezone_location(
+        timezone_name: str, locale_name: str = "en_US"
+    ) -> str | None: ...
+
 __all__ = [
     "tomllib",
     "HAS_TOMLLIB",
