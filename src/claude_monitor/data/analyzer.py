@@ -5,20 +5,20 @@ Combines session block creation and limit detection functionality.
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
 
-from claude_monitor.core.models import (
-    SessionBlock,
-    TokenCounts,
-    UsageEntry,
-    normalize_model_name,
-)
-from claude_monitor.types import (
-    ClaudeJSONEntry,
-    LimitDetectionInfo,
-    RawJSONData,
-)
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+
+from claude_monitor.core.models import SessionBlock
+from claude_monitor.core.models import TokenCounts
+from claude_monitor.core.models import UsageEntry
+from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import ClaudeJSONEntry
+from claude_monitor.types import LimitDetectionInfo
+from claude_monitor.types import RawJSONData
 from claude_monitor.utils.time_utils import TimezoneHandler
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ class SessionAnalyzer:
         self.session_duration = timedelta(hours=session_duration_hours)
         self.timezone_handler = TimezoneHandler()
 
-    def transform_to_blocks(self, entries: list[UsageEntry]) -> list[SessionBlock]:
+    def transform_to_blocks(
+        self, entries: list[UsageEntry]
+    ) -> list[SessionBlock]:
         """Process entries and create session blocks.
 
         Args:
@@ -82,7 +84,9 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, entries: list[ClaudeJSONEntry]) -> list[LimitDetectionInfo]:
+    def detect_limits(
+        self, entries: list[ClaudeJSONEntry]
+    ) -> list[LimitDetectionInfo]:
         """Detect token limit messages from JSONL entries.
 
         Args:
@@ -100,14 +104,17 @@ class SessionAnalyzer:
 
         return limits
 
-    def _should_create_new_block(self, block: SessionBlock, entry: UsageEntry) -> bool:
+    def _should_create_new_block(
+        self, block: SessionBlock, entry: UsageEntry
+    ) -> bool:
         """Check if new block is needed."""
         if entry.timestamp >= block.end_time:
             return True
 
         return (
             len(block.entries) > 0
-            and (entry.timestamp - block.entries[-1].timestamp) >= self.session_duration
+            and (entry.timestamp - block.entries[-1].timestamp)
+            >= self.session_duration
         )
 
     def _round_to_hour(self, timestamp: datetime) -> datetime:
@@ -134,12 +141,18 @@ class SessionAnalyzer:
             cost_usd=0.0,
         )
 
-    def _add_entry_to_block(self, block: SessionBlock, entry: UsageEntry) -> None:
+    def _add_entry_to_block(
+        self, block: SessionBlock, entry: UsageEntry
+    ) -> None:
         """Add entry to block and aggregate data per model."""
         block.entries.append(entry)
 
         raw_model = entry.model or "unknown"
-        model = normalize_model_name(raw_model) if raw_model != "unknown" else "unknown"
+        model = (
+            normalize_model_name(raw_model)
+            if raw_model != "unknown"
+            else "unknown"
+        )
 
         if model not in block.per_model_stats:
             block.per_model_stats[model] = {
@@ -220,7 +233,9 @@ class SessionAnalyzer:
 
     # Limit detection methods
 
-    def _detect_single_limit(self, entry: ClaudeJSONEntry) -> LimitDetectionInfo | None:
+    def _detect_single_limit(
+        self, entry: ClaudeJSONEntry
+    ) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = entry.get("type")
 
@@ -253,14 +268,16 @@ class SessionAnalyzer:
 
             # Check for Opus-specific limit
             if self._is_opus_limit(content_lower) and timestamp is not None:
-                reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
+                reset_time, wait_minutes = self._extract_wait_time(
+                    content, timestamp
+                )
                 opus_limit: LimitDetectionInfo = {
                     "type": "opus_limit",
                     "timestamp": timestamp,
                     "content": content,
+                    "raw_data": entry,
+                    "block_context": block_context,
                 }
-                opus_limit["raw_data"] = entry
-                opus_limit["block_context"] = block_context
                 if reset_time is not None:
                     opus_limit["reset_time"] = reset_time
                 if wait_minutes is not None:
@@ -273,14 +290,14 @@ class SessionAnalyzer:
                     "type": "system_limit",
                     "timestamp": timestamp,
                     "content": content,
+                    "raw_data": entry,
+                    "block_context": block_context,
                 }
-                system_limit["raw_data"] = entry
-                system_limit["block_context"] = block_context
                 return system_limit
 
         except (ValueError, TypeError):
             return None
-        
+
         return None
 
     def _process_user_message(
@@ -292,16 +309,21 @@ class SessionAnalyzer:
             return None
         content_list = message.get("content", [])
 
-        if not isinstance(content_list, list):
+        if not content_list:
             return None
 
         for item in content_list:
-            if item.get("type") == "tool_result":
+            if isinstance(item, dict) and item.get("type") == "tool_result":
                 # Cast to RawJSONData since we verified it's a dict with the expected structure
                 from typing import cast
+
                 # Cast the message to the expected type
-                msg_cast = cast(dict[str, str | int | list[dict[str, str]]], message)
-                limit_info = self._process_tool_result(cast(RawJSONData, item), entry, msg_cast)
+                msg_cast = cast(
+                    dict[str, str | int | list[dict[str, str]]], message
+                )
+                limit_info = self._process_tool_result(
+                    cast(RawJSONData, item), entry, msg_cast
+                )
                 if limit_info:
                     return limit_info
 
@@ -324,8 +346,10 @@ class SessionAnalyzer:
 
             # We already checked tool_item is dict, so cast it for proper typing
             from typing import cast
+
             tool_dict = cast(dict[str, str], tool_item)
-            text_str = str(tool_dict.get("text", ""))
+            text_content = tool_dict.get("text", "")
+            text_str = str(text_content)
             if not text_str or "limit reached" not in text_str.lower():
                 continue
 
@@ -337,16 +361,16 @@ class SessionAnalyzer:
                 timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
                 if timestamp is None:
                     continue
-                    
-                general_limit: LimitDetectionInfo = {
-                    "type": "general_limit",
-                    "timestamp": timestamp,
-                    "content": text_str,
-                }
-                general_limit["raw_data"] = entry
-                general_limit["block_context"] = self._extract_block_context(entry, message)
 
+                block_context = self._extract_block_context(entry, message)
                 reset_time = self._parse_reset_timestamp(text_str)
+                general_limit = LimitDetectionInfo(
+                    type="general_limit",
+                    timestamp=timestamp,
+                    content=text_str,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
                 if reset_time is not None:
                     general_limit["reset_time"] = reset_time
 
@@ -357,7 +381,9 @@ class SessionAnalyzer:
         return None
 
     def _extract_block_context(
-        self, entry: ClaudeJSONEntry, message: dict[str, str | int | list[dict[str, str]]] | None = None
+        self,
+        entry: ClaudeJSONEntry,
+        message: dict[str, str | int | list[dict[str, str]]] | None = None,
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}
@@ -403,7 +429,12 @@ class SessionAnalyzer:
         if "opus" not in content_lower:
             return False
 
-        limit_phrases = ["rate limit", "limit exceeded", "limit reached", "limit hit"]
+        limit_phrases = [
+            "rate limit",
+            "limit exceeded",
+            "limit reached",
+            "limit hit",
+        ]
         return (
             any(phrase in content_lower for phrase in limit_phrases)
             or "limit" in content_lower
