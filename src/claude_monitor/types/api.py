@@ -1,9 +1,6 @@
 """Claude API message types and related structures."""
 
-from typing import Literal
-from typing import NotRequired
-from typing import Required
-from typing import TypedDict
+from typing import Literal, NotRequired, Required, TypedDict
 
 
 class MessageContentBase(TypedDict, total=False):
@@ -90,12 +87,8 @@ class TokenUsage(TypedDict, total=False):
     cache_read_input_tokens: NotRequired[int]  # Alternative field name
     inputTokens: NotRequired[int]  # Alternative field name (camelCase)
     outputTokens: NotRequired[int]  # Alternative field name (camelCase)
-    cacheCreationInputTokens: NotRequired[
-        int
-    ]  # Alternative field name (camelCase)
+    cacheCreationInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     cacheReadInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     prompt_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
-    completion_tokens: NotRequired[
-        int
-    ]  # Alternative field name (OpenAI format)
+    completion_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
     total_tokens: NotRequired[int]

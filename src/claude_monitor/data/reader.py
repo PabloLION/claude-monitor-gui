@@ -312,9 +312,7 @@ def _create_unique_hash(data: RawJSONData) -> str | None:
     return f"{message_id}:{request_id}" if message_id and request_id else None
 
 
-def _update_processed_hashes(
-    data: RawJSONData, processed_hashes: set[str]
-) -> None:
+def _update_processed_hashes(data: RawJSONData, processed_hashes: set[str]) -> None:
     """Update the processed hashes set with current entry's hash."""
     unique_hash = _create_unique_hash(data)
     if unique_hash:
@@ -407,9 +405,7 @@ class UsageEntryMapper:
         self.pricing_calculator = pricing_calculator
         self.timezone_handler = timezone_handler
 
-    def map(
-        self, data: RawJSONData, mode: CostMode
-    ) -> UsageEntry | None:
+    def map(self, data: RawJSONData, mode: CostMode) -> UsageEntry | None:
         """Map raw data to UsageEntry - compatibility interface."""
         return _map_to_usage_entry(
             data, mode, self.timezone_handler, self.pricing_calculator

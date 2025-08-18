@@ -7,14 +7,16 @@ code duplication across different components.
 from datetime import datetime
 from typing import cast
 
-from claude_monitor.types import AssistantEntry
-from claude_monitor.types import ClaudeJSONEntry
-from claude_monitor.types import ExtractedTokens
-from claude_monitor.types import FlattenedData
-from claude_monitor.types import JSONSerializable
-from claude_monitor.types import RawJSONData
-from claude_monitor.types import TokenSource
-from claude_monitor.types import UserEntry
+from claude_monitor.types import (
+    AssistantEntry,
+    ClaudeJSONEntry,
+    ExtractedTokens,
+    FlattenedData,
+    JSONSerializable,
+    RawJSONData,
+    TokenSource,
+    UserEntry,
+)
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -23,9 +25,7 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = (
-            timezone_handler or TimezoneHandler()
-        )
+        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -122,9 +122,7 @@ class TokenExtractor:
             entry_type = data.get("type")
             if entry_type == "system" or entry_type == "user":
                 # System and user messages don't have token usage
-                logger.debug(
-                    "TokenExtractor: System/user messages have no token usage"
-                )
+                logger.debug("TokenExtractor: System/user messages have no token usage")
                 return {
                     "input_tokens": 0,
                     "output_tokens": 0,
@@ -174,9 +172,7 @@ class TokenExtractor:
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(TokenSource, data))
 
-        logger.debug(
-            f"TokenExtractor: Checking {len(token_sources)} token sources"
-        )
+        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
 
         # Extract tokens from first valid source
         for source in token_sources:
@@ -240,9 +236,7 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(
-        data: RawJSONData, prefix: str = ""
-    ) -> FlattenedData:
+    def flatten_nested_dict(data: RawJSONData, prefix: str = "") -> FlattenedData:
         """Flatten nested dictionary structure.
 
         Args:
@@ -259,9 +253,7 @@ class DataConverter:
 
             if isinstance(value, dict):
                 result.update(
-                    DataConverter.flatten_nested_dict(
-                        cast(RawJSONData, value), new_key
-                    )
+                    DataConverter.flatten_nested_dict(cast(RawJSONData, value), new_key)
                 )
             else:
                 # Use type: ignore for dynamic key assignment in TypedDict

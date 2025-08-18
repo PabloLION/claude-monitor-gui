@@ -230,7 +230,7 @@ class DisplayController:
             Rich renderable for display
         """
         from typing import cast
-        
+
         if not data or "blocks" not in data:
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
@@ -308,7 +308,10 @@ class DisplayController:
                         if value:
                             # Cast to proper type for iteration
                             from typing import cast
-                            model_stats = cast(dict[str, dict[str, str | int | float]], value)
+
+                            model_stats = cast(
+                                dict[str, dict[str, str | int | float]], value
+                            )
                             for model, stats in model_stats.items():
                                 logger.exception(
                                     f"    {model}: {type(stats).__name__} = {stats}"

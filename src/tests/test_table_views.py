@@ -1,11 +1,12 @@
 """Tests for table views module."""
 
-import pytest
 from typing import cast
+
+import pytest
 from rich.panel import Panel
 from rich.table import Table
 
-from claude_monitor.types import TotalAggregatedData, AggregatedTotals
+from claude_monitor.types import AggregatedTotals, TotalAggregatedData
 from claude_monitor.ui.table_views import TableViewsController
 
 
@@ -20,131 +21,144 @@ class TestTableViewsController:
     @pytest.fixture
     def sample_daily_data(self) -> list[TotalAggregatedData]:
         """Create sample daily aggregated data."""
-        return cast(list[TotalAggregatedData], [
-            {
-                "date": "2024-01-01",
-                "input_tokens": 1000,
-                "output_tokens": 500,
-                "cache_creation_tokens": 100,
-                "cache_read_tokens": 50,
-                "total_cost": 0.05,
-                "models_used": ["claude-3-haiku", "claude-3-sonnet"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 600,
-                        "output_tokens": 300,
-                        "cache_creation_tokens": 60,
-                        "cache_read_tokens": 30,
-                        "cost": 0.03,
-                        "count": 6,
+        return cast(
+            list[TotalAggregatedData],
+            [
+                {
+                    "date": "2024-01-01",
+                    "input_tokens": 1000,
+                    "output_tokens": 500,
+                    "cache_creation_tokens": 100,
+                    "cache_read_tokens": 50,
+                    "total_cost": 0.05,
+                    "models_used": ["claude-3-haiku", "claude-3-sonnet"],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 600,
+                            "output_tokens": 300,
+                            "cache_creation_tokens": 60,
+                            "cache_read_tokens": 30,
+                            "cost": 0.03,
+                            "count": 6,
+                        },
+                        "claude-3-sonnet": {
+                            "input_tokens": 400,
+                            "output_tokens": 200,
+                            "cache_creation_tokens": 40,
+                            "cache_read_tokens": 20,
+                            "cost": 0.02,
+                            "count": 4,
+                        },
                     },
-                    "claude-3-sonnet": {
-                        "input_tokens": 400,
-                        "output_tokens": 200,
-                        "cache_creation_tokens": 40,
-                        "cache_read_tokens": 20,
-                        "cost": 0.02,
-                        "count": 4,
-                    },
+                    "entries_count": 10,
                 },
-                "entries_count": 10,
-            },
-            {
-                "date": "2024-01-02",
-                "input_tokens": 2000,
-                "output_tokens": 1000,
-                "cache_creation_tokens": 200,
-                "cache_read_tokens": 100,
-                "total_cost": 0.10,
-                "models_used": ["claude-3-opus"],
-                "model_breakdowns": {
-                    "claude-3-opus": {
-                        "input_tokens": 2000,
-                        "output_tokens": 1000,
-                        "cache_creation_tokens": 200,
-                        "cache_read_tokens": 100,
-                        "cost": 0.10,
-                        "count": 20,
+                {
+                    "date": "2024-01-02",
+                    "input_tokens": 2000,
+                    "output_tokens": 1000,
+                    "cache_creation_tokens": 200,
+                    "cache_read_tokens": 100,
+                    "total_cost": 0.10,
+                    "models_used": ["claude-3-opus"],
+                    "model_breakdowns": {
+                        "claude-3-opus": {
+                            "input_tokens": 2000,
+                            "output_tokens": 1000,
+                            "cache_creation_tokens": 200,
+                            "cache_read_tokens": 100,
+                            "cost": 0.10,
+                            "count": 20,
+                        },
                     },
+                    "entries_count": 20,
                 },
-                "entries_count": 20,
-            },
-        ])
+            ],
+        )
 
     @pytest.fixture
     def sample_monthly_data(self) -> list[TotalAggregatedData]:
         """Create sample monthly aggregated data."""
-        return cast(list[TotalAggregatedData], [
-            {
-                "month": "2024-01",
-                "input_tokens": 30000,
-                "output_tokens": 15000,
-                "cache_creation_tokens": 3000,
-                "cache_read_tokens": 1500,
-                "total_cost": 1.50,
-                "models_used": ["claude-3-haiku", "claude-3-sonnet", "claude-3-opus"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
+        return cast(
+            list[TotalAggregatedData],
+            [
+                {
+                    "month": "2024-01",
+                    "input_tokens": 30000,
+                    "output_tokens": 15000,
+                    "cache_creation_tokens": 3000,
+                    "cache_read_tokens": 1500,
+                    "total_cost": 1.50,
+                    "models_used": [
+                        "claude-3-haiku",
+                        "claude-3-sonnet",
+                        "claude-3-opus",
+                    ],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
+                        "claude-3-sonnet": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
+                        "claude-3-opus": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
                     },
-                    "claude-3-sonnet": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
-                    },
-                    "claude-3-opus": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
-                    },
+                    "entries_count": 300,
                 },
-                "entries_count": 300,
-            },
-            {
-                "month": "2024-02",
-                "input_tokens": 20000,
-                "output_tokens": 10000,
-                "cache_creation_tokens": 2000,
-                "cache_read_tokens": 1000,
-                "total_cost": 1.00,
-                "models_used": ["claude-3-haiku"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 20000,
-                        "output_tokens": 10000,
-                        "cache_creation_tokens": 2000,
-                        "cache_read_tokens": 1000,
-                        "cost": 1.00,
-                        "count": 200,
+                {
+                    "month": "2024-02",
+                    "input_tokens": 20000,
+                    "output_tokens": 10000,
+                    "cache_creation_tokens": 2000,
+                    "cache_read_tokens": 1000,
+                    "total_cost": 1.00,
+                    "models_used": ["claude-3-haiku"],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 20000,
+                            "output_tokens": 10000,
+                            "cache_creation_tokens": 2000,
+                            "cache_read_tokens": 1000,
+                            "cost": 1.00,
+                            "count": 200,
+                        },
                     },
+                    "entries_count": 200,
                 },
-                "entries_count": 200,
-            },
-        ])
+            ],
+        )
 
     @pytest.fixture
     def sample_totals(self) -> AggregatedTotals:
         """Create sample totals data."""
-        return cast(AggregatedTotals, {
-            "input_tokens": 50000,
-            "output_tokens": 25000,
-            "cache_creation_tokens": 5000,
-            "cache_read_tokens": 2500,
-            "total_tokens": 82500,
-            "total_cost": 2.50,
-            "entries_count": 500,
-        })
+        return cast(
+            AggregatedTotals,
+            {
+                "input_tokens": 50000,
+                "output_tokens": 25000,
+                "cache_creation_tokens": 5000,
+                "cache_read_tokens": 2500,
+                "total_tokens": 82500,
+                "total_cost": 2.50,
+                "entries_count": 500,
+            },
+        )
 
     def test_init_styles(self, controller: TableViewsController) -> None:
         """Test controller initialization with styles."""
@@ -363,29 +377,35 @@ class TestTableViewsController:
 
     def test_table_with_zero_tokens(self, controller: TableViewsController) -> None:
         """Test table with entries having zero tokens."""
-        data = cast(list[TotalAggregatedData], [
+        data = cast(
+            list[TotalAggregatedData],
+            [
+                {
+                    "date": "2024-01-01",
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "total_cost": 0.0,
+                    "models_used": ["claude-3-haiku"],
+                    "model_breakdowns": {},
+                    "entries_count": 0,
+                }
+            ],
+        )
+
+        totals = cast(
+            AggregatedTotals,
             {
-                "date": "2024-01-01",
                 "input_tokens": 0,
                 "output_tokens": 0,
                 "cache_creation_tokens": 0,
                 "cache_read_tokens": 0,
+                "total_tokens": 0,
                 "total_cost": 0.0,
-                "models_used": ["claude-3-haiku"],
-                "model_breakdowns": {},
                 "entries_count": 0,
-            }
-        ])
-
-        totals = cast(AggregatedTotals, {
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "cache_creation_tokens": 0,
-            "cache_read_tokens": 0,
-            "total_tokens": 0,
-            "total_cost": 0.0,
-            "entries_count": 0,
-        })
+            },
+        )
 
         table = controller.create_daily_table(data, totals, "UTC")
         # Table should have 3 rows:
@@ -466,15 +486,18 @@ class TestTableViewsController:
 
     def test_empty_data_lists(self, controller: TableViewsController) -> None:
         """Test handling of empty data lists."""
-        empty_totals = cast(AggregatedTotals, {
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "cache_creation_tokens": 0,
-            "cache_read_tokens": 0,
-            "total_tokens": 0,
-            "total_cost": 0.0,
-            "entries_count": 0,
-        })
+        empty_totals = cast(
+            AggregatedTotals,
+            {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_creation_tokens": 0,
+                "cache_read_tokens": 0,
+                "total_tokens": 0,
+                "total_cost": 0.0,
+                "entries_count": 0,
+            },
+        )
 
         # Daily table with empty data
         daily_table = controller.create_daily_table([], empty_totals, "UTC")

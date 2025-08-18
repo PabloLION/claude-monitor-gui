@@ -19,11 +19,11 @@ from claude_monitor.utils.backports import HAS_BABEL, get_timezone_location
 _TIMEZONE_TO_LOCATION: dict[str, str] = {
     # United States
     "America/New_York": "United States",
-    "America/Chicago": "United States", 
+    "America/Chicago": "United States",
     "America/Denver": "United States",
     "America/Los_Angeles": "United States",
     "America/Phoenix": "United States",
-    "America/Anchorage": "United States", 
+    "America/Anchorage": "United States",
     "America/Honolulu": "United States",
     "US/Eastern": "United States",
     "US/Central": "United States",
@@ -38,7 +38,7 @@ _TIMEZONE_TO_LOCATION: dict[str, str] = {
     "America/Halifax": "Canada",
     "Canada/Eastern": "Canada",
     "Canada/Central": "Canada",
-    "Canada/Mountain": "Canada", 
+    "Canada/Mountain": "Canada",
     "Canada/Pacific": "Canada",
     # Australia
     "Australia/Sydney": "Australia",
@@ -53,7 +53,7 @@ _TIMEZONE_TO_LOCATION: dict[str, str] = {
     "GMT": "United Kingdom",
     "Europe/Belfast": "United Kingdom",
     # Germany (24h example)
-    "Europe/Berlin": "Germany", 
+    "Europe/Berlin": "Germany",
     "Europe/Munich": "Germany",
     # Other common timezones for 12h countries
     "Pacific/Auckland": "New Zealand",
@@ -66,7 +66,7 @@ _TIMEZONE_TO_LOCATION: dict[str, str] = {
     "Asia/Kuala_Lumpur": "Malaysia",
     "Africa/Accra": "Ghana",
     "Africa/Nairobi": "Kenya",
-    "Africa/Lagos": "Nigeria", 
+    "Africa/Lagos": "Nigeria",
     "America/Lima": "Peru",
     "Africa/Johannesburg": "South Africa",
     "Asia/Colombo": "Sri Lanka",
@@ -79,7 +79,7 @@ _TIMEZONE_TO_LOCATION: dict[str, str] = {
 
 _COUNTRY_CODES: dict[str, str] = {
     "United States": "US",
-    "Canada": "CA", 
+    "Canada": "CA",
     "Australia": "AU",
     "United Kingdom": "GB",
     "New Zealand": "NZ",
@@ -98,10 +98,11 @@ _COUNTRY_CODES: dict[str, str] = {
     "Sri Lanka": "LK",
     "Bangladesh": "BD",
     "Jordan": "JO",
-    "Singapore": "SG", 
+    "Singapore": "SG",
     "Ireland": "IE",
     "Malta": "MT",
 }
+
 
 def _get_timezone_location_fallback(timezone_name: str) -> str | None:
     """Enhanced fallback when babel is not available or returns None."""
@@ -177,7 +178,7 @@ class TimeFormatDetector:
             # Use fallback if babel returns None
             if location is None:
                 location = _get_timezone_location_fallback(timezone_name)
-            
+
             if location:
                 for country_code in cls.TWELVE_HOUR_COUNTRIES:
                     if country_code in location or location.endswith(country_code):  # type: ignore[misc]
@@ -464,11 +465,9 @@ class TimezoneHandler:
         if use_12_hour is None:
             # Handle timezone name safely
             tz_name = None
-            if dt.tzinfo and hasattr(dt.tzinfo, 'zone'):
-                tz_name = getattr(dt.tzinfo, 'zone', None)
-            use_12_hour = TimeFormatDetector.get_preference(
-                timezone_name=tz_name
-            )
+            if dt.tzinfo and hasattr(dt.tzinfo, "zone"):
+                tz_name = getattr(dt.tzinfo, "zone", None)
+            use_12_hour = TimeFormatDetector.get_preference(timezone_name=tz_name)
 
         dt = self.ensure_timezone(dt)
 

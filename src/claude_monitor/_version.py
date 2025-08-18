@@ -6,11 +6,9 @@ as the single source of truth, avoiding version duplication across the codebase.
 
 import importlib.metadata
 import sys
-
 from pathlib import Path
 
-from claude_monitor.utils.backports import HAS_TOMLLIB
-from claude_monitor.utils.backports import tomllib
+from claude_monitor.utils.backports import HAS_TOMLLIB, tomllib
 
 
 def get_version() -> str:
@@ -92,9 +90,7 @@ def get_package_info() -> dict[str, str | None]:
         }
 
 
-def get_version_info() -> (
-    dict[str, str | dict[str, int] | dict[str, str | None]]
-):
+def get_version_info() -> dict[str, str | dict[str, int] | dict[str, str | None]]:
     """Get detailed version and system information.
 
     Returns:

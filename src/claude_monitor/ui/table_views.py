@@ -12,14 +12,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.types import AggregatedTotals
-from claude_monitor.types import JSONSerializable
-from claude_monitor.types import TotalAggregatedData
+from claude_monitor.types import AggregatedTotals, JSONSerializable, TotalAggregatedData
 
 # Removed theme import - using direct styles
-from claude_monitor.utils.formatting import format_currency
-from claude_monitor.utils.formatting import format_number
-
+from claude_monitor.utils.formatting import format_currency, format_number
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +68,8 @@ class TableViewsController:
             period_column_name, style=self.key_style, width=period_column_width
         )
         table.add_column("Models", style=self.value_style, width=20)
-        table.add_column(
-            "Input", style=self.value_style, justify="right", width=12
-        )
-        table.add_column(
-            "Output", style=self.value_style, justify="right", width=12
-        )
+        table.add_column("Input", style=self.value_style, justify="right", width=12)
+        table.add_column("Output", style=self.value_style, justify="right", width=12)
         table.add_column(
             "Cache Create", style=self.value_style, justify="right", width=12
         )
@@ -423,12 +415,8 @@ class TableViewsController:
         # Calculate totals with safe type conversion
         # #TODO-ref: use a clearer approach for calculating totals
         totals = {
-            "input_tokens": sum(
-                safe_numeric(d.get("input_tokens", 0)) for d in data
-            ),
-            "output_tokens": sum(
-                safe_numeric(d.get("output_tokens", 0)) for d in data
-            ),
+            "input_tokens": sum(safe_numeric(d.get("input_tokens", 0)) for d in data),
+            "output_tokens": sum(safe_numeric(d.get("output_tokens", 0)) for d in data),
             "cache_creation_tokens": sum(
                 safe_numeric(d.get("cache_creation_tokens", 0)) for d in data
             ),
@@ -442,12 +430,8 @@ class TableViewsController:
                 + safe_numeric(d.get("cache_read_tokens", 0))
                 for d in data
             ),
-            "total_cost": sum(
-                safe_numeric(d.get("total_cost", 0)) for d in data
-            ),
-            "entries_count": sum(
-                safe_numeric(d.get("entries_count", 0)) for d in data
-            ),
+            "total_cost": sum(safe_numeric(d.get("total_cost", 0)) for d in data),
+            "entries_count": sum(safe_numeric(d.get("entries_count", 0)) for d in data),
         }
 
         # Determine period for summary
@@ -479,14 +463,10 @@ class TableViewsController:
                 "entries_count": int(totals["entries_count"]),
             }
         )
-        summary_panel = self.create_summary_panel(
-            view_mode, json_totals, period
-        )
+        summary_panel = self.create_summary_panel(view_mode, json_totals, period)
 
         # Create and display table
-        table = self.create_aggregate_table(
-            data, json_totals, view_mode, timezone
-        )
+        table = self.create_aggregate_table(data, json_totals, view_mode, timezone)
 
         # Display using console if provided
         if console:

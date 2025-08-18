@@ -46,12 +46,14 @@ class TokenProgressRenderer(Protocol):
         """Render token progress bar."""
         ...
 
+
 class TimeProgressRenderer(Protocol):
     """Protocol for time progress bar rendering."""
 
     def render(self, elapsed_minutes: float, total_minutes: float) -> str:
         """Render time progress bar."""
         ...
+
 
 class ModelProgressRenderer(Protocol):
     """Protocol for model progress bar rendering."""
@@ -167,8 +169,6 @@ class BaseProgressBar(ABC):
             if value >= threshold:
                 return style
         return thresholds[-1][1] if thresholds else ""
-
-
 
 
 class TokenProgressBar(BaseProgressBar):
@@ -377,9 +377,7 @@ class ModelUsageBar(BaseProgressBar):
         bar_display = "".join(bar_segments)
 
         if opus_tokens > 0 and sonnet_tokens > 0:
-            summary = (
-                f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
-            )
+            summary = f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
         elif sonnet_tokens > 0:
             summary = f"Sonnet {sonnet_percentage:.1f}%"
         elif opus_tokens > 0:

@@ -5,23 +5,23 @@ Combines session block creation and limit detection functionality.
 
 import logging
 import re
+from datetime import datetime, timedelta, timezone
 
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-
-from claude_monitor.core.models import SessionBlock
-from claude_monitor.core.models import TokenCounts
-from claude_monitor.core.models import UsageEntry
-from claude_monitor.core.models import normalize_model_name
-from claude_monitor.types import AssistantMessageContent
-from claude_monitor.types import ClaudeJSONEntry
-from claude_monitor.types import LimitDetectionInfo
-from claude_monitor.types import RawJSONData
-from claude_monitor.types import SystemMessageContent
-from claude_monitor.types import UserMessageContent
+from claude_monitor.core.models import (
+    SessionBlock,
+    TokenCounts,
+    UsageEntry,
+    normalize_model_name,
+)
+from claude_monitor.types import (
+    AssistantMessageContent,
+    ClaudeJSONEntry,
+    LimitDetectionInfo,
+    RawJSONData,
+    SystemMessageContent,
+    UserMessageContent,
+)
 from claude_monitor.utils.time_utils import TimezoneHandler
-
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,7 @@ class SessionAnalyzer:
         self.session_duration = timedelta(hours=session_duration_hours)
         self.timezone_handler = TimezoneHandler()
 
-    def transform_to_blocks(
-        self, entries: list[UsageEntry]
-    ) -> list[SessionBlock]:
+    def transform_to_blocks(self, entries: list[UsageEntry]) -> list[SessionBlock]:
         """Process entries and create session blocks.
 
         Args:
@@ -87,9 +85,7 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(
-        self, entries: list[ClaudeJSONEntry]
-    ) -> list[LimitDetectionInfo]:
+    def detect_limits(self, entries: list[ClaudeJSONEntry]) -> list[LimitDetectionInfo]:
         """Detect token limit messages from JSONL entries.
 
         Args:
@@ -107,17 +103,14 @@ class SessionAnalyzer:
 
         return limits
 
-    def _should_create_new_block(
-        self, block: SessionBlock, entry: UsageEntry
-    ) -> bool:
+    def _should_create_new_block(self, block: SessionBlock, entry: UsageEntry) -> bool:
         """Check if new block is needed."""
         if entry.timestamp >= block.end_time:
             return True
 
         return (
             len(block.entries) > 0
-            and (entry.timestamp - block.entries[-1].timestamp)
-            >= self.session_duration
+            and (entry.timestamp - block.entries[-1].timestamp) >= self.session_duration
         )
 
     def _round_to_hour(self, timestamp: datetime) -> datetime:
@@ -144,18 +137,12 @@ class SessionAnalyzer:
             cost_usd=0.0,
         )
 
-    def _add_entry_to_block(
-        self, block: SessionBlock, entry: UsageEntry
-    ) -> None:
+    def _add_entry_to_block(self, block: SessionBlock, entry: UsageEntry) -> None:
         """Add entry to block and aggregate data per model."""
         block.entries.append(entry)
 
         raw_model = entry.model or "unknown"
-        model = (
-            normalize_model_name(raw_model)
-            if raw_model != "unknown"
-            else "unknown"
-        )
+        model = normalize_model_name(raw_model) if raw_model != "unknown" else "unknown"
 
         if model not in block.per_model_stats:
             block.per_model_stats[model] = {
@@ -236,9 +223,7 @@ class SessionAnalyzer:
 
     # Limit detection methods
 
-    def _detect_single_limit(
-        self, entry: ClaudeJSONEntry
-    ) -> LimitDetectionInfo | None:
+    def _detect_single_limit(self, entry: ClaudeJSONEntry) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
         entry_type = entry.get("type")
 
@@ -271,9 +256,7 @@ class SessionAnalyzer:
 
             # Check for Opus-specific limit
             if self._is_opus_limit(content_lower) and timestamp is not None:
-                reset_time, wait_minutes = self._extract_wait_time(
-                    content, timestamp
-                )
+                reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
                 opus_limit = LimitDetectionInfo(
                     type="opus_limit",
                     timestamp=timestamp,
@@ -335,9 +318,7 @@ class SessionAnalyzer:
         self,
         item: RawJSONData,
         entry: ClaudeJSONEntry,
-        message: (
-            AssistantMessageContent | SystemMessageContent | UserMessageContent
-        ),
+        message: (AssistantMessageContent | SystemMessageContent | UserMessageContent),
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -387,9 +368,8 @@ class SessionAnalyzer:
     def _extract_block_context(
         self,
         entry: ClaudeJSONEntry,
-        message: (
-            AssistantMessageContent | SystemMessageContent | UserMessageContent
-        ) | None = None,
+        message: (AssistantMessageContent | SystemMessageContent | UserMessageContent)
+        | None = None,
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}

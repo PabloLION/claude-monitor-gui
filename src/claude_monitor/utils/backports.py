@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         timezone_name: str, locale_name: str = "en_US"
     ) -> str | None: ...
 
+
 __all__ = [
     "tomllib",
     "HAS_TOMLLIB",
@@ -24,7 +25,6 @@ __all__ = [
     "HAS_WINREG",
 ]
 import sys
-
 
 # TOML library backport
 try:
