@@ -14,9 +14,12 @@ from claude_monitor.core.models import SessionBlock
 from claude_monitor.core.models import TokenCounts
 from claude_monitor.core.models import UsageEntry
 from claude_monitor.core.models import normalize_model_name
+from claude_monitor.types import AssistantMessageContent
 from claude_monitor.types import ClaudeJSONEntry
 from claude_monitor.types import LimitDetectionInfo
 from claude_monitor.types import RawJSONData
+from claude_monitor.types import SystemMessageContent
+from claude_monitor.types import UserMessageContent
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -271,13 +274,13 @@ class SessionAnalyzer:
                 reset_time, wait_minutes = self._extract_wait_time(
                     content, timestamp
                 )
-                opus_limit: LimitDetectionInfo = {
-                    "type": "opus_limit",
-                    "timestamp": timestamp,
-                    "content": content,
-                    "raw_data": entry,
-                    "block_context": block_context,
-                }
+                opus_limit = LimitDetectionInfo(
+                    type="opus_limit",
+                    timestamp=timestamp,
+                    content=content,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
                 if reset_time is not None:
                     opus_limit["reset_time"] = reset_time
                 if wait_minutes is not None:
@@ -286,13 +289,13 @@ class SessionAnalyzer:
 
             # General system limit (only if timestamp is valid)
             if timestamp is not None:
-                system_limit: LimitDetectionInfo = {
-                    "type": "system_limit",
-                    "timestamp": timestamp,
-                    "content": content,
-                    "raw_data": entry,
-                    "block_context": block_context,
-                }
+                system_limit = LimitDetectionInfo(
+                    type="system_limit",
+                    timestamp=timestamp,
+                    content=content,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
                 return system_limit
 
         except (ValueError, TypeError):
@@ -307,6 +310,7 @@ class SessionAnalyzer:
         message = entry.get("message", {})
         if not message:
             return None
+        # #TODO: rename variable
         content_list = message.get("content", [])
 
         if not content_list:
@@ -317,12 +321,10 @@ class SessionAnalyzer:
                 # Cast to RawJSONData since we verified it's a dict with the expected structure
                 from typing import cast
 
-                # Cast the message to the expected type
-                msg_cast = cast(
-                    dict[str, str | int | list[dict[str, str]]], message
-                )
                 limit_info = self._process_tool_result(
-                    cast(RawJSONData, item), entry, msg_cast
+                    cast(RawJSONData, item),
+                    entry,
+                    message,
                 )
                 if limit_info:
                     return limit_info
@@ -333,7 +335,9 @@ class SessionAnalyzer:
         self,
         item: RawJSONData,
         entry: ClaudeJSONEntry,
-        message: dict[str, str | int | list[dict[str, str]]],
+        message: (
+            AssistantMessageContent | SystemMessageContent | UserMessageContent
+        ),
     ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
@@ -383,7 +387,9 @@ class SessionAnalyzer:
     def _extract_block_context(
         self,
         entry: ClaudeJSONEntry,
-        message: dict[str, str | int | list[dict[str, str]]] | None = None,
+        message: (
+            AssistantMessageContent | SystemMessageContent | UserMessageContent
+        ) | None = None,
     ) -> dict[str, str | int]:
         """Extract block context from entry data."""
         context: dict[str, str | int] = {}
