@@ -642,7 +642,7 @@ class TestUpdateProcessedHashes:
             return_value="msg_123:req_456",
         ):
             # Test with mock data dict and set - using dict literal for test data simplicity
-        _update_processed_hashes(data, processed_hashes)  # type: ignore[arg-type]  # Mock test data
+            _update_processed_hashes(data, processed_hashes)  # type: ignore[arg-type]  # Mock test data
 
         assert "msg_123:req_456" in processed_hashes
 
@@ -652,7 +652,7 @@ class TestUpdateProcessedHashes:
 
         with patch("claude_monitor.data.reader._create_unique_hash", return_value=None):
             # Test with mock data dict and set - using dict literal for test data simplicity
-        _update_processed_hashes(data, processed_hashes)  # type: ignore[arg-type]  # Mock test data
+            _update_processed_hashes(data, processed_hashes)  # type: ignore[arg-type]  # Mock test data
 
         assert len(processed_hashes) == 0
 
