@@ -55,7 +55,7 @@ def orchestrator(
             return_value=mock_session_monitor,
         ),
     ):
-        return MonitoringOrchestrator(update_interval=1)
+        return MonitoringOrchestrator(update_interval=1.0)
 
 
 class TestMonitoringOrchestratorInit:
@@ -64,8 +64,12 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_defaults(self) -> None:
         """Test initialization with default parameters."""
         with (
-            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
-            patch("claude_monitor.monitoring.orchestrator.SessionMonitor") as mock_sm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.DataManager"
+            ) as mock_dm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.SessionMonitor"
+            ) as mock_sm,
         ):
             orchestrator = MonitoringOrchestrator()
 
@@ -82,7 +86,9 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_custom_params(self) -> None:
         """Test initialization with custom parameters."""
         with (
-            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.DataManager"
+            ) as mock_dm,
             patch("claude_monitor.monitoring.orchestrator.SessionMonitor"),
         ):
             orchestrator = MonitoringOrchestrator(
@@ -90,13 +96,17 @@ class TestMonitoringOrchestratorInit:
             )
 
             assert orchestrator.update_interval == 5
-            mock_dm.assert_called_once_with(cache_ttl=5, data_path="/custom/path")
+            mock_dm.assert_called_once_with(
+                cache_ttl=5, data_path="/custom/path"
+            )
 
 
 class TestMonitoringOrchestratorLifecycle:
     """Test orchestrator start/stop lifecycle."""
 
-    def test_start_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_start_monitoring(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test starting monitoring creates thread."""
         assert not orchestrator._monitoring  # type: ignore[misc]
 
@@ -116,12 +126,18 @@ class TestMonitoringOrchestratorLifecycle:
         """Test starting monitoring when already running."""
         orchestrator._monitoring = True  # type: ignore[misc]
 
-        with patch("claude_monitor.monitoring.orchestrator.logger") as mock_logger:
+        with patch(
+            "claude_monitor.monitoring.orchestrator.logger"
+        ) as mock_logger:
             orchestrator.start()
 
-            mock_logger.warning.assert_called_once_with("Monitoring already running")
+            mock_logger.warning.assert_called_once_with(
+                "Monitoring already running"
+            )
 
-    def test_stop_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_stop_monitoring(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test stopping monitoring."""
         orchestrator.start()
         assert orchestrator._monitoring  # type: ignore[misc]
@@ -189,7 +205,9 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_session_callback(callback)
 
-        orchestrator.session_monitor.register_callback.assert_called_once_with(callback)  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.session_monitor.register_callback.assert_called_once_with(
+            callback
+        )  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class TestMonitoringOrchestratorDataProcessing:
@@ -197,19 +215,29 @@ class TestMonitoringOrchestratorDataProcessing:
 
     def test_force_refresh(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test force refresh calls data manager."""
-        expected_data: dict[str, list[dict[str, str]]] = {"blocks": [{"id": "test"}]}
-        orchestrator.data_manager.get_data.return_value = expected_data  # pyright: ignore[reportAttributeAccessIssue]
+        expected_data: dict[str, list[dict[str, str]]] = {
+            "blocks": [{"id": "test"}]
+        }
+        orchestrator.data_manager.get_data.return_value = (
+            expected_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         result = orchestrator.force_refresh()
 
         assert result is not None
         assert "data" in result
         assert result["data"] == expected_data
-        orchestrator.data_manager.get_data.assert_called_once_with(force_refresh=True)  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.assert_called_once_with(
+            force_refresh=True
+        )  # pyright: ignore[reportAttributeAccessIssue]
 
-    def test_force_refresh_no_data(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_force_refresh_no_data(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test force refresh when no data available."""
-        orchestrator.data_manager.get_data.return_value = None  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            None  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         result = orchestrator.force_refresh()
 
@@ -256,7 +284,9 @@ class TestMonitoringOrchestratorMonitoringLoop:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop performs initial fetch."""
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             # Start and quickly stop to test initial fetch
@@ -273,7 +303,9 @@ class TestMonitoringOrchestratorMonitoringLoop:
         """Test monitoring loop performs periodic updates."""
         orchestrator.update_interval = 0.1  # Very fast for testing
 
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
@@ -287,7 +319,9 @@ class TestMonitoringOrchestratorMonitoringLoop:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop respects stop event."""
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
@@ -317,8 +351,13 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
-        orchestrator.session_monitor.update.return_value = (True, [])  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
+        orchestrator.session_monitor.update.return_value = (
+            True,
+            [],
+        )  # pyright: ignore[reportAttributeAccessIssue]
 
         # Set args for token limit calculation
         args = Mock()
@@ -343,7 +382,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process when no data available."""
-        orchestrator.data_manager.get_data.return_value = None  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            None  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
@@ -354,7 +395,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
     ) -> None:
         """Test fetch and process with validation failure."""
         test_data: dict[str, list[JSONSerializable]] = {"blocks": []}
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
         orchestrator.session_monitor.update.return_value = (
             False,
             ["Validation error"],
@@ -378,7 +421,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         callback1 = Mock()
         callback2 = Mock()
@@ -414,7 +459,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         callback_error = Mock(side_effect=Exception("Callback failed"))
         callback_success = Mock()
@@ -426,11 +473,15 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 "claude_monitor.monitoring.orchestrator.get_token_limit",
                 return_value=200000,
             ),
-            patch("claude_monitor.monitoring.orchestrator.report_error") as mock_report,
+            patch(
+                "claude_monitor.monitoring.orchestrator.report_error"
+            ) as mock_report,
         ):
             result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert result is not None  # Should still return data despite callback error
+        assert (
+            result is not None
+        )  # Should still return data despite callback error
         callback_success.assert_called_once()  # Other callbacks should still work
         mock_report.assert_called_once()
 
@@ -438,7 +489,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process handles exceptions."""
-        orchestrator.data_manager.get_data.side_effect = Exception("Fetch failed")  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.side_effect = Exception(
+            "Fetch failed"
+        )  # pyright: ignore[reportAttributeAccessIssue]
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
@@ -462,7 +515,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         assert not orchestrator._first_data_event.is_set()  # type: ignore[misc]
 
@@ -552,7 +607,9 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
 class TestMonitoringOrchestratorIntegration:
     """Test integration scenarios."""
 
-    def test_full_monitoring_cycle(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_full_monitoring_cycle(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test complete monitoring cycle."""
         # Setup test data
         test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
@@ -565,7 +622,9 @@ class TestMonitoringOrchestratorIntegration:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         # Setup callback to capture monitoring data
         captured_data: list[MonitoringState] = list[MonitoringState]()
@@ -640,7 +699,9 @@ class TestMonitoringOrchestratorIntegration:
             call_count += 1
             return initial_data if call_count == 1 else changed_data
 
-        orchestrator.data_manager.get_data.side_effect = mock_get_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.side_effect = (
+            mock_get_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         # Mock session monitor to return different session IDs
         session_call_count = 0
@@ -655,11 +716,15 @@ class TestMonitoringOrchestratorIntegration:
             orchestrator.session_monitor.session_count = session_call_count  # pyright: ignore[reportAttributeAccessIssue]
             return (True, [])
 
-        orchestrator.session_monitor.update.side_effect = mock_update  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.session_monitor.update.side_effect = (
+            mock_update  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         # Capture callback data
         captured_data: list[MonitoringState] = list[MonitoringState]()
-        orchestrator.register_update_callback(lambda data: captured_data.append(data))
+        orchestrator.register_update_callback(
+            lambda data: captured_data.append(data)
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
@@ -750,7 +815,9 @@ class TestMonitoringOrchestratorThreadSafety:
         # All callbacks should be registered
         assert len(orchestrator._update_callbacks) == 30  # type: ignore[misc]
 
-    def test_concurrent_start_stop(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_concurrent_start_stop(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test thread-safe start/stop operations."""
 
         def start_stop_loop() -> None:
@@ -792,7 +859,9 @@ class TestMonitoringOrchestratorProperties:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (
+            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
@@ -853,7 +922,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(cast(AnalysisResult, data))  # Simplified test data
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert is_valid is True
         assert errors == []
@@ -865,7 +936,9 @@ class TestSessionMonitor:
         monitor = SessionMonitor()
 
         # Test with None data
-        is_valid, errors = monitor.update(None)  # pyright: ignore[reportArgumentType]
+        is_valid, errors = monitor.update(
+            None
+        )  # pyright: ignore[reportArgumentType]
         assert is_valid is False
         assert len(errors) > 0
 
@@ -876,7 +949,9 @@ class TestSessionMonitor:
         monitor = SessionMonitor()
 
         # Test empty dict
-        is_valid, errors = monitor.validate_data(cast(AnalysisResult, {}))  # Simplified test data
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, {})
+        )  # Simplified test data
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
 
@@ -887,7 +962,9 @@ class TestSessionMonitor:
         monitor = SessionMonitor()
 
         data = {"metadata": {"version": "1.0"}}
-        is_valid, errors = monitor.validate_data(cast(AnalysisResult, data))  # Simplified test data
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
@@ -899,7 +976,9 @@ class TestSessionMonitor:
         monitor = SessionMonitor()
 
         data = {"blocks": "not_a_list"}
-        is_valid, errors = monitor.validate_data(cast(AnalysisResult, data))  # Simplified test data
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert is_valid is False
         assert len(errors) > 0
@@ -1013,7 +1092,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(cast(AnalysisResult, data))  # Simplified test data
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
@@ -1036,7 +1117,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(cast(AnalysisResult, data))  # Simplified test data
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)

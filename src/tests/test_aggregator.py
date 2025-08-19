@@ -22,7 +22,7 @@ def get_daily_result_date(result: CompleteAggregatedUsage) -> str:
 
 def get_monthly_result_month(result: CompleteAggregatedUsage) -> str:
     """Get month from monthly aggregation result, which should always have month set."""
-    assert "month" in result, "Monthly aggregation result should have month field" 
+    assert "month" in result, "Monthly aggregation result should have month field"
     return result["month"]  # type: ignore[return-value,no-any-return]  # Monthly aggregation always sets month
 
 
@@ -503,7 +503,7 @@ class TestUsageAggregator:
     def test_calculate_totals_with_data(self, aggregator: UsageAggregator) -> None:
         """Test calculating totals with aggregated data."""
         from claude_monitor.types import CompleteAggregatedUsage
-        
+
         aggregated_data: list[CompleteAggregatedUsage] = [
             CompleteAggregatedUsage(
                 date="2024-01-01",
