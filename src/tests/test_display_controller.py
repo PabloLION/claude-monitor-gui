@@ -642,7 +642,7 @@ class TestScreenBufferManager:
 
         manager = ScreenBufferManager()
         mock_object = Mock()
-        screen_buffer = ["String line", mock_object]
+        screen_buffer = ["String line", str(mock_object)]
 
         result = manager.create_screen_renderable(screen_buffer)
 

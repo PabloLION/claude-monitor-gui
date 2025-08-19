@@ -648,7 +648,7 @@ class TestCreateUniqueHash:
         assert result is None
 
     def test_create_unique_hash_empty_data(self) -> None:
-        data = {}
+        data: dict[str, str] = {}
 
         # Test with mock data dict - using dict literal for test data simplicity
         result = _create_unique_hash(data)  # type: ignore[arg-type]  # Mock test data
