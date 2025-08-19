@@ -27,6 +27,9 @@ from claude_monitor.data.reader import (
     load_all_raw_entries,
     load_usage_entries,
 )
+
+# Note: RawJSONEntry type is referenced in comments but not directly used
+# since test data uses dict literals with type ignore comments
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 
@@ -520,10 +523,10 @@ class TestShouldProcessEntry:
             ):
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _should_process_entry(
-                    data,
+                    data,  # type: ignore[arg-type]  # Mock test data
                     cutoff_time,
                     set(),
-                    timezone_handler,  # type: ignore[arg-type]  # Mock test data
+                    timezone_handler,
                 )
 
         assert result is True
@@ -559,10 +562,10 @@ class TestShouldProcessEntry:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _should_process_entry(
-                data,
+                data,  # type: ignore[arg-type]  # Mock test data
                 None,
                 processed_hashes,
-                timezone_handler,  # type: ignore[arg-type]  # Mock test data
+                timezone_handler,
             )
 
         assert result is False
@@ -597,10 +600,10 @@ class TestShouldProcessEntry:
             ):
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _should_process_entry(
-                    data,
+                    data,  # type: ignore[arg-type]  # Mock test data
                     cutoff_time,
                     set(),
-                    timezone_handler,  # type: ignore[arg-type]  # Mock test data
+                    timezone_handler,
                 )
 
         assert result is True
@@ -739,7 +742,10 @@ class TestMapToUsageEntry:
                     pricing_calculator.calculate_cost_for_entry.return_value = 0.001
 
                     result = _map_to_usage_entry(
-                        data, CostMode.AUTO, timezone_handler, pricing_calculator
+                        data,  # type: ignore[arg-type]  # Mock test data
+                        CostMode.AUTO,
+                        timezone_handler,
+                        pricing_calculator,
                     )
 
         assert result is not None
@@ -769,10 +775,10 @@ class TestMapToUsageEntry:
 
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data,
+                data,  # type: ignore[arg-type]  # Mock test data
                 CostMode.AUTO,
                 timezone_handler,
-                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                pricing_calculator,
             )
 
         assert result is None
@@ -806,10 +812,10 @@ class TestMapToUsageEntry:
 
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _map_to_usage_entry(
-                    data,
+                    data,  # type: ignore[arg-type]  # Mock test data
                     CostMode.AUTO,
                     timezone_handler,
-                    pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                    pricing_calculator,
                 )
 
         assert result is None
@@ -828,10 +834,10 @@ class TestMapToUsageEntry:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data,
+                data,  # type: ignore[arg-type]  # Mock test data
                 CostMode.AUTO,
                 timezone_handler,
-                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                pricing_calculator,
             )
 
         assert result is None
@@ -877,10 +883,10 @@ class TestMapToUsageEntry:
 
                     # Test with mock data dict - using dict literal for test data simplicity
                     result = _map_to_usage_entry(
-                        data,
+                        data,  # type: ignore[arg-type]  # Mock test data
                         CostMode.AUTO,
                         timezone_handler,
-                        pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                        pricing_calculator,
                     )
 
         assert result is not None
@@ -1160,7 +1166,7 @@ class TestPerformanceAndEdgeCases:
                     None,
                 )  # No raw data when include_raw=False
 
-                _entries, raw_data = load_usage_entries(
+                _, raw_data = load_usage_entries(
                     data_path=str(temp_path), include_raw=False
                 )
 
@@ -1231,7 +1237,7 @@ class TestUsageEntryMapper:
         self, mapper_components: tuple[Mock, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper.map with invalid data."""
-        mapper, _timezone_handler, _pricing_calculator = mapper_components
+        mapper, _, _ = mapper_components
 
         data = {"invalid": "data"}
 
@@ -1260,7 +1266,7 @@ class TestUsageEntryMapper:
         self, mapper_components: tuple[Mock, Mock, Mock]
     ) -> None:
         """Test UsageEntryMapper._extract_timestamp method."""
-        mapper, _timezone_handler, _ = mapper_components
+        mapper, _, _ = mapper_components
 
         with patch(
             "claude_monitor.data.reader.TimestampProcessor"
@@ -1391,10 +1397,10 @@ class TestAdditionalEdgeCases:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data,
+                data,  # type: ignore[arg-type]  # Mock test data
                 CostMode.AUTO,
                 timezone_handler,
-                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                pricing_calculator,
             )
         assert result is None
 
@@ -1437,10 +1443,10 @@ class TestAdditionalEdgeCases:
 
                     # Test with mock data dict - using dict literal for test data simplicity
                     result = _map_to_usage_entry(
-                        data,
+                        data,  # type: ignore[arg-type]  # Mock test data
                         CostMode.AUTO,
                         timezone_handler,
-                        pricing_calculator,  # type: ignore[arg-type]  # Mock test data
+                        pricing_calculator,
                     )
                     assert result is None
 
@@ -1662,7 +1668,7 @@ class TestDataProcessors:
 
             # Test that the function handles parsing failures gracefully
             result = processor.parse_timestamp("invalid-format-that-will-fail")
-            # Should return None for unparseable strings
+            # Should return None for unparsable strings
             assert result is None
 
     def test_timestamp_processor_parse_numeric(self):
@@ -1783,7 +1789,7 @@ class TestDataProcessors:
         # Test with default
         data = dict[str, Any]()
         assert (
-            DataConverter.extract_model_name(data, "default-model") == "default-model"
+            DataConverter.extract_model_name(data, "default-model") == "default-model"  # type: ignore[arg-type]  # Empty dict for testing
         )
 
         # Test with None data (handle gracefully) - testing error handling
@@ -1811,11 +1817,11 @@ class TestDataProcessors:
         result = DataConverter.flatten_nested_dict(data)  # type: ignore[arg-type]  # Mock test data
         assert isinstance(result, dict)
 
-        assert result["user.name"] == "John"
-        assert result["user.age"] == 30
-        assert result["settings.theme"] == "dark"
-        assert result["settings.notifications.email"] is True
-        assert result["settings.notifications.push"] is False
+        assert result["user.name"] == "John"  # type: ignore[typeddict-item]  # Dynamic flattened keys
+        assert result["user.age"] == 30  # type: ignore[typeddict-item]  # Dynamic flattened keys
+        assert result["settings.theme"] == "dark"  # type: ignore[typeddict-item]  # Dynamic flattened keys
+        assert result["settings.notifications.email"] is True  # type: ignore[typeddict-item]  # Dynamic flattened keys
+        assert result["settings.notifications.push"] is False  # type: ignore[typeddict-item]  # Dynamic flattened keys
 
     def test_data_converter_flatten_with_prefix(self):
         """Test flattening with custom prefix."""
@@ -1826,7 +1832,7 @@ class TestDataProcessors:
         result = DataConverter.flatten_nested_dict(data, "prefix")  # type: ignore[arg-type]  # Mock test data
         assert isinstance(result, dict)
 
-        assert result["prefix.inner.value"] == 42
+        assert result["prefix.inner.value"] == 42  # type: ignore[typeddict-item]  # Dynamic flattened keys
 
     def test_data_converter_to_serializable(self):
         """Test object serialization."""
