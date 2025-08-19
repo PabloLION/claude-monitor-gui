@@ -1182,7 +1182,7 @@ class TestUsageEntryMapper:
 
             assert result == expected_entry
             mock_map.assert_called_once_with(
-                data, CostMode.AUTO, timezone_handler, pricing_calculator
+                data, CostMode.AUTO, _timezone_handler, _pricing_calculator
             )
 
     def test_usage_entry_mapper_map_failure(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
