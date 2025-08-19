@@ -27,6 +27,7 @@ from claude_monitor.data.reader import (
     load_all_raw_entries,
     load_usage_entries,
 )
+from claude_monitor.types import RawJSONEntry
 
 # Note: RawJSONEntry type is referenced in comments but not directly used
 # since test data uses dict literals with type ignore comments
@@ -648,7 +649,7 @@ class TestCreateUniqueHash:
         assert result is None
 
     def test_create_unique_hash_empty_data(self) -> None:
-        data: dict[str, str] = {}
+        data = RawJSONEntry()
 
         # Test with mock data dict - using dict literal for test data simplicity
         result = _create_unique_hash(data)  # type: ignore[arg-type]  # Mock test data

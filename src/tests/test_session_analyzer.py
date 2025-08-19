@@ -5,12 +5,7 @@ from typing import cast
 
 from claude_monitor.core.models import SessionBlock, TokenCounts, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
-from claude_monitor.types import (
-    AssistantMessageEntry,
-    ClaudeMessageEntry,
-    SystemMessageEntry,
-    UserMessageEntry,
-)
+from claude_monitor.types import ClaudeMessageEntry
 
 
 class TestSessionAnalyzer:
@@ -283,7 +278,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(cast(SystemMessageEntry | UserMessageEntry | AssistantMessageEntry, raw_data))  # type: ignore[misc]
+        result = analyzer._detect_single_limit(cast(ClaudeMessageEntry, raw_data))  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
@@ -305,7 +300,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(cast(SystemMessageEntry | UserMessageEntry | AssistantMessageEntry, raw_data))  # type: ignore[misc]
+        result = analyzer._detect_single_limit(cast(ClaudeMessageEntry, raw_data))  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
