@@ -208,7 +208,10 @@ class TestDisplayController:
 
             # Testing cost prediction with valid plan - private method access for business logic
             result = controller._calculate_cost_predictions(  # type: ignore[attr-defined]
-                session_data, time_data, sample_args, cost_limit_p90  # type: ignore[arg-type]  # Mock test data
+                session_data,
+                time_data,
+                sample_args,
+                cost_limit_p90,  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_limit"] == 5.0
@@ -232,7 +235,10 @@ class TestDisplayController:
 
             # Testing cost prediction with invalid plan - private method access for edge cases
             controller._calculate_cost_predictions(  # type: ignore[attr-defined]
-                session_data, time_data, sample_args, None  # type: ignore[arg-type]  # Mock test data
+                session_data,
+                time_data,
+                sample_args,
+                None,  # type: ignore[arg-type]  # Mock test data
             )
 
             mock_calc.assert_called_once_with(session_data, time_data, 100.0)
@@ -245,9 +251,7 @@ class TestDisplayController:
             patch.object(
                 controller.notification_manager, "should_notify"
             ) as mock_should,
-            patch.object(
-                controller.notification_manager, "mark_notified"
-            ) as mock_mark,
+            patch.object(controller.notification_manager, "mark_notified") as mock_mark,
             patch.object(
                 controller.notification_manager, "is_notification_active"
             ) as mock_active,
@@ -265,16 +269,14 @@ class TestDisplayController:
                 original_limit=200000,
                 session_cost=2.0,
                 cost_limit=5.0,
-                predicted_end_time=datetime.now(timezone.utc)
-                + timedelta(hours=2),
+                predicted_end_time=datetime.now(timezone.utc) + timedelta(hours=2),
                 reset_time=datetime.now(timezone.utc) + timedelta(hours=12),
             )
 
             assert result["show_switch_notification"] is True
             # Verify switch_to_custom was called
             assert any(
-                call[0][0] == "switch_to_custom"
-                for call in mock_should.call_args_list
+                call[0][0] == "switch_to_custom" for call in mock_should.call_args_list
             )
             mock_mark.assert_called_with("switch_to_custom")
 
@@ -286,9 +288,7 @@ class TestDisplayController:
             patch.object(
                 controller.notification_manager, "should_notify"
             ) as mock_should,
-            patch.object(
-                controller.notification_manager, "mark_notified"
-            ) as mock_mark,
+            patch.object(controller.notification_manager, "mark_notified") as mock_mark,
             patch.object(
                 controller.notification_manager, "is_notification_active"
             ) as mock_active,
@@ -306,16 +306,14 @@ class TestDisplayController:
                 original_limit=200000,
                 session_cost=6.0,  # Exceeds limit
                 cost_limit=5.0,
-                predicted_end_time=datetime.now(timezone.utc)
-                + timedelta(hours=2),
+                predicted_end_time=datetime.now(timezone.utc) + timedelta(hours=2),
                 reset_time=datetime.now(timezone.utc) + timedelta(hours=12),
             )
 
             assert result["show_exceed_notification"] is True
             # Verify exceed_max_limit was called
             assert any(
-                call[0][0] == "exceed_max_limit"
-                for call in mock_should.call_args_list
+                call[0][0] == "exceed_max_limit" for call in mock_should.call_args_list
             )
             mock_mark.assert_called_with("exceed_max_limit")
 
@@ -327,9 +325,7 @@ class TestDisplayController:
             patch.object(
                 controller.notification_manager, "should_notify"
             ) as mock_should,
-            patch.object(
-                controller.notification_manager, "mark_notified"
-            ) as mock_mark,
+            patch.object(controller.notification_manager, "mark_notified") as mock_mark,
         ):
             mock_should.return_value = True
 
@@ -365,9 +361,7 @@ class TestDisplayController:
         """Test display time formatting."""
         mock_tz_handler = Mock()
         mock_tz_handler.validate_timezone.return_value = True
-        mock_tz_handler.convert_to_timezone.return_value = datetime.now(
-            timezone.utc
-        )
+        mock_tz_handler.convert_to_timezone.return_value = datetime.now(timezone.utc)
         mock_tz_handler_class.return_value = mock_tz_handler
 
         mock_get_format.return_value = "24h"
@@ -460,9 +454,7 @@ class TestDisplayController:
 
         data = {"blocks": [sample_active_block]}
 
-        with patch.object(
-            controller, "_process_active_session_data"
-        ) as mock_process:
+        with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.return_value = {
                 "plan": "pro",
                 "timezone": "UTC",
@@ -496,16 +488,16 @@ class TestDisplayController:
 
                 # Test with mock data containing SerializedBlock - using dict for edge case testing
                 result = controller.create_data_display(
-                    data, sample_args, 200000  # type: ignore[arg-type]  # Mock test data
+                    data,
+                    sample_args,
+                    200000,  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result is not None
                 mock_process.assert_called_once()
                 mock_format.assert_called_once()
 
-    def test_create_loading_display(
-        self, controller: DisplayController
-    ) -> None:
+    def test_create_loading_display(self, controller: DisplayController) -> None:
         """Test creating loading display."""
         result = controller.create_loading_display("pro", "UTC", "Loading...")
 
@@ -752,9 +744,7 @@ class TestDisplayControllerAdvanced:
         # Mock advanced display
         mock_temp_display = Mock()
         mock_advanced_display.return_value = mock_temp_display
-        mock_temp_display.collect_session_data.return_value = {
-            "limit_sessions": []
-        }
+        mock_temp_display.collect_session_data.return_value = {"limit_sessions": []}
         mock_temp_display.calculate_session_percentiles.return_value = {
             "costs": {"p90": 5.0},
             "messages": {"p90": 100},
@@ -781,9 +771,7 @@ class TestDisplayControllerAdvanced:
             ]
         }
 
-        with patch.object(
-            controller, "_process_active_session_data"
-        ) as mock_process:
+        with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.return_value = {
                 "plan": "custom",
                 "timezone": "UTC",
@@ -804,7 +792,9 @@ class TestDisplayControllerAdvanced:
 
                 # Test advanced display mode with complex mock data - using dict for testing
                 result = controller.create_data_display(
-                    data, sample_args_custom, 200000  # type: ignore[arg-type]  # Mock test data
+                    data,
+                    sample_args_custom,
+                    200000,  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result == "rendered_screen"
@@ -821,15 +811,9 @@ class TestDisplayControllerAdvanced:
         args.plan = "pro"
         args.timezone = "UTC"
 
-        data = {
-            "blocks": [
-                {"isActive": True, "totalTokens": 15000, "costUSD": 0.45}
-            ]
-        }
+        data = {"blocks": [{"isActive": True, "totalTokens": 15000, "costUSD": 0.45}]}
 
-        with patch.object(
-            controller, "_process_active_session_data"
-        ) as mock_process:
+        with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.side_effect = Exception("Test error")
 
             with (
@@ -872,9 +856,7 @@ class TestDisplayControllerAdvanced:
             ]
         }
 
-        with patch.object(
-            controller, "_process_active_session_data"
-        ) as mock_process:
+        with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.return_value = {
                 "plan": "pro",
                 "timezone": "UTC",
@@ -1015,12 +997,8 @@ class TestSessionCalculator:
         }
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
-        with patch.object(
-            calculator.tz_handler, "parse_timestamp"
-        ) as mock_parse:
-            with patch.object(
-                calculator.tz_handler, "ensure_utc"
-            ) as mock_ensure:
+        with patch.object(calculator.tz_handler, "parse_timestamp") as mock_parse:
+            with patch.object(calculator.tz_handler, "ensure_utc") as mock_ensure:
                 start_time = datetime(2024, 1, 1, 11, 0, tzinfo=timezone.utc)
                 end_time = datetime(2024, 1, 1, 13, 0, tzinfo=timezone.utc)
 
@@ -1029,7 +1007,8 @@ class TestSessionCalculator:
 
                 # Test with mock session data - using dict for testing time calculations
                 result = calculator.calculate_time_data(
-                    session_data, current_time  # type: ignore[arg-type]  # Mock test data
+                    session_data,
+                    current_time,  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result["start_time"] == start_time
@@ -1044,12 +1023,8 @@ class TestSessionCalculator:
         session_data = {"start_time_str": "2024-01-01T11:00:00Z"}
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
-        with patch.object(
-            calculator.tz_handler, "parse_timestamp"
-        ) as mock_parse:
-            with patch.object(
-                calculator.tz_handler, "ensure_utc"
-            ) as mock_ensure:
+        with patch.object(calculator.tz_handler, "parse_timestamp") as mock_parse:
+            with patch.object(calculator.tz_handler, "ensure_utc") as mock_ensure:
                 start_time = datetime(2024, 1, 1, 11, 0, tzinfo=timezone.utc)
 
                 mock_parse.return_value = start_time
@@ -1057,7 +1032,8 @@ class TestSessionCalculator:
 
                 # Test with mock session data - using dict for testing time calculations with no end time
                 result = calculator.calculate_time_data(
-                    session_data, current_time  # type: ignore[arg-type]  # Mock test data
+                    session_data,
+                    current_time,  # type: ignore[arg-type]  # Mock test data
                 )
 
                 assert result["start_time"] == start_time
@@ -1090,18 +1066,19 @@ class TestSessionCalculator:
         time_data = {"elapsed_session_minutes": 60}
         cost_limit = 10.0
 
-        with patch(
-            "claude_monitor.ui.display_controller.datetime"
-        ) as mock_datetime:
+        with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
             mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args, **kw  # type: ignore[misc]  # Mock datetime args
+                *args,
+                **kw,  # type: ignore[misc]  # Mock datetime args
             )
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, cost_limit  # type: ignore[arg-type]  # Mock test data
+                session_data,
+                time_data,
+                cost_limit,  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_per_minute"] == 2.5 / 60  # Approximately 0.0417
@@ -1119,18 +1096,19 @@ class TestSessionCalculator:
             "reset_time": datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
         }
 
-        with patch(
-            "claude_monitor.ui.display_controller.datetime"
-        ) as mock_datetime:
+        with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
             mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args, **kw  # type: ignore[misc]  # Mock datetime args
+                *args,
+                **kw,  # type: ignore[misc]  # Mock datetime args
             )
 
             # Test cost predictions without cost limit - using dict for edge case testing
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, None  # type: ignore[arg-type]  # Mock test data
+                session_data,
+                time_data,
+                None,  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_limit"] == 100.0  # Default
@@ -1148,18 +1126,19 @@ class TestSessionCalculator:
         }
         cost_limit = 10.0
 
-        with patch(
-            "claude_monitor.ui.display_controller.datetime"
-        ) as mock_datetime:
+        with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
             mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args, **kw  # type: ignore[misc]  # Mock datetime args
+                *args,
+                **kw,  # type: ignore[misc]  # Mock datetime args
             )
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
-                session_data, time_data, cost_limit  # type: ignore[arg-type]  # Mock test data
+                session_data,
+                time_data,
+                cost_limit,  # type: ignore[arg-type]  # Mock test data
             )
 
             assert result["cost_per_minute"] == 0.0

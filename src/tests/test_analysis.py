@@ -73,9 +73,7 @@ class TestAnalyzeUsage:
         assert result["total_tokens"] == 150
         assert result["total_cost"] == 0.001
         mock_load.assert_called_once()
-        mock_analyzer.transform_to_blocks.assert_called_once_with(
-            [sample_entry]
-        )
+        mock_analyzer.transform_to_blocks.assert_called_once_with([sample_entry])
         mock_analyzer.detect_limits.assert_called_once_with([{"raw": "data"}])
 
     @patch("claude_monitor.data.analysis.load_usage_entries")
@@ -258,9 +256,7 @@ class TestProcessBurnRates:
             start_time=datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc),
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
             is_active=True,
-            token_counts=TokenCounts(
-                input_tokens=0, output_tokens=0
-            ),  # No tokens
+            token_counts=TokenCounts(input_tokens=0, output_tokens=0),  # No tokens
             cost_usd=0.0,
         )
 
@@ -349,9 +345,7 @@ class TestLimitFunctions:
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
         )
 
-        limit_info = {
-            "timestamp": datetime(2024, 1, 1, 14, 0, tzinfo=timezone.utc)
-        }
+        limit_info = {"timestamp": datetime(2024, 1, 1, 14, 0, tzinfo=timezone.utc)}
 
         assert _is_limit_in_block_timerange(limit_info, block) is True
 
@@ -363,9 +357,7 @@ class TestLimitFunctions:
             end_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
         )
 
-        limit_info = {
-            "timestamp": datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc)
-        }
+        limit_info = {"timestamp": datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc)}
 
         assert _is_limit_in_block_timerange(limit_info, block) is False
 
@@ -523,17 +515,13 @@ class TestBlockConversion:
     def test_add_optional_block_data_all_fields(self) -> None:
         """Test _add_optional_block_data with all optional fields."""
         block = Mock()
-        block.burn_rate_snapshot = BurnRate(
-            tokens_per_minute=5.0, cost_per_hour=1.0
-        )
+        block.burn_rate_snapshot = BurnRate(tokens_per_minute=5.0, cost_per_hour=1.0)
         block.projection_data = {
             "totalTokens": 500,
             "totalCost": 0.005,
             "remainingMinutes": 60,
         }
-        block.limit_messages = [
-            {"type": "rate_limit", "content": "Limit reached"}
-        ]
+        block.limit_messages = [{"type": "rate_limit", "content": "Limit reached"}]
 
         block_dict = PartialBlock()
         _add_optional_block_data(block, block_dict)

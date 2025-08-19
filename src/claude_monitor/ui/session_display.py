@@ -92,9 +92,7 @@ class SessionDisplayComponent:
 
         return f"{color} [{filled_bar}]"
 
-    def format_active_session_screen_v2(
-        self, data: SessionDisplayData
-    ) -> list[str]:
+    def format_active_session_screen_v2(self, data: SessionDisplayData) -> list[str]:
         """Format complete active session screen using data class.
 
         This is the refactored version using SessionDisplayData.
@@ -193,9 +191,7 @@ class SessionDisplayComponent:
 
             screen_buffer.append("")
             if plan == "custom":
-                screen_buffer.append(
-                    "[bold]📊 Session-Based Dynamic Limits[/bold]"
-                )
+                screen_buffer.append("[bold]📊 Session-Based Dynamic Limits[/bold]")
                 screen_buffer.append(
                     "[dim]Based on your historical usage patterns when hitting limits (P90)[/dim]"
                 )
@@ -237,9 +233,7 @@ class SessionDisplayComponent:
                 else 0
             )
             time_bar = self._render_wide_progress_bar(time_percentage)
-            time_remaining = max(
-                0, total_session_minutes - elapsed_session_minutes
-            )
+            time_remaining = max(0, total_session_minutes - elapsed_session_minutes)
             time_left_hours = int(time_remaining // 60)
             time_left_mins = int(time_remaining % 60)
             screen_buffer.append(
@@ -249,14 +243,10 @@ class SessionDisplayComponent:
 
             if per_model_stats:
                 model_bar = self.model_usage.render(per_model_stats)
-                screen_buffer.append(
-                    f"🤖 [value]Model Distribution:[/]   {model_bar}"
-                )
+                screen_buffer.append(f"🤖 [value]Model Distribution:[/]   {model_bar}")
             else:
                 model_bar = self.model_usage.render({})
-                screen_buffer.append(
-                    f"🤖 [value]Model Distribution:[/]   {model_bar}"
-                )
+                screen_buffer.append(f"🤖 [value]Model Distribution:[/]   {model_bar}")
             screen_buffer.append(f"[separator]{'─' * 60}[/]")
 
             velocity_emoji = VelocityIndicator.get_velocity_emoji(burn_rate)
@@ -306,9 +296,7 @@ class SessionDisplayComponent:
 
             if per_model_stats:
                 model_bar = self.model_usage.render(per_model_stats)
-                screen_buffer.append(
-                    f"🤖 [value]Model Usage:[/]    {model_bar}"
-                )
+                screen_buffer.append(f"🤖 [value]Model Usage:[/]    {model_bar}")
 
             screen_buffer.append("")
 
@@ -424,9 +412,7 @@ class SessionDisplayComponent:
         screen_buffer.append(
             "💲 [value]Cost Rate:[/]      [cost.low]$0.00[/] [dim]$/min[/]"
         )
-        screen_buffer.append(
-            "📨 [value]Sent Messages:[/]  [info]0[/] [dim]messages[/]"
-        )
+        screen_buffer.append("📨 [value]Sent Messages:[/]  [info]0[/] [dim]messages[/]")
         screen_buffer.append("")
 
         if current_time and args:

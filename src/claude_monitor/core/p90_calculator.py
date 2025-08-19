@@ -15,9 +15,7 @@ class P90Config:
     cache_ttl_seconds: int
 
 
-def _did_hit_limit(
-    tokens: int, common_limits: Sequence[int], threshold: float
-) -> bool:
+def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) -> bool:
     return any(tokens >= limit * threshold for limit in common_limits)
 
 
@@ -41,16 +39,13 @@ def _calculate_p90_from_blocks(
         if b.get("isGap", False) or b.get("isActive", False):
             return False
         total_tokens = b.get("totalTokens", 0)
-        return _did_hit_limit(
-            total_tokens, cfg.common_limits, cfg.limit_threshold
-        )
+        return _did_hit_limit(total_tokens, cfg.common_limits, cfg.limit_threshold)
 
     hits = _extract_sessions(blocks, hit_limit_filter)
     if not hits:
         hits = _extract_sessions(
             blocks,
-            lambda b: not b.get("isGap", False)
-            and not b.get("isActive", False),
+            lambda b: not b.get("isGap", False) and not b.get("isActive", False),
         )
     if not hits:
         return cfg.default_min_limit
@@ -80,8 +75,7 @@ class P90Calculator:
         self, key: int, blocks_tuple: tuple[tuple[bool, bool, int], ...]
     ) -> int:
         blocks: list[LegacyBlockData] = [
-            {"isGap": g, "isActive": a, "totalTokens": t}
-            for g, a, t in blocks_tuple
+            {"isGap": g, "isActive": a, "totalTokens": t} for g, a, t in blocks_tuple
         ]
         return _calculate_p90_from_blocks(blocks, self._cfg)
 

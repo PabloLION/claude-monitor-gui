@@ -79,9 +79,7 @@ class BurnRateCalculator:
         )
         current_cost = block.cost_usd
 
-        projected_additional_tokens = (
-            burn_rate.tokens_per_minute * remaining_minutes
-        )
+        projected_additional_tokens = burn_rate.tokens_per_minute * remaining_minutes
         projected_total_tokens = current_tokens + projected_additional_tokens
 
         projected_additional_cost = burn_rate.cost_per_hour * remaining_hours
@@ -102,9 +100,7 @@ def calculate_hourly_burn_rate(
         return 0.0
 
     one_hour_ago = current_time - timedelta(hours=1)
-    total_tokens = _calculate_total_tokens_in_hour(
-        blocks, one_hour_ago, current_time
-    )
+    total_tokens = _calculate_total_tokens_in_hour(blocks, one_hour_ago, current_time)
 
     return total_tokens / 60.0 if total_tokens > 0 else 0.0
 
@@ -117,9 +113,7 @@ def _calculate_total_tokens_in_hour(
     """Calculate total tokens for all blocks in the last hour."""
     total_tokens = 0.0
     for block in blocks:
-        total_tokens += _process_block_for_burn_rate(
-            block, one_hour_ago, current_time
-        )
+        total_tokens += _process_block_for_burn_rate(block, one_hour_ago, current_time)
     return total_tokens
 
 
@@ -176,9 +170,7 @@ def _determine_session_end_time(
         except (ValueError, TypeError, AttributeError) as e:
             block_id = block.get("id")
             block_id_str = str(block_id) if block_id is not None else None
-            _log_timestamp_error(
-                e, actual_end_str, block_id_str, "actual_end_time"
-            )
+            _log_timestamp_error(e, actual_end_str, block_id_str, "actual_end_time")
     return current_time
 
 
@@ -196,12 +188,8 @@ def _calculate_tokens_in_hour(
     if session_end_in_hour <= session_start_in_hour:
         return 0
 
-    total_session_duration = (
-        session_actual_end - start_time
-    ).total_seconds() / 60
-    hour_duration = (
-        session_end_in_hour - session_start_in_hour
-    ).total_seconds() / 60
+    total_session_duration = (session_actual_end - start_time).total_seconds() / 60
+    hour_duration = (session_end_in_hour - session_start_in_hour).total_seconds() / 60
 
     if total_session_duration > 0:
         session_tokens = float(block.get("totalTokens", 0))
@@ -216,9 +204,7 @@ def _log_timestamp_error(
     timestamp_type: str,
 ) -> None:
     """Log timestamp parsing errors with context."""
-    logging.debug(
-        f"Failed to parse {timestamp_type} '{timestamp_str}': {exception}"
-    )
+    logging.debug(f"Failed to parse {timestamp_type} '{timestamp_str}': {exception}")
     report_error(
         exception=exception,
         component="burn_rate_calculator",

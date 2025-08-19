@@ -39,9 +39,7 @@ class SessionAnalyzer:
         self.session_duration = timedelta(hours=session_duration_hours)
         self.timezone_handler = TimezoneHandler()
 
-    def transform_to_blocks(
-        self, entries: list[UsageEntry]
-    ) -> list[SessionBlock]:
+    def transform_to_blocks(self, entries: list[UsageEntry]) -> list[SessionBlock]:
         """Process entries and create session blocks.
 
         Args:
@@ -107,17 +105,14 @@ class SessionAnalyzer:
 
         return limits
 
-    def _should_create_new_block(
-        self, block: SessionBlock, entry: UsageEntry
-    ) -> bool:
+    def _should_create_new_block(self, block: SessionBlock, entry: UsageEntry) -> bool:
         """Check if new block is needed."""
         if entry.timestamp >= block.end_time:
             return True
 
         return (
             len(block.entries) > 0
-            and (entry.timestamp - block.entries[-1].timestamp)
-            >= self.session_duration
+            and (entry.timestamp - block.entries[-1].timestamp) >= self.session_duration
         )
 
     def _round_to_hour(self, timestamp: datetime) -> datetime:
@@ -144,18 +139,12 @@ class SessionAnalyzer:
             cost_usd=0.0,
         )
 
-    def _add_entry_to_block(
-        self, block: SessionBlock, entry: UsageEntry
-    ) -> None:
+    def _add_entry_to_block(self, block: SessionBlock, entry: UsageEntry) -> None:
         """Add entry to block and aggregate data per model."""
         block.entries.append(entry)
 
         raw_model = entry.model or "unknown"
-        model = (
-            normalize_model_name(raw_model)
-            if raw_model != "unknown"
-            else "unknown"
-        )
+        model = normalize_model_name(raw_model) if raw_model != "unknown" else "unknown"
 
         if model not in block.per_model_stats:
             block.per_model_stats[model] = {
@@ -271,9 +260,7 @@ class SessionAnalyzer:
 
             # Check for Opus-specific limit
             if self._is_opus_limit(content_lower) and timestamp is not None:
-                reset_time, wait_minutes = self._extract_wait_time(
-                    content, timestamp
-                )
+                reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
                 opus_limit = LimitDetectionInfo(
                     type="opus_limit",
                     timestamp=timestamp,

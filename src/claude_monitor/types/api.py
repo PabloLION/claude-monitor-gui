@@ -73,9 +73,7 @@ class AssistantMessageEntry(BaseClaudeEntry, total=False):
 
 
 # Discriminated union for all Claude JSONL entry types
-ClaudeMessageEntry = (
-    SystemMessageEntry | UserMessageEntry | AssistantMessageEntry
-)
+ClaudeMessageEntry = SystemMessageEntry | UserMessageEntry | AssistantMessageEntry
 
 
 class TokenUsageData(TypedDict, total=False):
@@ -89,12 +87,8 @@ class TokenUsageData(TypedDict, total=False):
     cache_read_input_tokens: NotRequired[int]  # Alternative field name
     inputTokens: NotRequired[int]  # Alternative field name (camelCase)
     outputTokens: NotRequired[int]  # Alternative field name (camelCase)
-    cacheCreationInputTokens: NotRequired[
-        int
-    ]  # Alternative field name (camelCase)
+    cacheCreationInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     cacheReadInputTokens: NotRequired[int]  # Alternative field name (camelCase)
     prompt_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
-    completion_tokens: NotRequired[
-        int
-    ]  # Alternative field name (OpenAI format)
+    completion_tokens: NotRequired[int]  # Alternative field name (OpenAI format)
     total_tokens: NotRequired[int]

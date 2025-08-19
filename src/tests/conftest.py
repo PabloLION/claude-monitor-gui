@@ -24,9 +24,7 @@ def mock_timezone_handler() -> Mock:
     mock.parse_timestamp.return_value = datetime(
         2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
     )
-    mock.ensure_utc.return_value = datetime(
-        2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc
-    )
+    mock.ensure_utc.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
     return mock
 
 

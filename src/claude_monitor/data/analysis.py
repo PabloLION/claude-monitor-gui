@@ -201,9 +201,7 @@ def _create_base_block_dict(block: SessionBlock) -> PartialBlock:
             "startTime": block.start_time.isoformat(),
             "endTime": block.end_time.isoformat(),
             "actualEndTime": (
-                block.actual_end_time.isoformat()
-                if block.actual_end_time
-                else None
+                block.actual_end_time.isoformat() if block.actual_end_time else None
             ),
             "tokenCounts": TokenCountsData(
                 {
@@ -217,9 +215,7 @@ def _create_base_block_dict(block: SessionBlock) -> PartialBlock:
             + block.token_counts.output_tokens,
             "costUSD": block.cost_usd,
             "models": block.models,
-            "perModelStats": cast(
-                dict[str, ModelUsageStats], block.per_model_stats
-            ),
+            "perModelStats": cast(dict[str, ModelUsageStats], block.per_model_stats),
             "sentMessagesCount": block.sent_messages_count,
             "durationMinutes": block.duration_minutes,
             "entries": _format_block_entries(block.entries),
@@ -246,9 +242,7 @@ def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
     ]
 
 
-def _add_optional_block_data(
-    block: SessionBlock, block_dict: PartialBlock
-) -> None:
+def _add_optional_block_data(block: SessionBlock, block_dict: PartialBlock) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
         block_dict["burnRate"] = BurnRateData(
@@ -259,9 +253,7 @@ def _add_optional_block_data(
         )
 
     if hasattr(block, "projection_data") and block.projection_data:
-        block_dict["projection"] = cast(
-            SessionProjectionJson, block.projection_data
-        )
+        block_dict["projection"] = cast(SessionProjectionJson, block.projection_data)
 
     if hasattr(block, "limit_messages") and block.limit_messages:
         block_dict["limitMessages"] = block.limit_messages

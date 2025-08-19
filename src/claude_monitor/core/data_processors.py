@@ -25,9 +25,7 @@ class TimestampProcessor:
 
     def __init__(self, timezone_handler: TimezoneHandler | None = None) -> None:
         """Initialize with optional timezone handler."""
-        self.timezone_handler: TimezoneHandler = (
-            timezone_handler or TimezoneHandler()
-        )
+        self.timezone_handler: TimezoneHandler = timezone_handler or TimezoneHandler()
 
     def parse_timestamp(
         self, timestamp_value: str | int | float | datetime | None
@@ -124,9 +122,7 @@ class TokenExtractor:
             entry_type = data.get("type")
             if entry_type == "system" or entry_type == "user":
                 # System and user messages don't have token usage
-                logger.debug(
-                    "TokenExtractor: System/user messages have no token usage"
-                )
+                logger.debug("TokenExtractor: System/user messages have no token usage")
                 return {
                     "input_tokens": 0,
                     "output_tokens": 0,
@@ -176,9 +172,7 @@ class TokenExtractor:
             # Top-level fields as fallback (cast for type compatibility)
             token_sources.append(cast(TokenSourceData, data))
 
-        logger.debug(
-            f"TokenExtractor: Checking {len(token_sources)} token sources"
-        )
+        logger.debug(f"TokenExtractor: Checking {len(token_sources)} token sources")
 
         # Extract tokens from first valid source
         for source in token_sources:
@@ -242,9 +236,7 @@ class DataConverter:
     """Unified data conversion utilities."""
 
     @staticmethod
-    def flatten_nested_dict(
-        data: RawJSONEntry, prefix: str = ""
-    ) -> FlattenedEntry:
+    def flatten_nested_dict(data: RawJSONEntry, prefix: str = "") -> FlattenedEntry:
         """Flatten nested dictionary structure.
 
         Args:

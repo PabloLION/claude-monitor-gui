@@ -17,7 +17,6 @@ import pytest
 from claude_monitor.core.models import CostMode, UsageEntry
 from claude_monitor.core.pricing import PricingCalculator
 from claude_monitor.data.reader import (
-    RawJSONEntry,
     UsageEntryMapper,
     _create_unique_hash,  # type: ignore[misc]
     _find_jsonl_files,  # type: ignore[misc]
@@ -367,7 +366,9 @@ class TestProcessSingleFile:
         assert len(entries) == 1
         assert raw_data is None
 
-    def test_process_single_file_filtered_entries(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_process_single_file_filtered_entries(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         timezone_handler: Mock
         pricing_calculator: Mock
         timezone_handler, pricing_calculator = mock_components
@@ -396,7 +397,9 @@ class TestProcessSingleFile:
         # raw_data could be None, but we expect it to be a list in this test
         assert raw_data is not None and len(raw_data) == 0
 
-    def test_process_single_file_invalid_json(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_process_single_file_invalid_json(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
         jsonl_content = 'invalid json\n{"valid": "data"}'
@@ -423,7 +426,9 @@ class TestProcessSingleFile:
         # raw_data could be None, but we expect it to be a list in this test
         assert raw_data is not None and len(raw_data) == 1
 
-    def test_process_single_file_read_error(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_process_single_file_read_error(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         timezone_handler, pricing_calculator = mock_components
         test_file = Path("/test/nonexistent.jsonl")
 
@@ -443,7 +448,9 @@ class TestProcessSingleFile:
         assert raw_data is None
         mock_report.assert_called_once()
 
-    def test_process_single_file_mapping_failure(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_process_single_file_mapping_failure(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
         sample_data = [{"timestamp": "2024-01-01T12:00:00Z", "input_tokens": 100}]
@@ -513,12 +520,17 @@ class TestShouldProcessEntry:
             ):
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _should_process_entry(
-                    data, cutoff_time, set(), timezone_handler  # type: ignore[arg-type]  # Mock test data
+                    data,
+                    cutoff_time,
+                    set(),
+                    timezone_handler,  # type: ignore[arg-type]  # Mock test data
                 )
 
         assert result is True
 
-    def test_should_process_entry_with_time_filter_fail(self, timezone_handler: Mock) -> None:
+    def test_should_process_entry_with_time_filter_fail(
+        self, timezone_handler: Mock
+    ) -> None:
         data = {"timestamp": "2024-01-01T08:00:00Z"}
         cutoff_time = datetime(2024, 1, 1, 10, 0, tzinfo=timezone.utc)
 
@@ -536,7 +548,9 @@ class TestShouldProcessEntry:
 
         assert result is False
 
-    def test_should_process_entry_with_duplicate_hash(self, timezone_handler: Mock) -> None:
+    def test_should_process_entry_with_duplicate_hash(
+        self, timezone_handler: Mock
+    ) -> None:
         data = {"message_id": "msg_1", "request_id": "req_1"}
         processed_hashes = {"msg_1:req_1"}
 
@@ -545,7 +559,10 @@ class TestShouldProcessEntry:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _should_process_entry(
-                data, None, processed_hashes, timezone_handler  # type: ignore[arg-type]  # Mock test data
+                data,
+                None,
+                processed_hashes,
+                timezone_handler,  # type: ignore[arg-type]  # Mock test data
             )
 
         assert result is False
@@ -562,7 +579,9 @@ class TestShouldProcessEntry:
 
         assert result is True
 
-    def test_should_process_entry_invalid_timestamp(self, timezone_handler: Mock) -> None:
+    def test_should_process_entry_invalid_timestamp(
+        self, timezone_handler: Mock
+    ) -> None:
         data = {"timestamp": "invalid", "message_id": "msg_1"}
         cutoff_time = datetime(2024, 1, 1, 10, 0, tzinfo=timezone.utc)
 
@@ -578,7 +597,10 @@ class TestShouldProcessEntry:
             ):
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _should_process_entry(
-                    data, cutoff_time, set(), timezone_handler  # type: ignore[arg-type]  # Mock test data
+                    data,
+                    cutoff_time,
+                    set(),
+                    timezone_handler,  # type: ignore[arg-type]  # Mock test data
                 )
 
         assert result is True
@@ -747,12 +769,17 @@ class TestMapToUsageEntry:
 
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                data,
+                CostMode.AUTO,
+                timezone_handler,
+                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
             )
 
         assert result is None
 
-    def test_map_to_usage_entry_no_tokens(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_map_to_usage_entry_no_tokens(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         timezone_handler, pricing_calculator = mock_components
 
         data = {"timestamp": "2024-01-01T12:00:00Z"}
@@ -779,12 +806,17 @@ class TestMapToUsageEntry:
 
                 # Test with mock data dict - using dict literal for test data simplicity
                 result = _map_to_usage_entry(
-                    data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                    data,
+                    CostMode.AUTO,
+                    timezone_handler,
+                    pricing_calculator,  # type: ignore[arg-type]  # Mock test data
                 )
 
         assert result is None
 
-    def test_map_to_usage_entry_exception_handling(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_map_to_usage_entry_exception_handling(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         """Test _map_to_usage_entry with exception during processing."""
         timezone_handler, pricing_calculator = mock_components
 
@@ -796,12 +828,17 @@ class TestMapToUsageEntry:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                data,
+                CostMode.AUTO,
+                timezone_handler,
+                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
             )
 
         assert result is None
 
-    def test_map_to_usage_entry_minimal_data(self, mock_components: tuple[Mock, Mock]) -> None:
+    def test_map_to_usage_entry_minimal_data(
+        self, mock_components: tuple[Mock, Mock]
+    ) -> None:
         """Test _map_to_usage_entry with minimal valid data."""
         timezone_handler, pricing_calculator = mock_components
 
@@ -840,7 +877,10 @@ class TestMapToUsageEntry:
 
                     # Test with mock data dict - using dict literal for test data simplicity
                     result = _map_to_usage_entry(
-                        data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                        data,
+                        CostMode.AUTO,
+                        timezone_handler,
+                        pricing_calculator,  # type: ignore[arg-type]  # Mock test data
                     )
 
         assert result is not None
@@ -1022,7 +1062,9 @@ class TestIntegration:
             # Should process valid entries and skip invalid JSON
             assert len(entries) == 2
             # raw_data could be None, but we expect it to be a list in this test
-            assert raw_data is not None and len(raw_data) == 2  # Only valid JSON included in raw data
+            assert (
+                raw_data is not None and len(raw_data) == 2
+            )  # Only valid JSON included in raw data
 
 
 class TestPerformanceAndEdgeCases:
@@ -1185,7 +1227,9 @@ class TestUsageEntryMapper:
                 data, CostMode.AUTO, _timezone_handler, _pricing_calculator
             )
 
-    def test_usage_entry_mapper_map_failure(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_map_failure(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper.map with invalid data."""
         mapper, _timezone_handler, _pricing_calculator = mapper_components
 
@@ -1197,7 +1241,9 @@ class TestUsageEntryMapper:
 
             assert result is None
 
-    def test_usage_entry_mapper_has_valid_tokens(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_has_valid_tokens(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._has_valid_tokens method."""
         mapper, _, _ = mapper_components
 
@@ -1210,7 +1256,9 @@ class TestUsageEntryMapper:
         assert not mapper._has_valid_tokens({"input_tokens": 0, "output_tokens": 0})
         assert not mapper._has_valid_tokens({})
 
-    def test_usage_entry_mapper_extract_timestamp(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_extract_timestamp(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._extract_timestamp method."""
         mapper, _timezone_handler, _ = mapper_components
 
@@ -1230,7 +1278,9 @@ class TestUsageEntryMapper:
             result = mapper._extract_timestamp({})
             assert result is None
 
-    def test_usage_entry_mapper_extract_model(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_extract_model(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._extract_model method."""
         mapper, _, _ = mapper_components
 
@@ -1245,7 +1295,9 @@ class TestUsageEntryMapper:
                 data, default="unknown"
             )
 
-    def test_usage_entry_mapper_extract_metadata(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_extract_metadata(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._extract_metadata method."""
         mapper, _, _ = mapper_components
 
@@ -1256,7 +1308,9 @@ class TestUsageEntryMapper:
         expected = {"message_id": "msg_123", "request_id": "req_456"}
         assert result == expected
 
-    def test_usage_entry_mapper_extract_metadata_nested(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_extract_metadata_nested(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._extract_metadata with nested message data."""
         mapper, _, _ = mapper_components
 
@@ -1267,7 +1321,9 @@ class TestUsageEntryMapper:
         expected = {"message_id": "msg_123", "request_id": "req_456"}
         assert result == expected
 
-    def test_usage_entry_mapper_extract_metadata_defaults(self, mapper_components: tuple[Mock, Mock, Mock]) -> None:
+    def test_usage_entry_mapper_extract_metadata_defaults(
+        self, mapper_components: tuple[Mock, Mock, Mock]
+    ) -> None:
         """Test UsageEntryMapper._extract_metadata with missing data."""
         mapper, _, _ = mapper_components
 
@@ -1335,7 +1391,10 @@ class TestAdditionalEdgeCases:
         ):
             # Test with mock data dict - using dict literal for test data simplicity
             result = _map_to_usage_entry(
-                data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                data,
+                CostMode.AUTO,
+                timezone_handler,
+                pricing_calculator,  # type: ignore[arg-type]  # Mock test data
             )
         assert result is None
 
@@ -1378,7 +1437,10 @@ class TestAdditionalEdgeCases:
 
                     # Test with mock data dict - using dict literal for test data simplicity
                     result = _map_to_usage_entry(
-                        data, CostMode.AUTO, timezone_handler, pricing_calculator  # type: ignore[arg-type]  # Mock test data
+                        data,
+                        CostMode.AUTO,
+                        timezone_handler,
+                        pricing_calculator,  # type: ignore[arg-type]  # Mock test data
                     )
                     assert result is None
 

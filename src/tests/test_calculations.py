@@ -94,9 +94,7 @@ class TestBurnRateCalculator:
         self, calculator: BurnRateCalculator, mock_active_block: Mock
     ) -> None:
         """Test burn rate calculation with very small duration."""
-        mock_active_block.duration_minutes = (
-            1  # 1 minute minimum for active check
-        )
+        mock_active_block.duration_minutes = 1  # 1 minute minimum for active check
         burn_rate = calculator.calculate_burn_rate(mock_active_block)
 
         assert burn_rate is not None
@@ -237,9 +235,7 @@ class TestHourlyBurnRateCalculation:
         assert burn_rate == 3.0
 
         one_hour_ago = current_time - timedelta(hours=1)
-        mock_calc_tokens.assert_called_once_with(
-            blocks, one_hour_ago, current_time
-        )
+        mock_calc_tokens.assert_called_once_with(blocks, one_hour_ago, current_time)
 
     @patch("claude_monitor.core.calculations._calculate_total_tokens_in_hour")
     def test_calculate_hourly_burn_rate_zero_tokens(
@@ -278,9 +274,7 @@ class TestHourlyBurnRateCalculation:
         gap_block = {"isGap": True, "start_time": "2024-01-01T11:30:00Z"}
         one_hour_ago = current_time - timedelta(hours=1)
 
-        tokens = _process_block_for_burn_rate(
-            gap_block, one_hour_ago, current_time
-        )
+        tokens = _process_block_for_burn_rate(gap_block, one_hour_ago, current_time)
         assert tokens == 0
 
     @patch("claude_monitor.core.calculations._parse_block_start_time")
@@ -306,9 +300,7 @@ class TestHourlyBurnRateCalculation:
         old_time = one_hour_ago - timedelta(minutes=30)
 
         mock_parse_time.return_value = old_time
-        mock_end_time.return_value = (
-            old_time  # Session ended before one hour ago
-        )
+        mock_end_time.return_value = old_time  # Session ended before one hour ago
 
         block = {"isGap": False, "start_time": "2024-01-01T10:30:00Z"}
 

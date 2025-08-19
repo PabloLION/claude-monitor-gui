@@ -178,9 +178,7 @@ class Settings(BaseSettings):
 
     clear: bool = Field(default=False, description="Clear saved configuration")
 
-    def __init__(
-        self, _cli_parse_args: list[str] | None = None, **data: Any
-    ) -> None:
+    def __init__(self, _cli_parse_args: list[str] | None = None, **data: Any) -> None:
         """Initialize Settings with optional CLI arguments parsing.
 
         Args:

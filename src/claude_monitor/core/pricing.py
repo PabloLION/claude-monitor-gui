@@ -222,14 +222,10 @@ class PricingCalculator:
 
         # Ensure all token values are integers
         input_tokens = (
-            int(input_tokens_raw)
-            if isinstance(input_tokens_raw, (int, float))
-            else 0
+            int(input_tokens_raw) if isinstance(input_tokens_raw, (int, float)) else 0
         )
         output_tokens = (
-            int(output_tokens_raw)
-            if isinstance(output_tokens_raw, (int, float))
-            else 0
+            int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else 0
         )
         cache_creation = (
             int(cache_creation_raw)
@@ -237,9 +233,7 @@ class PricingCalculator:
             else 0
         )
         cache_read = (
-            int(cache_read_raw)
-            if isinstance(cache_read_raw, (int, float))
-            else 0
+            int(cache_read_raw) if isinstance(cache_read_raw, (int, float)) else 0
         )
 
         return self.calculate_cost(

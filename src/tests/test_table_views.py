@@ -178,9 +178,7 @@ class TestTableViewsController:
         sample_totals: UsageTotals,
     ) -> None:
         """Test creation of daily table structure."""
-        table = controller.create_daily_table(
-            sample_daily_data, sample_totals, "UTC"
-        )
+        table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
 
         assert isinstance(table, Table)
         assert table.title == "Claude Code Token Usage Report - Daily (UTC)"
@@ -209,9 +207,7 @@ class TestTableViewsController:
         sample_totals: UsageTotals,
     ) -> None:
         """Test daily table data population."""
-        table = controller.create_daily_table(
-            sample_daily_data, sample_totals, "UTC"
-        )
+        table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
 
         # The table should have:
         # - 2 data rows (for the 2 days)
@@ -275,9 +271,7 @@ class TestTableViewsController:
         sample_totals: UsageTotals,
     ) -> None:
         """Test creation of summary panel."""
-        panel = controller.create_summary_panel(
-            "daily", sample_totals, "Last 30 days"
-        )
+        panel = controller.create_summary_panel("daily", sample_totals, "Last 30 days")
 
         assert isinstance(panel, Panel)
         assert panel.title == "Summary"
@@ -286,16 +280,12 @@ class TestTableViewsController:
         assert panel.expand is False
         assert panel.padding == (1, 2)
 
-    def test_format_models_single(
-        self, controller: TableViewsController
-    ) -> None:
+    def test_format_models_single(self, controller: TableViewsController) -> None:
         """Test formatting single model."""
         result = controller._format_models(["claude-3-haiku"])  # type: ignore[misc]
         assert result == "claude-3-haiku"
 
-    def test_format_models_multiple(
-        self, controller: TableViewsController
-    ) -> None:
+    def test_format_models_multiple(self, controller: TableViewsController) -> None:
         """Test formatting multiple models."""
         result = controller._format_models(  # type: ignore[misc]
             ["claude-3-haiku", "claude-3-sonnet", "claude-3-opus"]
@@ -303,16 +293,12 @@ class TestTableViewsController:
         expected = "• claude-3-haiku\n• claude-3-sonnet\n• claude-3-opus"
         assert result == expected
 
-    def test_format_models_empty(
-        self, controller: TableViewsController
-    ) -> None:
+    def test_format_models_empty(self, controller: TableViewsController) -> None:
         """Test formatting empty models list."""
         result = controller._format_models([])  # type: ignore[misc]
         assert result == "No models"
 
-    def test_create_no_data_display(
-        self, controller: TableViewsController
-    ) -> None:
+    def test_create_no_data_display(self, controller: TableViewsController) -> None:
         """Test creation of no data display."""
         panel = controller.create_no_data_display("daily")
 
@@ -374,8 +360,7 @@ class TestTableViewsController:
             sample_daily_data, sample_totals, "America/New_York"
         )
         assert (
-            table.title
-            == "Claude Code Token Usage Report - Daily (America/New_York)"
+            table.title == "Claude Code Token Usage Report - Daily (America/New_York)"
         )
 
     def test_monthly_table_timezone_display(
@@ -388,14 +373,9 @@ class TestTableViewsController:
         table = controller.create_monthly_table(
             sample_monthly_data, sample_totals, "Europe/London"
         )
-        assert (
-            table.title
-            == "Claude Code Token Usage Report - Monthly (Europe/London)"
-        )
+        assert table.title == "Claude Code Token Usage Report - Monthly (Europe/London)"
 
-    def test_table_with_zero_tokens(
-        self, controller: TableViewsController
-    ) -> None:
+    def test_table_with_zero_tokens(self, controller: TableViewsController) -> None:
         """Test table with entries having zero tokens."""
         data = cast(
             list[CompleteAggregatedUsage],
@@ -450,9 +430,7 @@ class TestTableViewsController:
         ]
 
         for period in periods:
-            panel = controller.create_summary_panel(
-                "daily", sample_totals, period
-            )
+            panel = controller.create_summary_panel("daily", sample_totals, period)
             assert isinstance(panel, Panel)
             assert panel.title == "Summary"
 
@@ -473,9 +451,7 @@ class TestTableViewsController:
     ) -> None:
         """Test that number formatting is integrated correctly."""
         # Test that the table can be created with real formatting functions
-        table = controller.create_daily_table(
-            sample_daily_data, sample_totals, "UTC"
-        )
+        table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
 
         # Verify table was created successfully
         assert table is not None
@@ -489,9 +465,7 @@ class TestTableViewsController:
     ) -> None:
         """Test that currency formatting is integrated correctly."""
         # Test that the table can be created with real formatting functions
-        table = controller.create_daily_table(
-            sample_daily_data, sample_totals, "UTC"
-        )
+        table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
 
         # Verify table was created successfully
         assert table is not None
@@ -504,9 +478,7 @@ class TestTableViewsController:
         sample_totals: UsageTotals,
     ) -> None:
         """Test that numeric columns are right-aligned."""
-        table = controller.create_daily_table(
-            sample_daily_data, sample_totals, "UTC"
-        )
+        table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
 
         # Check that numeric columns are right-aligned
         for i in range(2, 8):  # Columns 2-7 are numeric

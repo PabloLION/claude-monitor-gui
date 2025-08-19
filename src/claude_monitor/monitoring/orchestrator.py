@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 class MonitoringOrchestrator:
     """Orchestrates monitoring components following SRP."""
 
-    def __init__(
-        self, update_interval: int = 10, data_path: str | None = None
-    ) -> None:
+    def __init__(self, update_interval: int = 10, data_path: str | None = None) -> None:
         """Initialize orchestrator with components.
 
         Args:
@@ -28,9 +26,7 @@ class MonitoringOrchestrator:
         """
         self.update_interval: int = update_interval
 
-        self.data_manager: DataManager = DataManager(
-            cache_ttl=5, data_path=data_path
-        )
+        self.data_manager: DataManager = DataManager(cache_ttl=5, data_path=data_path)
         self.session_monitor: SessionMonitor = SessionMonitor()
 
         self._monitoring: bool = False
@@ -47,9 +43,7 @@ class MonitoringOrchestrator:
             logger.warning("Monitoring already running")
             return
 
-        logger.info(
-            f"Starting monitoring with {self.update_interval}s interval"
-        )
+        logger.info(f"Starting monitoring with {self.update_interval}s interval")
         self._monitoring = True
         self._stop_event.clear()
 

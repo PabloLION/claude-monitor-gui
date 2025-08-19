@@ -63,12 +63,8 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_defaults(self) -> None:
         """Test initialization with default parameters."""
         with (
-            patch(
-                "claude_monitor.monitoring.orchestrator.DataManager"
-            ) as mock_dm,
-            patch(
-                "claude_monitor.monitoring.orchestrator.SessionMonitor"
-            ) as mock_sm,
+            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
+            patch("claude_monitor.monitoring.orchestrator.SessionMonitor") as mock_sm,
         ):
             orchestrator = MonitoringOrchestrator()
 
@@ -85,9 +81,7 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_custom_params(self) -> None:
         """Test initialization with custom parameters."""
         with (
-            patch(
-                "claude_monitor.monitoring.orchestrator.DataManager"
-            ) as mock_dm,
+            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
             patch("claude_monitor.monitoring.orchestrator.SessionMonitor"),
         ):
             orchestrator = MonitoringOrchestrator(
@@ -95,17 +89,13 @@ class TestMonitoringOrchestratorInit:
             )
 
             assert orchestrator.update_interval == 5
-            mock_dm.assert_called_once_with(
-                cache_ttl=5, data_path="/custom/path"
-            )
+            mock_dm.assert_called_once_with(cache_ttl=5, data_path="/custom/path")
 
 
 class TestMonitoringOrchestratorLifecycle:
     """Test orchestrator start/stop lifecycle."""
 
-    def test_start_monitoring(
-        self, orchestrator: MonitoringOrchestrator
-    ) -> None:
+    def test_start_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test starting monitoring creates thread."""
         assert not orchestrator._monitoring  # type: ignore[misc]
 
@@ -125,18 +115,12 @@ class TestMonitoringOrchestratorLifecycle:
         """Test starting monitoring when already running."""
         orchestrator._monitoring = True  # type: ignore[misc]
 
-        with patch(
-            "claude_monitor.monitoring.orchestrator.logger"
-        ) as mock_logger:
+        with patch("claude_monitor.monitoring.orchestrator.logger") as mock_logger:
             orchestrator.start()
 
-            mock_logger.warning.assert_called_once_with(
-                "Monitoring already running"
-            )
+            mock_logger.warning.assert_called_once_with("Monitoring already running")
 
-    def test_stop_monitoring(
-        self, orchestrator: MonitoringOrchestrator
-    ) -> None:
+    def test_stop_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test stopping monitoring."""
         orchestrator.start()
         assert orchestrator._monitoring  # type: ignore[misc]
@@ -204,9 +188,7 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_session_callback(callback)
 
-        orchestrator.session_monitor.register_callback.assert_called_once_with(
-            callback
-        )
+        orchestrator.session_monitor.register_callback.assert_called_once_with(callback)
 
 
 class TestMonitoringOrchestratorDataProcessing:
@@ -214,9 +196,7 @@ class TestMonitoringOrchestratorDataProcessing:
 
     def test_force_refresh(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test force refresh calls data manager."""
-        expected_data: dict[str, list[dict[str, str]]] = {
-            "blocks": [{"id": "test"}]
-        }
+        expected_data: dict[str, list[dict[str, str]]] = {"blocks": [{"id": "test"}]}
         orchestrator.data_manager.get_data.return_value = expected_data
 
         result = orchestrator.force_refresh()
@@ -224,13 +204,9 @@ class TestMonitoringOrchestratorDataProcessing:
         assert result is not None
         assert "data" in result
         assert result["data"] == expected_data
-        orchestrator.data_manager.get_data.assert_called_once_with(
-            force_refresh=True
-        )
+        orchestrator.data_manager.get_data.assert_called_once_with(force_refresh=True)
 
-    def test_force_refresh_no_data(
-        self, orchestrator: MonitoringOrchestrator
-    ) -> None:
+    def test_force_refresh_no_data(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test force refresh when no data available."""
         orchestrator.data_manager.get_data.return_value = None
 
@@ -279,9 +255,7 @@ class TestMonitoringOrchestratorMonitoringLoop:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop performs initial fetch."""
-        with patch.object(
-            orchestrator, "_fetch_and_process_data"
-        ) as mock_fetch:
+        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             # Start and quickly stop to test initial fetch
@@ -298,9 +272,7 @@ class TestMonitoringOrchestratorMonitoringLoop:
         """Test monitoring loop performs periodic updates."""
         orchestrator.update_interval = 0.1  # Very fast for testing
 
-        with patch.object(
-            orchestrator, "_fetch_and_process_data"
-        ) as mock_fetch:
+        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
@@ -314,9 +286,7 @@ class TestMonitoringOrchestratorMonitoringLoop:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop respects stop event."""
-        with patch.object(
-            orchestrator, "_fetch_and_process_data"
-        ) as mock_fetch:
+        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
@@ -455,15 +425,11 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 "claude_monitor.monitoring.orchestrator.get_token_limit",
                 return_value=200000,
             ),
-            patch(
-                "claude_monitor.monitoring.orchestrator.report_error"
-            ) as mock_report,
+            patch("claude_monitor.monitoring.orchestrator.report_error") as mock_report,
         ):
             result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert (
-            result is not None
-        )  # Should still return data despite callback error
+        assert result is not None  # Should still return data despite callback error
         callback_success.assert_called_once()  # Other callbacks should still work
         mock_report.assert_called_once()
 
@@ -471,9 +437,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process handles exceptions."""
-        orchestrator.data_manager.get_data.side_effect = Exception(
-            "Fetch failed"
-        )
+        orchestrator.data_manager.get_data.side_effect = Exception("Fetch failed")
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
@@ -587,9 +551,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
 class TestMonitoringOrchestratorIntegration:
     """Test integration scenarios."""
 
-    def test_full_monitoring_cycle(
-        self, orchestrator: MonitoringOrchestrator
-    ) -> None:
+    def test_full_monitoring_cycle(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test complete monitoring cycle."""
         # Setup test data
         test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
@@ -695,9 +657,7 @@ class TestMonitoringOrchestratorIntegration:
 
         # Capture callback data
         captured_data: list[MonitoringState] = list[MonitoringState]()
-        orchestrator.register_update_callback(
-            lambda data: captured_data.append(data)
-        )
+        orchestrator.register_update_callback(lambda data: captured_data.append(data))
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
@@ -788,9 +748,7 @@ class TestMonitoringOrchestratorThreadSafety:
         # All callbacks should be registered
         assert len(orchestrator._update_callbacks) == 30  # type: ignore[misc]
 
-    def test_concurrent_start_stop(
-        self, orchestrator: MonitoringOrchestrator
-    ) -> None:
+    def test_concurrent_start_stop(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test thread-safe start/stop operations."""
 
         def start_stop_loop() -> None:

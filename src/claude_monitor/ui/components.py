@@ -111,9 +111,7 @@ class ErrorDisplayComponent:
         screen_buffer.append("  • You're not logged into Claude")
         screen_buffer.append("  • Network connection issues")
         screen_buffer.append("")
-        screen_buffer.append(
-            "[dim]Retrying in 3 seconds... (Ctrl+C to exit)[/]"
-        )
+        screen_buffer.append("[dim]Retrying in 3 seconds... (Ctrl+C to exit)[/]")
 
         return screen_buffer
 
@@ -180,9 +178,7 @@ class LoadingScreenComponent:
         Returns:
             Rich renderable for loading screen
         """
-        screen_buffer = self.create_loading_screen(
-            plan, timezone, custom_message
-        )
+        screen_buffer = self.create_loading_screen(plan, timezone, custom_message)
 
         from claude_monitor.ui.display_controller import ScreenBufferManager
 
@@ -201,9 +197,7 @@ class AdvancedCustomLimitDisplay:
     ) -> SessionCollection:
         """Collect session data and identify limit sessions."""
         if not blocks:
-            default_session = SessionMonitoringData(
-                tokens=0, cost=0.0, messages=0
-            )
+            default_session = SessionMonitoringData(tokens=0, cost=0.0, messages=0)
             return SessionCollection(
                 all_sessions=list[SessionMonitoringData](),
                 limit_sessions=list[SessionMonitoringData](),

@@ -367,9 +367,7 @@ class ModelUsageBar(BaseProgressBar):
         bar_display = "".join(bar_segments)
 
         if opus_tokens > 0 and sonnet_tokens > 0:
-            summary = (
-                f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
-            )
+            summary = f"Sonnet {sonnet_percentage:.1f}% | Opus {opus_percentage:.1f}%"
         elif sonnet_tokens > 0:
             summary = f"Sonnet {sonnet_percentage:.1f}%"
         elif opus_tokens > 0:
