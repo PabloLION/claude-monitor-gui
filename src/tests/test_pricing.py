@@ -1,9 +1,12 @@
 """Comprehensive tests for PricingCalculator class."""
 
+from typing import cast
+
 import pytest
 
 from claude_monitor.core.models import CostMode, TokenCounts
 from claude_monitor.core.pricing import PricingCalculator
+from claude_monitor.types import ProcessedEntry, RawJSONEntry
 
 
 class TestPricingCalculator:
@@ -211,7 +214,7 @@ class TestPricingCalculator:
         sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with AUTO mode."""
-        cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.AUTO)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, sample_entry_data), CostMode.AUTO)  # Simplified test data
 
         expected = (
             1000 * 0.25  # input
@@ -232,7 +235,7 @@ class TestPricingCalculator:
             "cost_usd": 0.123,  # Pre-existing cost
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.CACHED)
+        cost = calculator.calculate_cost_for_entry(cast(ProcessedEntry, entry_data), CostMode.CACHED)  # Simplified test data
         assert cost == 0.123
 
     def test_calculate_cost_for_entry_cached_mode_without_existing_cost(
@@ -241,7 +244,7 @@ class TestPricingCalculator:
         sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with CACHED mode but no existing cost."""
-        cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.CACHED)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, sample_entry_data), CostMode.CACHED)  # Simplified test data
 
         # Should fall back to calculation since no existing cost
         expected = (1000 * 0.25 + 500 * 1.25 + 100 * 0.3 + 50 * 0.03) / 1000000
@@ -258,7 +261,7 @@ class TestPricingCalculator:
             "cost_usd": 0.999,  # Should be ignored in CALCULATED mode
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.CALCULATED)
+        cost = calculator.calculate_cost_for_entry(cast(ProcessedEntry, entry_data), CostMode.CALCULATED)  # Simplified test data
 
         # Should calculate cost regardless of existing cost_usd
         expected = (500 * 15.0 + 250 * 75.0) / 1000000
@@ -275,7 +278,7 @@ class TestPricingCalculator:
         }
 
         with pytest.raises(KeyError):
-            calculator.calculate_cost_for_entry(entry_data, CostMode.AUTO)
+            calculator.calculate_cost_for_entry(cast(RawJSONEntry, entry_data), CostMode.AUTO)  # Simplified test data
 
     def test_calculate_cost_for_entry_with_defaults(
         self, calculator: PricingCalculator
@@ -286,7 +289,7 @@ class TestPricingCalculator:
             # Missing token counts - should default to 0
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.AUTO)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, entry_data), CostMode.AUTO)  # Simplified test data
         assert cost == 0.0
 
     def test_custom_pricing_calculator(

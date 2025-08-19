@@ -71,7 +71,7 @@ class TestTimezoneHandler:
             if tz is None or isinstance(tz, int):
                 # These will cause errors due to type conversion
                 try:
-                    result = handler.validate_timezone(tz)
+                    result = handler.validate_timezone(tz)  # type: ignore[arg-type]
                     assert result is False
                 except (TypeError, AttributeError):
                     # Expected for None and int types

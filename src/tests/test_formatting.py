@@ -1,6 +1,8 @@
 """Tests for formatting utilities."""
 
+from argparse import Namespace
 from datetime import datetime, timezone
+from typing import cast
 from unittest.mock import Mock, patch
 
 from claude_monitor.utils.formatting import (
@@ -98,7 +100,7 @@ class TestGetTimeFormatPreference:
     @patch("claude_monitor.utils.time_utils.TimeFormatDetector.get_preference")
     def test_get_time_format_preference_with_args(self, mock_get_pref: Mock) -> None:
         """Test getting time format preference with args."""
-        mock_args = {"time_format": "12h"}
+        mock_args = cast(Namespace, {"time_format": "12h"})  # Simplified test data
         mock_get_pref.return_value = False
         result = get_time_format_preference(mock_args)
         mock_get_pref.assert_called_once_with(mock_args)
@@ -306,7 +308,7 @@ class TestFormattingAdvanced:
             mock_pref.assert_called_once_with(None)
 
         # Test with empty args object
-        empty_args = type("Args", (), {})()
+        empty_args = cast(Namespace, type("Args", (), {})())  # Simplified test data
         with patch(
             "claude_monitor.utils.time_utils.TimeFormatDetector.get_preference"
         ) as mock_pref:
@@ -367,7 +369,7 @@ class TestFormattingErrorHandling:
         """Test format_display_time with invalid inputs."""
         # Test with None datetime
         try:
-            result = format_display_time(None)
+            result = format_display_time(None)  # type: ignore[arg-type]
             # If it doesn't raise an error, should return something sensible
             assert isinstance(result, str)
         except (AttributeError, TypeError):
@@ -428,7 +430,7 @@ class TestModelUtils:
 
         # Test empty/None inputs
         assert normalize_model_name("") == ""
-        assert normalize_model_name(None) == ""
+        assert normalize_model_name(None) == ""  # type: ignore[arg-type]
 
         # Test unknown models
         assert normalize_model_name("unknown-model") == "unknown-model"

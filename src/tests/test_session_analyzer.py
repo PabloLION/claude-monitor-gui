@@ -1,9 +1,11 @@
 """Tests for session analyzer module."""
 
 from datetime import datetime, timedelta, timezone
+from typing import cast
 
 from claude_monitor.core.models import SessionBlock, TokenCounts, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
+from claude_monitor.types import ClaudeMessageEntry
 
 
 class TestSessionAnalyzer:
@@ -257,7 +259,7 @@ class TestSessionAnalyzer:
             }
         ]
 
-        result = analyzer.detect_limits(raw_entries)
+        result = analyzer.detect_limits(cast(list[ClaudeMessageEntry], raw_entries))  # Simplified test data
 
         assert result == []
 
@@ -470,7 +472,7 @@ class TestSessionAnalyzerIntegration:
             },
         ]
 
-        limits = analyzer.detect_limits(raw_entries)
+        limits = analyzer.detect_limits(cast(list[ClaudeMessageEntry], raw_entries))  # Simplified test data
 
         # May or may not detect limits depending on implementation
         assert isinstance(limits, list)

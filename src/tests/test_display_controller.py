@@ -1,11 +1,17 @@
 """Tests for DisplayController class."""
 
 from datetime import datetime, timedelta, timezone
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
 
-from claude_monitor.types import SerializedBlock
+from claude_monitor.types import (
+    AnalysisResult,
+    SerializedBlock,
+    SessionDataExtract,
+    TimeData,
+)
 from claude_monitor.ui.display_controller import (
     DisplayController,
     LiveDisplayManager,
@@ -86,6 +92,16 @@ class TestDisplayController:
             "startTime": "2024-01-01T11:00:00Z",
             "endTime": "2024-01-01T13:00:00Z",
             "actualEndTime": "2024-01-01T12:45:00Z",
+            "burnRate": {
+                "tokensPerMinute": 125.0,
+                "costPerHour": 0.225,
+            },
+            "projection": {
+                "totalTokens": 200000,
+                "totalCost": 10.0,
+                "remainingMinutes": 60.0,
+            },
+            "limitMessages": [],
         }
 
     @pytest.fixture
@@ -163,10 +179,10 @@ class TestDisplayController:
         self, mock_burn_rate: Mock, controller: DisplayController
     ) -> None:
         """Test time data calculation."""
-        session_data = {
+        session_data = cast(SessionDataExtract, {
             "start_time_str": "2024-01-01T11:00:00Z",
             "end_time_str": "2024-01-01T13:00:00Z",
-        }
+        })  # Simplified test data
         current_time = datetime(2024, 1, 1, 12, 30, 0, tzinfo=timezone.utc)
 
         with patch.object(
@@ -194,8 +210,8 @@ class TestDisplayController:
     ) -> None:
         """Test cost predictions for valid plans."""
         mock_is_valid.return_value = True
-        session_data = {"session_cost": 0.45}
-        time_data = {"elapsed_session_minutes": 90}
+        session_data = cast(SessionDataExtract, {"session_cost": 0.45})  # Simplified test data
+        time_data = cast(TimeData, {"elapsed_session_minutes": 90})  # Simplified test data
         cost_limit_p90 = 5.0
 
         with patch.object(
@@ -222,8 +238,8 @@ class TestDisplayController:
     ) -> None:
         """Test cost predictions for invalid plans."""
         sample_args.plan = "invalid"
-        session_data = {"session_cost": 0.45}
-        time_data = {"elapsed_session_minutes": 90}
+        session_data = cast(SessionDataExtract, {"session_cost": 0.45})  # Simplified test data
+        time_data = cast(TimeData, {"elapsed_session_minutes": 90})  # Simplified test data
 
         with patch.object(
             controller.session_calculator, "calculate_cost_predictions"
@@ -418,7 +434,7 @@ class TestDisplayController:
     ) -> None:
         """Test create_data_display with no data."""
         # Test with empty data - using dict literal for edge case testing
-        result = controller.create_data_display({}, sample_args, 200000)  # type: ignore[arg-type]  # Mock test data
+        result = controller.create_data_display({}, sample_args, 200000)  # type: ignore[arg-type,typeddict-item]  # Mock test data
 
         assert result is not None
         # Should return error screen renderable
@@ -452,7 +468,7 @@ class TestDisplayController:
         mock_cost_limit.return_value = 5.0
         mock_msg_limit.return_value = 1000
 
-        data = {"blocks": [sample_active_block]}
+        data = cast(AnalysisResult, {"blocks": [sample_active_block]})  # Simplified test data
 
         with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.return_value = {
@@ -663,7 +679,7 @@ class TestDisplayControllerEdgeCases:
             "costUSD": 0.45,
         }
 
-        data = {"blocks": [sample_active_block]}
+        data = cast(AnalysisResult, {"blocks": [sample_active_block]})  # Simplified test data
 
         # Mock an exception in session data extraction
         with patch.object(controller, "_extract_session_data") as mock_extract:
@@ -751,7 +767,7 @@ class TestDisplayControllerAdvanced:
         }
 
         # Mock data with active block
-        data = {
+        data = cast(AnalysisResult, {
             "blocks": [
                 {
                     "isActive": True,
@@ -769,7 +785,7 @@ class TestDisplayControllerAdvanced:
                     "endTime": "2024-01-01T13:00:00Z",
                 }
             ]
-        }
+        })  # Simplified test data
 
         with patch.object(controller, "_process_active_session_data") as mock_process:
             mock_process.return_value = {
@@ -991,10 +1007,10 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_time_data with start and end times."""
-        session_data = {
+        session_data = cast(SessionDataExtract, {
             "start_time_str": "2024-01-01T11:00:00Z",
             "end_time_str": "2024-01-01T13:00:00Z",
-        }
+        })  # Simplified test data
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
         with patch.object(calculator.tz_handler, "parse_timestamp") as mock_parse:
@@ -1020,7 +1036,7 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_time_data without end time."""
-        session_data = {"start_time_str": "2024-01-01T11:00:00Z"}
+        session_data = cast(SessionDataExtract, {"start_time_str": "2024-01-01T11:00:00Z"})  # Simplified test data
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
         with patch.object(calculator.tz_handler, "parse_timestamp") as mock_parse:
@@ -1045,7 +1061,7 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_time_data without start time."""
-        session_data = dict[str, str | None]()
+        session_data = cast(SessionDataExtract, {})  # Simplified test data
         current_time = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
 
         # Test with empty mock session data - using dict for edge case testing
@@ -1062,17 +1078,14 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_cost_predictions with existing cost."""
-        session_data = {"session_cost": 2.5}
-        time_data = {"elapsed_session_minutes": 60}
+        session_data = cast(SessionDataExtract, {"session_cost": 2.5})  # Simplified test data
+        time_data = cast(TimeData, {"elapsed_session_minutes": 60})  # Simplified test data
         cost_limit = 10.0
 
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args,
-                **kw,  # type: ignore[misc]  # Mock datetime args
-            )
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
@@ -1090,19 +1103,16 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_cost_predictions without cost limit."""
-        session_data = {"session_cost": 1.0}
-        time_data = {
+        session_data = cast(SessionDataExtract, {"session_cost": 1.0})  # Simplified test data
+        time_data = cast(TimeData, {
             "elapsed_session_minutes": 30,
             "reset_time": datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
-        }
+        })  # Simplified test data
 
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args,
-                **kw,  # type: ignore[misc]  # Mock datetime args
-            )
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
 
             # Test cost predictions without cost limit - using dict for edge case testing
             result = calculator.calculate_cost_predictions(
@@ -1119,20 +1129,17 @@ class TestSessionCalculator:
         self, calculator: SessionCalculator
     ) -> None:
         """Test calculate_cost_predictions with zero cost rate."""
-        session_data = {"session_cost": 0.0}
-        time_data = {
+        session_data = cast(SessionDataExtract, {"session_cost": 0.0})  # Simplified test data
+        time_data = cast(TimeData, {
             "elapsed_session_minutes": 60,
             "reset_time": datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
-        }
+        })  # Simplified test data
         cost_limit = 10.0
 
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(  # type: ignore[misc]  # Mock lambda
-                *args,
-                **kw,  # type: ignore[misc]  # Mock datetime args
-            )
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(

@@ -1,6 +1,7 @@
 """Tests for calculations module."""
 
 from datetime import datetime, timedelta, timezone
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -13,6 +14,27 @@ from claude_monitor.core.calculations import (
 )
 from claude_monitor.core.models import BurnRate, TokenCounts, UsageProjection
 from claude_monitor.types import LegacyBlockData
+
+
+def create_test_block(
+    block_id: str = "test_block",
+    is_active: bool = True,
+    total_tokens: int = 100,
+    start_time: str = "2024-01-01T12:00:00Z",
+    end_time: str = "2024-01-01T13:00:00Z",
+    is_gap: bool = False,
+    cost_usd: float = 0.05,
+) -> LegacyBlockData:
+    """Create a test LegacyBlockData with proper structure."""
+    return {
+        "id": block_id,
+        "isActive": is_active,
+        "isGap": is_gap,
+        "totalTokens": total_tokens,
+        "startTime": start_time,
+        "endTime": end_time,
+        "costUSD": cost_usd,
+    }
 
 
 class TestBurnRateCalculator:
@@ -170,7 +192,12 @@ class TestHourlyBurnRateCalculation:
             "endTime": "2024-01-01T12:00:00Z",
             "costUSD": 0.05,
             "actualEndTime": "2024-01-01T12:00:00Z",
-            "tokenCounts": {"input_tokens": 100, "output_tokens": 50},
+            "tokenCounts": {
+                "inputTokens": 100,
+                "outputTokens": 50,
+                "cacheCreationInputTokens": 0,
+                "cacheReadInputTokens": 0,
+            },
         }
 
         block2: LegacyBlockData = {
@@ -182,7 +209,12 @@ class TestHourlyBurnRateCalculation:
             "endTime": "2024-01-01T10:30:00Z",
             "costUSD": 0.10,
             "actualEndTime": "2024-01-01T10:30:00Z",
-            "tokenCounts": {"input_tokens": 200, "output_tokens": 100},
+            "tokenCounts": {
+                "inputTokens": 200,
+                "outputTokens": 100,
+                "cacheCreationInputTokens": 0,
+                "cacheReadInputTokens": 0,
+            },
         }
 
         block3: LegacyBlockData = {
@@ -193,7 +225,12 @@ class TestHourlyBurnRateCalculation:
             "startTime": "2024-01-01T11:45:00Z",
             "endTime": "2024-01-01T12:15:00Z",
             "costUSD": 0.03,
-            "tokenCounts": {"input_tokens": 50, "output_tokens": 25},
+            "tokenCounts": {
+                "inputTokens": 50,
+                "outputTokens": 25,
+                "cacheCreationInputTokens": 0,
+                "cacheReadInputTokens": 0,
+            },
         }
 
         return [block1, block2, block3]
@@ -244,7 +281,7 @@ class TestHourlyBurnRateCalculation:
         """Test hourly burn rate calculation with zero tokens."""
         mock_calc_tokens.return_value = 0.0
 
-        blocks = [Mock()]
+        blocks = cast(list[LegacyBlockData], [Mock()])  # Mock objects for testing
         burn_rate = calculate_hourly_burn_rate(blocks, current_time)
 
         assert burn_rate == 0.0
@@ -257,7 +294,7 @@ class TestHourlyBurnRateCalculation:
         # Mock returns different token counts for each block
         mock_process_block.side_effect = [150.0, 0.0, 0.0]
 
-        blocks = [Mock(), Mock(), Mock()]
+        blocks = cast(list[LegacyBlockData], [Mock(), Mock(), Mock()])  # Mock objects for testing
         one_hour_ago = current_time - timedelta(hours=1)
 
         total_tokens = _calculate_total_tokens_in_hour(
@@ -271,7 +308,7 @@ class TestHourlyBurnRateCalculation:
         self, current_time: datetime
     ) -> None:
         """Test processing gap block returns zero."""
-        gap_block = {"isGap": True, "start_time": "2024-01-01T11:30:00Z"}
+        gap_block = cast(LegacyBlockData, {"isGap": True, "start_time": "2024-01-01T11:30:00Z"})  # Simplified test data
         one_hour_ago = current_time - timedelta(hours=1)
 
         tokens = _process_block_for_burn_rate(gap_block, one_hour_ago, current_time)
@@ -284,7 +321,7 @@ class TestHourlyBurnRateCalculation:
         """Test processing block with invalid start time returns zero."""
         mock_parse_time.return_value = None
 
-        block = {"isGap": False, "start_time": "invalid"}
+        block = cast(LegacyBlockData, {"isGap": False, "start_time": "invalid"})  # Simplified test data
         one_hour_ago = current_time - timedelta(hours=1)
 
         tokens = _process_block_for_burn_rate(block, one_hour_ago, current_time)
@@ -302,7 +339,7 @@ class TestHourlyBurnRateCalculation:
         mock_parse_time.return_value = old_time
         mock_end_time.return_value = old_time  # Session ended before one hour ago
 
-        block = {"isGap": False, "start_time": "2024-01-01T10:30:00Z"}
+        block = cast(LegacyBlockData, {"isGap": False, "start_time": "2024-01-01T10:30:00Z"})  # Simplified test data
 
         tokens = _process_block_for_burn_rate(block, one_hour_ago, current_time)
         assert tokens == 0
@@ -416,16 +453,16 @@ class TestP90Calculator:
             _extract_sessions,  # type: ignore[misc]
         )
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False},
             {"totalTokens": 2000, "isGap": True},
             {"totalTokens": 3000, "isGap": False},
             {"totalTokens": 0, "isGap": False},
             {"isGap": False},
-        ]
+        ])  # Simplified test data
 
         # Filter function that excludes gaps
-        def filter_fn(b):
+        def filter_fn(b: LegacyBlockData) -> bool:
             return not b.get("isGap", False)
 
         result = _extract_sessions(blocks, filter_fn)
@@ -438,14 +475,14 @@ class TestP90Calculator:
             _extract_sessions,  # type: ignore[misc]
         )
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": True},
             {"totalTokens": 3000, "isGap": True, "isActive": False},
             {"totalTokens": 4000, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
 
-        def filter_fn(b):
+        def filter_fn(b: LegacyBlockData) -> bool:
             return not b.get("isGap", False) and not b.get("isActive", False)
 
         result = _extract_sessions(blocks, filter_fn)
@@ -467,12 +504,12 @@ class TestP90Calculator:
         )
 
         # Blocks with some hitting limits (>=9000 or >=45000)
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 9500, "isGap": False, "isActive": False},
             {"totalTokens": 8000, "isGap": False, "isActive": False},
             {"totalTokens": 46000, "isGap": False, "isActive": False},
             {"totalTokens": 1000, "isGap": True, "isActive": False},
-        ]
+        ])  # Simplified test data
 
         result = _calculate_p90_from_blocks(blocks, config)
 
@@ -483,7 +520,7 @@ class TestP90Calculator:
         """Test _calculate_p90_from_blocks when no limit hits are found."""
         from claude_monitor.core.p90_calculator import (
             P90Config,
-            _calculate_p90_from_blocks,  # type: ignore[misc]
+            _calculate_p90_from_blocks,  # pyright: ignore[reportPrivateUsage]
         )
 
         config = P90Config(
@@ -494,7 +531,7 @@ class TestP90Calculator:
         )
 
         # Blocks with no limit hits
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": False},
             {"totalTokens": 3000, "isGap": False, "isActive": False},
@@ -503,7 +540,7 @@ class TestP90Calculator:
                 "isGap": True,
                 "isActive": False,
             },  # Gap - ignored
-        ]
+        ])  # Simplified test data
 
         result = _calculate_p90_from_blocks(blocks, config)
 
@@ -527,10 +564,10 @@ class TestP90Calculator:
         result = _calculate_p90_from_blocks([], config)
         assert result == config.default_min_limit
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"isGap": True, "isActive": False},
             {"totalTokens": 0, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
 
         result = _calculate_p90_from_blocks(blocks, config)
         assert result == config.default_min_limit
@@ -569,11 +606,11 @@ class TestP90Calculator:
 
         calculator = P90Calculator()
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": False},
             {"totalTokens": 3000, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
 
         result = calculator.calculate_p90_limit(blocks)
 
@@ -596,10 +633,10 @@ class TestP90Calculator:
 
         calculator = P90Calculator()
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
 
         # First call
         result1 = calculator.calculate_p90_limit(blocks)
@@ -623,17 +660,17 @@ class TestP90Calculator:
             cache_ttl_seconds=300,
         )
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 500, "isGap": False, "isActive": False},
             {"totalTokens": 600, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
         result = _calculate_p90_from_blocks(blocks, config)
         assert result >= config.default_min_limit
 
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000000, "isGap": False, "isActive": False},
             {"totalTokens": 1100000, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
         result = _calculate_p90_from_blocks(blocks, config)
         assert result > 0
 
@@ -652,7 +689,7 @@ class TestP90Calculator:
         )
 
         # Create blocks with known distribution
-        blocks = [
+        blocks = cast(list[LegacyBlockData], [
             {"totalTokens": 1000, "isGap": False, "isActive": False},
             {"totalTokens": 2000, "isGap": False, "isActive": False},
             {"totalTokens": 3000, "isGap": False, "isActive": False},
@@ -663,7 +700,7 @@ class TestP90Calculator:
             {"totalTokens": 8000, "isGap": False, "isActive": False},
             {"totalTokens": 9000, "isGap": False, "isActive": False},
             {"totalTokens": 10000, "isGap": False, "isActive": False},
-        ]
+        ])  # Simplified test data
 
         result = _calculate_p90_from_blocks(blocks, config)
 

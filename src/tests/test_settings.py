@@ -4,6 +4,7 @@ import argparse
 import json
 import tempfile
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -59,7 +60,7 @@ class TestLastUsedParams:
         )()
 
         # Save parameters
-        self.last_used.save(mock_settings)
+        self.last_used.save(cast(Settings, mock_settings))  # Mock settings for testing
 
         # Verify file exists and contains correct data
         assert self.last_used.params_file.exists()
@@ -95,7 +96,7 @@ class TestLastUsedParams:
             },
         )()
 
-        self.last_used.save(mock_settings)
+        self.last_used.save(cast(Settings, mock_settings))  # Mock settings for testing
 
         with open(self.last_used.params_file) as f:
             data = json.load(f)
@@ -124,7 +125,7 @@ class TestLastUsedParams:
             },
         )()
 
-        last_used.save(mock_settings)
+        last_used.save(cast(Settings, mock_settings))  # Mock settings for testing
 
         assert non_existent_dir.exists()
         assert last_used.params_file.exists()
@@ -145,7 +146,7 @@ class TestLastUsedParams:
             mock_settings.view = "realtime"
 
             # Should not raise exception
-            self.last_used.save(mock_settings)
+            self.last_used.save(cast(Settings, mock_settings))  # Mock settings for testing
 
             # Should log warning
             mock_logger.warning.assert_called_once()
@@ -172,12 +173,13 @@ class TestLastUsedParams:
 
         # Verify timestamp is removed and other data is present
         assert "timestamp" not in result
-        assert result["theme"] == "dark"
-        assert result["timezone"] == "Europe/Warsaw"
-        assert result["time_format"] == "24h"
-        assert result["refresh_rate"] == 5
-        assert result["reset_hour"] == 8
-        assert result["custom_limit_tokens"] == 2000
+        # Use .get() for optional TypedDict fields
+        assert result.get("theme") == "dark"
+        assert result.get("timezone") == "Europe/Warsaw"
+        assert result.get("time_format") == "24h"
+        assert result.get("refresh_rate") == 5
+        assert result.get("reset_hour") == 8
+        assert result.get("custom_limit_tokens") == 2000
 
     def test_load_file_not_exists(self) -> None:
         """Test loading when file doesn't exist."""
