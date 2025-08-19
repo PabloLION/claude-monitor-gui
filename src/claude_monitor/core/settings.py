@@ -288,19 +288,17 @@ class Settings(BaseSettings):
             sys.exit(0)
 
         clear_config = argv and "--clear" in argv
+        cli_provided_fields: set[str] = set()
 
         if clear_config:
             last_used = LastUsedParams()
             last_used.clear()
             settings = cls(_cli_parse_args=argv)
-            cli_provided_fields: set[str] = set()
         else:
             last_used = LastUsedParams()
             last_params = last_used.load()
 
             settings = cls(_cli_parse_args=argv)
-
-            cli_provided_fields: set[str] = set()
             if argv:
                 for arg in argv:
                     if arg.startswith("--"):

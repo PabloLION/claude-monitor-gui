@@ -13,7 +13,10 @@ from datetime import datetime
 import pytz
 from pytz import BaseTzInfo
 
-from claude_monitor.utils.backports import HAS_BABEL, get_timezone_location
+from claude_monitor.utils.backports import (  # type: ignore[attr-defined]
+    HAS_BABEL,
+    get_timezone_location,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
+)
 
 # Comprehensive timezone to location mapping for fallback when babel returns None
 _TIMEZONE_TO_LOCATION: dict[str, str] = {
@@ -172,7 +175,8 @@ class TimeFormatDetector:
             return None
 
         try:
-            location: str | None = get_timezone_location(
+            # Type: ignore needed as get_timezone_location may come from babel (untyped)
+            location: str | None = get_timezone_location(  # type: ignore[misc]
                 timezone_name, locale_name="en_US"
             )
             # Use fallback if babel returns None
@@ -391,10 +395,10 @@ class TimezoneHandler:
                 if tz_str == "Z":
                     return dt.replace(tzinfo=pytz.UTC)
                 if tz_str:
-                    result = datetime.fromisoformat(timestamp_str)
+                    result: datetime = datetime.fromisoformat(timestamp_str)
                     return result
-                result = self.default_tz.localize(dt)
-                return result
+                localized_result: datetime = self.default_tz.localize(dt)
+                return localized_result
             except Exception as e:
                 logger.debug(f"Failed to parse ISO timestamp: {e}")
 
@@ -410,8 +414,8 @@ class TimezoneHandler:
         for fmt in formats:
             try:
                 parsed_dt: datetime = datetime.strptime(timestamp_str, fmt)
-                localized_result: datetime = self.default_tz.localize(parsed_dt)
-                return localized_result
+                localized_dt: datetime = self.default_tz.localize(parsed_dt)
+                return localized_dt
             except ValueError:
                 continue
 

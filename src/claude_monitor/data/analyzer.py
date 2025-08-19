@@ -297,6 +297,7 @@ class SessionAnalyzer:
         message = entry.get("message", {})
         if not message:
             return None
+
         # #TODO: rename variable
         content_list = message.get("content", [])
 
@@ -307,11 +308,10 @@ class SessionAnalyzer:
             if isinstance(item, dict) and item.get("type") == "tool_result":
                 # Cast to RawJSONData since we verified it's a dict with the expected structure
                 from typing import cast
-
                 limit_info = self._process_tool_result(
                     cast(RawJSONEntry, item),
                     entry,
-                    message,
+                    cast(AssistantMessage | SystemMessage | UserMessage, message),  # pyright: ignore[reportUnnecessaryCast]  # Needed for MyPy compatibility
                 )
                 if limit_info:
                     return limit_info

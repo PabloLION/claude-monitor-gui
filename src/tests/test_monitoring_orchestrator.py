@@ -2,14 +2,18 @@
 
 import threading
 import time
+
 from typing import cast
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
-from claude_monitor.types import AnalysisResult, JSONSerializable, MonitoringState
+from claude_monitor.types import AnalysisResult
+from claude_monitor.types import JSONSerializable
+from claude_monitor.types import MonitoringState
 
 
 @pytest.fixture
@@ -205,9 +209,9 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_session_callback(callback)
 
-        orchestrator.session_monitor.register_callback.assert_called_once_with(
+        orchestrator.session_monitor.register_callback.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             callback
-        )  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
 
 class TestMonitoringOrchestratorDataProcessing:
@@ -218,25 +222,23 @@ class TestMonitoringOrchestratorDataProcessing:
         expected_data: dict[str, list[dict[str, str]]] = {
             "blocks": [{"id": "test"}]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            expected_data  # pyright: ignore[reportAttributeAccessIssue]
-        )
+        orchestrator.data_manager.get_data.return_value = expected_data  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         result = orchestrator.force_refresh()
 
         assert result is not None
         assert "data" in result
         assert result["data"] == expected_data
-        orchestrator.data_manager.get_data.assert_called_once_with(
+        orchestrator.data_manager.get_data.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             force_refresh=True
-        )  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
     def test_force_refresh_no_data(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test force refresh when no data available."""
-        orchestrator.data_manager.get_data.return_value = (
-            None  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            None
         )
 
         result = orchestrator.force_refresh()
@@ -351,13 +353,13 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
-        orchestrator.session_monitor.update.return_value = (
+        orchestrator.session_monitor.update.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             True,
             [],
-        )  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         # Set args for token limit calculation
         args = Mock()
@@ -382,8 +384,8 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process when no data available."""
-        orchestrator.data_manager.get_data.return_value = (
-            None  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            None
         )
 
         result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
@@ -395,10 +397,10 @@ class TestMonitoringOrchestratorFetchAndProcess:
     ) -> None:
         """Test fetch and process with validation failure."""
         test_data: dict[str, list[JSONSerializable]] = {"blocks": []}
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
-        orchestrator.session_monitor.update.return_value = (
+        orchestrator.session_monitor.update.return_value = (  # pyright: ignore[reportAttributeAccessIssue]
             False,
             ["Validation error"],
         )
@@ -421,8 +423,8 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
 
         callback1 = Mock()
@@ -459,8 +461,8 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
 
         callback_error = Mock(side_effect=Exception("Callback failed"))
@@ -489,9 +491,9 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process handles exceptions."""
-        orchestrator.data_manager.get_data.side_effect = Exception(
+        orchestrator.data_manager.get_data.side_effect = Exception(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             "Fetch failed"
-        )  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
@@ -515,8 +517,8 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
 
         assert not orchestrator._first_data_event.is_set()  # type: ignore[misc]
@@ -539,7 +541,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         """Test token limit calculation without args."""
         data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
-        result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
+        result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -557,7 +559,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == 200000
         mock_get_limit.assert_called_once_with("pro")
@@ -580,7 +582,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=175000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == 175000
         mock_get_limit.assert_called_once_with("custom", blocks_data)
@@ -599,7 +601,7 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             side_effect=Exception("Calculation failed"),
         ):
-            result = orchestrator._calculate_token_limit(data)  # type: ignore[misc]
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -622,9 +624,7 @@ class TestMonitoringOrchestratorIntegration:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
-        )
+        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         # Setup callback to capture monitoring data
         captured_data: list[MonitoringState] = list[MonitoringState]()
@@ -699,8 +699,8 @@ class TestMonitoringOrchestratorIntegration:
             call_count += 1
             return initial_data if call_count == 1 else changed_data
 
-        orchestrator.data_manager.get_data.side_effect = (
-            mock_get_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.side_effect = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            mock_get_data
         )
 
         # Mock session monitor to return different session IDs
@@ -710,14 +710,14 @@ class TestMonitoringOrchestratorIntegration:
             nonlocal session_call_count
             session_call_count += 1
             # Use type ignore for property assignment during testing
-            orchestrator.session_monitor.current_session_id = (  # pyright: ignore[reportAttributeAccessIssue]
+            orchestrator.session_monitor.current_session_id = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
                 f"session_{session_call_count}"
             )
-            orchestrator.session_monitor.session_count = session_call_count  # pyright: ignore[reportAttributeAccessIssue]
+            orchestrator.session_monitor.session_count = session_call_count  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             return (True, [])
 
-        orchestrator.session_monitor.update.side_effect = (
-            mock_update  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.session_monitor.update.side_effect = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            mock_update
         )
 
         # Capture callback data
@@ -766,7 +766,7 @@ class TestMonitoringOrchestratorIntegration:
                 ]
             }
 
-        orchestrator.data_manager.get_data.side_effect = mock_get_data  # pyright: ignore[reportAttributeAccessIssue]  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.side_effect = mock_get_data  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
@@ -859,8 +859,8 @@ class TestMonitoringOrchestratorProperties:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = (
-            test_data  # pyright: ignore[reportAttributeAccessIssue]
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
         )
 
         with patch(
@@ -870,7 +870,7 @@ class TestMonitoringOrchestratorProperties:
             result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert orchestrator._last_valid_data == result  # type: ignore[misc]
-        assert orchestrator._last_valid_data["data"] == test_data  # type: ignore[misc]
+        assert orchestrator._last_valid_data is not None and orchestrator._last_valid_data["data"] == test_data  # type: ignore[misc]
 
     def test_monitoring_state_consistency(
         self, orchestrator: MonitoringOrchestrator
@@ -935,10 +935,8 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        # Test with None data
-        is_valid, errors = monitor.update(
-            None
-        )  # pyright: ignore[reportArgumentType]
+        # Test with None data - using cast to bypass type checking for test
+        is_valid, errors = monitor.update(cast(AnalysisResult, None))
         assert is_valid is False
         assert len(errors) > 0
 

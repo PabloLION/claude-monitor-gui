@@ -161,7 +161,9 @@ def _is_limit_in_block_timerange(
     if limit_timestamp.tzinfo is None:
         limit_timestamp = limit_timestamp.replace(tzinfo=timezone.utc)
 
-    return block.start_time <= limit_timestamp <= block.end_time
+    # Explicit boolean return for type checking
+    result: bool = block.start_time <= limit_timestamp <= block.end_time
+    return result
 
 
 def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:

@@ -1085,7 +1085,7 @@ class TestSessionCalculator:
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues,reportUnknownLambdaType,reportUnknownArgumentType]  # Mock datetime constructor
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
@@ -1112,7 +1112,7 @@ class TestSessionCalculator:
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues,reportUnknownLambdaType,reportUnknownArgumentType]  # Mock datetime constructor
 
             # Test cost predictions without cost limit - using dict for edge case testing
             result = calculator.calculate_cost_predictions(
@@ -1139,7 +1139,7 @@ class TestSessionCalculator:
         with patch("claude_monitor.ui.display_controller.datetime") as mock_datetime:
             current_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
             mock_datetime.now.return_value = current_time
-            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues]  # Mock datetime constructor
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)  # pyright: ignore[reportGeneralTypeIssues,reportUnknownLambdaType,reportUnknownArgumentType]  # Mock datetime constructor
 
             # Test cost predictions with mock data - using dict for testing calculations
             result = calculator.calculate_cost_predictions(
