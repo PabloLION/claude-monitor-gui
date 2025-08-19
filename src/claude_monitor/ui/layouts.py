@@ -7,7 +7,8 @@ This module consolidates layout management functionality including:
 
 from __future__ import annotations
 
-from typing import Final, Sequence
+from collections.abc import Sequence
+from typing import Final
 
 
 class HeaderManager:
@@ -101,7 +102,7 @@ class ScreenManager:
         Returns:
             Combined screen layout as list of lines
         """
-        screen_buffer: list[str] = []
+        screen_buffer: list[str] = list[str]()
 
         screen_buffer.extend([""] * self.margin_top)
 

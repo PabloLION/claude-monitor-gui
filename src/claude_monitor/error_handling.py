@@ -8,7 +8,6 @@ import os
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
 
 
 class ErrorLevel(str, Enum):
@@ -21,9 +20,9 @@ class ErrorLevel(str, Enum):
 def report_error(
     exception: Exception,
     component: str,
-    context_name: Optional[str] = None,
-    context_data: Optional[Dict[str, Any]] = None,
-    tags: Optional[Dict[str, str]] = None,
+    context_name: str | None = None,
+    context_data: dict[str, str | int | float | None] | None = None,
+    tags: dict[str, str] | None = None,
     level: ErrorLevel = ErrorLevel.ERROR,
 ) -> None:
     """Report an exception with standardized logging and context.
@@ -55,9 +54,9 @@ def report_error(
 
 def report_file_error(
     exception: Exception,
-    file_path: Union[str, Path],
+    file_path: str | Path,
     operation: str = "read",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report file-related errors with standardized context.
 
@@ -67,7 +66,7 @@ def report_file_error(
         operation: The operation that failed (read, write, parse, etc.)
         additional_context: Any additional context data
     """
-    context_data = {
+    context_data: dict[str, str | int | float | None] = {
         "file_path": str(file_path),
         "operation": operation,
     }
@@ -84,7 +83,7 @@ def report_file_error(
     )
 
 
-def get_error_context() -> Dict[str, Any]:
+def get_error_context() -> dict[str, str | int | float | None]:
     """Get standard error context information.
 
     Returns:
@@ -95,14 +94,14 @@ def get_error_context() -> Dict[str, Any]:
         "platform": sys.platform,
         "cwd": os.getcwd(),
         "pid": os.getpid(),
-        "argv": sys.argv,
+        "argv": " ".join(sys.argv),
     }
 
 
 def report_application_startup_error(
     exception: Exception,
     component: str = "application_startup",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report application startup-related errors with system context.
 
@@ -127,9 +126,9 @@ def report_application_startup_error(
 
 def report_configuration_error(
     exception: Exception,
-    config_file: Optional[Union[str, Path]] = None,
-    config_section: Optional[str] = None,
-    additional_context: Optional[Dict[str, Any]] = None,
+    config_file: str | Path | None = None,
+    config_section: str | None = None,
+    additional_context: dict[str, str | int | float | None] | None = None,
 ) -> None:
     """Report configuration-related errors.
 
@@ -139,7 +138,7 @@ def report_configuration_error(
         config_section: Configuration section that failed
         additional_context: Additional context data
     """
-    context_data = {
+    context_data: dict[str, str | int | float | None] = {
         "config_file": str(config_file) if config_file else None,
         "config_section": config_section,
     }

@@ -1,12 +1,13 @@
 """Shared pytest fixtures for Claude Monitor tests."""
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Set
+from typing import cast
 from unittest.mock import Mock
 
 import pytest
 
 from claude_monitor.core.models import CostMode, UsageEntry
+from claude_monitor.types import AnalysisResult, JSONSerializable, RawJSONEntry
 
 
 @pytest.fixture
@@ -45,7 +46,7 @@ def sample_usage_entry() -> UsageEntry:
 
 
 @pytest.fixture
-def sample_valid_data() -> Dict[str, Any]:
+def sample_valid_data() -> RawJSONEntry:
     """Sample valid data structure for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -65,7 +66,7 @@ def sample_valid_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_assistant_data() -> Dict[str, Any]:
+def sample_assistant_data() -> RawJSONEntry:
     """Sample assistant-type data for testing."""
     return {
         "timestamp": "2024-01-01T12:00:00Z",
@@ -85,9 +86,9 @@ def sample_assistant_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_user_data() -> Dict[str, Any]:
+def sample_user_data() -> RawJSONEntry:
     """Sample user-type data for testing."""
-    return {
+    return cast(RawJSONEntry, {
         "timestamp": "2024-01-01T12:00:00Z",
         "type": "user",
         "usage": {
@@ -99,33 +100,33 @@ def sample_user_data() -> Dict[str, Any]:
         "model": "claude-3-haiku",
         "message_id": "msg_123",
         "request_id": "req_456",
-    }
+    })  # Test data with simplified structure
 
 
 @pytest.fixture
-def sample_malformed_data() -> Dict[str, Any]:
+def sample_malformed_data() -> RawJSONEntry:
     """Sample malformed data for testing error handling."""
-    return {
+    return cast(RawJSONEntry, {
         "timestamp": "invalid_timestamp",
         "message": "not_a_dict",
         "usage": {"input_tokens": "not_a_number", "output_tokens": None},
-    }
+    })  # Test data with invalid types for error testing
 
 
 @pytest.fixture
-def sample_minimal_data() -> Dict[str, Any]:
+def sample_minimal_data() -> RawJSONEntry:
     """Sample minimal valid data for testing."""
-    return {
+    return cast(RawJSONEntry, {
         "timestamp": "2024-01-01T12:00:00Z",
         "usage": {"input_tokens": 100, "output_tokens": 50},
         "request_id": "req_456",
-    }
+    })  # Minimal test data structure
 
 
 @pytest.fixture
-def sample_empty_tokens_data() -> Dict[str, Any]:
+def sample_empty_tokens_data() -> RawJSONEntry:
     """Sample data with empty/zero tokens for testing."""
-    return {
+    return cast(RawJSONEntry, {
         "timestamp": "2024-01-01T12:00:00Z",
         "usage": {
             "input_tokens": 0,
@@ -134,13 +135,13 @@ def sample_empty_tokens_data() -> Dict[str, Any]:
             "cache_read_input_tokens": 0,
         },
         "request_id": "req_456",
-    }
+    })  # Test data with zero token values
 
 
 @pytest.fixture
-def sample_duplicate_data() -> List[Dict[str, Any]]:
+def sample_duplicate_data() -> list[RawJSONEntry]:
     """Sample data for testing duplicate detection."""
-    return [
+    return cast(list[RawJSONEntry], [
         {
             "timestamp": "2024-01-01T12:00:00Z",
             "message_id": "msg_1",
@@ -159,11 +160,11 @@ def sample_duplicate_data() -> List[Dict[str, Any]]:
             "request_id": "req_2",
             "usage": {"input_tokens": 200, "output_tokens": 75},
         },
-    ]
+    ])  # Test data with duplicate message IDs
 
 
 @pytest.fixture
-def all_cost_modes() -> List[CostMode]:
+def all_cost_modes() -> list[CostMode]:
     """All available cost modes for testing."""
     return [CostMode.AUTO]
 
@@ -175,7 +176,7 @@ def sample_cutoff_time() -> datetime:
 
 
 @pytest.fixture
-def sample_processed_hashes() -> Set[str]:
+def sample_processed_hashes() -> set[str]:
     """Sample processed hashes set for testing."""
     return {"msg_existing:req_existing", "msg_old:req_old"}
 
@@ -300,42 +301,76 @@ def mock_session_monitor() -> Mock:
 
 
 @pytest.fixture
-def sample_monitoring_data() -> Dict[str, Any]:
+def sample_monitoring_data() -> AnalysisResult:
     """Sample monitoring data structure for testing."""
-    return {
+    return cast(AnalysisResult, {
         "blocks": [
             {
                 "id": "session_1",
                 "isActive": True,
+                "isGap": False,
+                "startTime": "2024-01-01T12:00:00Z",
+                "endTime": "2024-01-01T17:00:00Z",
+                "actualEndTime": "2024-01-01T17:00:00Z",
+                "tokenCounts": {"inputTokens": 800, "outputTokens": 200, "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0},
                 "totalTokens": 1000,
                 "costUSD": 0.05,
-                "startTime": "2024-01-01T12:00:00Z",
+                "models": ["claude-3-haiku"],
+                "perModelStats": {},
+                "sentMessagesCount": 5,
+                "durationMinutes": 300.0,
+                "entries": [],
+                "entries_count": 5,
             },
             {
                 "id": "session_2",
                 "isActive": False,
+                "isGap": False,
+                "startTime": "2024-01-01T11:00:00Z",
+                "endTime": "2024-01-01T12:00:00Z",
+                "actualEndTime": "2024-01-01T12:00:00Z",
+                "tokenCounts": {"inputTokens": 400, "outputTokens": 100, "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0},
                 "totalTokens": 500,
                 "costUSD": 0.025,
-                "startTime": "2024-01-01T11:00:00Z",
+                "models": ["claude-3-haiku"],
+                "perModelStats": {},
+                "sentMessagesCount": 3,
+                "durationMinutes": 60.0,
+                "entries": [],
+                "entries_count": 3,
             },
-        ]
-    }
+        ],
+        "metadata": {
+            "generated_at": "2024-01-01T12:00:00Z",
+            "hours_analyzed": 24,
+            "entries_processed": 8,
+            "blocks_created": 2,
+            "limits_detected": 0,
+            "load_time_seconds": 0.1,
+            "transform_time_seconds": 0.05,
+            "cache_used": False,
+            "quick_start": False,
+        },
+        "entries_count": 8,
+        "total_tokens": 1500,
+        "total_cost": 0.075,
+    })  # Complete test monitoring data
 
 
 @pytest.fixture
-def sample_session_data() -> Dict[str, Any]:
+def sample_session_data() -> RawJSONEntry:
     """Sample session data for testing."""
-    return {
+    return cast(RawJSONEntry, {
         "id": "session_1",
         "isActive": True,
         "totalTokens": 1000,
         "costUSD": 0.05,
         "startTime": "2024-01-01T12:00:00Z",
-    }
+    })  # Session test data with simplified structure
 
 
 @pytest.fixture
-def sample_invalid_monitoring_data() -> Dict[str, Any]:
+def sample_invalid_monitoring_data() -> dict[str, JSONSerializable]:
     """Sample invalid monitoring data for testing."""
     return {
         "blocks": [

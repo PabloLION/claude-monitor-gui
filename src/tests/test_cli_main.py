@@ -68,7 +68,7 @@ class TestMain:
 
         # Manually replace the function - this works across all Python versions
         original_discover = actual_module.discover_claude_data_paths
-        actual_module.discover_claude_data_paths = Mock(
+        actual_module.discover_claude_data_paths = Mock(  # pyright: ignore[reportAttributeAccessIssue]
             return_value=[Path("/test/path")]
         )
 
@@ -93,7 +93,7 @@ class TestMain:
                 assert result == 0
         finally:
             # Restore the original function
-            actual_module.discover_claude_data_paths = original_discover
+            actual_module.discover_claude_data_paths = original_discover  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class TestFunctions:

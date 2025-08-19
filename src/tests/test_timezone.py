@@ -1,7 +1,6 @@
 """Comprehensive tests for TimezoneHandler class."""
 
 from datetime import datetime, timezone
-from typing import List, Union
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,7 +8,7 @@ import pytz
 
 from claude_monitor.utils.timezone import (
     TimezoneHandler,
-    _detect_timezone_time_preference,
+    detect_timezone_time_preference,
 )
 
 
@@ -45,7 +44,7 @@ class TestTimezoneHandler:
 
     def test_validate_timezone_valid_timezones(self, handler: TimezoneHandler) -> None:
         """Test timezone validation with valid timezones."""
-        valid_timezones: List[str] = [
+        valid_timezones: list[str] = [
             "UTC",
             "America/New_York",
             "Europe/London",
@@ -60,7 +59,7 @@ class TestTimezoneHandler:
         self, handler: TimezoneHandler
     ) -> None:
         """Test timezone validation with invalid timezones."""
-        invalid_timezones: List[Union[str, None, int]] = [
+        invalid_timezones: list[str | None | int] = [
             "",
             "Invalid/Timezone",
             "Not_A_Timezone",
@@ -72,7 +71,7 @@ class TestTimezoneHandler:
             if tz is None or isinstance(tz, int):
                 # These will cause errors due to type conversion
                 try:
-                    result = handler.validate_timezone(tz)
+                    result = handler.validate_timezone(tz)  # type: ignore[arg-type]
                     assert result is False
                 except (TypeError, AttributeError):
                     # Expected for None and int types
@@ -292,7 +291,7 @@ class TestTimezoneHandler:
 
     def test_comprehensive_timestamp_parsing(self, handler: TimezoneHandler) -> None:
         """Test comprehensive timestamp parsing with various formats."""
-        test_cases: List[str] = [
+        test_cases: list[str] = [
             "2024-01-15T10:30:45Z",
             "2024-01-15T10:30:45.123Z",
             "2024-01-15T10:30:45+00:00",
@@ -314,13 +313,13 @@ class TestTimezonePreferenceDetection:
     """Test suite for timezone preference detection functions."""
 
     def test_detect_timezone_time_preference_delegation(self) -> None:
-        """Test that _detect_timezone_time_preference delegates correctly."""
+        """Test that detect_timezone_time_preference delegates correctly."""
         # This function delegates to get_time_format_preference
         with patch(
             "claude_monitor.utils.time_utils.get_time_format_preference",
             return_value=True,
         ):
-            result = _detect_timezone_time_preference()
+            result = detect_timezone_time_preference()
             assert result is True
 
     def test_detect_timezone_time_preference_with_args(self) -> None:
@@ -332,5 +331,5 @@ class TestTimezonePreferenceDetection:
             "claude_monitor.utils.time_utils.get_time_format_preference",
             return_value=False,
         ):
-            result = _detect_timezone_time_preference(mock_args)
+            result = detect_timezone_time_preference(mock_args)
             assert result is False

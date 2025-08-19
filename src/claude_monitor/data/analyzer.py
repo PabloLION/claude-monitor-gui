@@ -6,13 +6,20 @@ Combines session block creation and limit detection functionality.
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 from claude_monitor.core.models import (
     SessionBlock,
     TokenCounts,
     UsageEntry,
     normalize_model_name,
+)
+from claude_monitor.types import (
+    AssistantMessage,
+    ClaudeMessageEntry,
+    LimitDetectionInfo,
+    RawJSONEntry,
+    SystemMessage,
+    UserMessage,
 )
 from claude_monitor.utils.time_utils import TimezoneHandler
 
@@ -32,7 +39,7 @@ class SessionAnalyzer:
         self.session_duration = timedelta(hours=session_duration_hours)
         self.timezone_handler = TimezoneHandler()
 
-    def transform_to_blocks(self, entries: List[UsageEntry]) -> List[SessionBlock]:
+    def transform_to_blocks(self, entries: list[UsageEntry]) -> list[SessionBlock]:
         """Process entries and create session blocks.
 
         Args:
@@ -44,7 +51,7 @@ class SessionAnalyzer:
         if not entries:
             return []
 
-        blocks = []
+        blocks = list[SessionBlock]()
         current_block = None
 
         for entry in entries:
@@ -78,19 +85,21 @@ class SessionAnalyzer:
 
         return blocks
 
-    def detect_limits(self, raw_entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Detect token limit messages from raw JSONL entries.
+    def detect_limits(
+        self, entries: list[ClaudeMessageEntry]
+    ) -> list[LimitDetectionInfo]:
+        """Detect token limit messages from JSONL entries.
 
         Args:
-            raw_entries: List of raw JSONL entries
+            entries: List of typed JSONL entries or raw entries for backward compatibility
 
         Returns:
             List of detected limit information
         """
-        limits: List[Dict[str, Any]] = []
+        limits = list[LimitDetectionInfo]()
 
-        for raw_data in raw_entries:
-            limit_info = self._detect_single_limit(raw_data)
+        for entry in entries:
+            limit_info = self._detect_single_limit(entry)
             if limit_info:
                 limits.append(limit_info)
 
@@ -102,7 +111,7 @@ class SessionAnalyzer:
             return True
 
         return (
-            block.entries
+            len(block.entries) > 0
             and (entry.timestamp - block.entries[-1].timestamp) >= self.session_duration
         )
 
@@ -147,7 +156,7 @@ class SessionAnalyzer:
                 "entries_count": 0,
             }
 
-        model_stats: Dict[str, Union[int, float]] = block.per_model_stats[model]
+        model_stats = block.per_model_stats[model]
         model_stats["input_tokens"] += entry.input_tokens
         model_stats["output_tokens"] += entry.output_tokens
         model_stats["cache_creation_tokens"] += entry.cache_creation_tokens
@@ -181,7 +190,7 @@ class SessionAnalyzer:
 
     def _check_for_gap(
         self, last_block: SessionBlock, next_entry: UsageEntry
-    ) -> Optional[SessionBlock]:
+    ) -> SessionBlock | None:
         """Check for inactivity gap between blocks."""
         if not last_block.actual_end_time:
             return None
@@ -206,7 +215,7 @@ class SessionAnalyzer:
 
         return None
 
-    def _mark_active_blocks(self, blocks: List[SessionBlock]) -> None:
+    def _mark_active_blocks(self, blocks: list[SessionBlock]) -> None:
         """Mark blocks as active if they're still ongoing."""
         current_time = datetime.now(timezone.utc)
 
@@ -217,23 +226,23 @@ class SessionAnalyzer:
     # Limit detection methods
 
     def _detect_single_limit(
-        self, raw_data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, entry: ClaudeMessageEntry
+    ) -> LimitDetectionInfo | None:
         """Detect token limit messages from a single JSONL entry."""
-        entry_type = raw_data.get("type")
+        entry_type = entry.get("type")
 
         if entry_type == "system":
-            return self._process_system_message(raw_data)
+            return self._process_system_message(entry)
         if entry_type == "user":
-            return self._process_user_message(raw_data)
+            return self._process_user_message(entry)
 
         return None
 
     def _process_system_message(
-        self, raw_data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, entry: ClaudeMessageEntry
+    ) -> LimitDetectionInfo | None:
         """Process system messages for limit detection."""
-        content = raw_data.get("content", "")
+        content = entry.get("content", "")
         if not isinstance(content, str):
             return None
 
@@ -241,61 +250,80 @@ class SessionAnalyzer:
         if "limit" not in content_lower and "rate" not in content_lower:
             return None
 
-        timestamp_str = raw_data.get("timestamp")
+        timestamp_str = entry.get("timestamp")
         if not timestamp_str:
             return None
 
         try:
             timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
-            block_context = self._extract_block_context(raw_data)
+            block_context = self._extract_block_context(entry)
 
             # Check for Opus-specific limit
-            if self._is_opus_limit(content_lower):
+            if self._is_opus_limit(content_lower) and timestamp is not None:
                 reset_time, wait_minutes = self._extract_wait_time(content, timestamp)
-                return {
-                    "type": "opus_limit",
-                    "timestamp": timestamp,
-                    "content": content,
-                    "reset_time": reset_time,
-                    "wait_minutes": wait_minutes,
-                    "raw_data": raw_data,
-                    "block_context": block_context,
-                }
+                opus_limit = LimitDetectionInfo(
+                    type="opus_limit",
+                    timestamp=timestamp,
+                    content=content,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
+                if reset_time is not None:
+                    opus_limit["reset_time"] = reset_time
+                if wait_minutes is not None:
+                    opus_limit["wait_minutes"] = float(wait_minutes)
+                return opus_limit
 
-            # General system limit
-            return {
-                "type": "system_limit",
-                "timestamp": timestamp,
-                "content": content,
-                "reset_time": None,
-                "raw_data": raw_data,
-                "block_context": block_context,
-            }
+            # General system limit (only if timestamp is valid)
+            if timestamp is not None:
+                system_limit = LimitDetectionInfo(
+                    type="system_limit",
+                    timestamp=timestamp,
+                    content=content,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
+                return system_limit
 
         except (ValueError, TypeError):
             return None
 
+        return None
+
     def _process_user_message(
-        self, raw_data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, entry: ClaudeMessageEntry
+    ) -> LimitDetectionInfo | None:
         """Process user messages for tool result limit detection."""
-        message = raw_data.get("message", {})
+        message = entry.get("message", {})
+        if not message:
+            return None
+
+        # #TODO: rename variable
         content_list = message.get("content", [])
 
-        if not isinstance(content_list, list):
+        if not content_list:
             return None
 
         for item in content_list:
             if isinstance(item, dict) and item.get("type") == "tool_result":
-                limit_info = self._process_tool_result(item, raw_data, message)
+                # Cast to RawJSONData since we verified it's a dict with the expected structure
+                from typing import cast
+                limit_info = self._process_tool_result(
+                    cast(RawJSONEntry, item),
+                    entry,
+                    cast(AssistantMessage | SystemMessage | UserMessage, message),  # pyright: ignore[reportUnnecessaryCast]  # Needed for MyPy compatibility
+                )
                 if limit_info:
                     return limit_info
 
         return None
 
     def _process_tool_result(
-        self, item: Dict[str, Any], raw_data: Dict[str, Any], message: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self,
+        item: RawJSONEntry,
+        entry: ClaudeMessageEntry,
+        message: AssistantMessage | SystemMessage | UserMessage,
+    ) -> LimitDetectionInfo | None:
         """Process a single tool result item for limit detection."""
         tool_content = item.get("content", [])
         if not isinstance(tool_content, list):
@@ -305,46 +333,83 @@ class SessionAnalyzer:
             if not isinstance(tool_item, dict):
                 continue
 
-            text = tool_item.get("text", "")
-            if not isinstance(text, str) or "limit reached" not in text.lower():
+            # We already checked tool_item is dict, so cast it for proper typing
+            from typing import cast
+
+            tool_dict = cast(dict[str, str], tool_item)
+            text_content = tool_dict.get("text", "")
+            text_str = str(text_content)
+            if not text_str or "limit reached" not in text_str.lower():
                 continue
 
-            timestamp_str = raw_data.get("timestamp")
+            timestamp_str = entry.get("timestamp")
             if not timestamp_str:
                 continue
 
             try:
                 timestamp = self.timezone_handler.parse_timestamp(timestamp_str)
-                return {
-                    "type": "general_limit",
-                    "timestamp": timestamp,
-                    "content": text,
-                    "reset_time": self._parse_reset_timestamp(text),
-                    "raw_data": raw_data,
-                    "block_context": self._extract_block_context(raw_data, message),
-                }
+                if timestamp is None:
+                    continue
+
+                block_context = self._extract_block_context(entry, message)
+                reset_time = self._parse_reset_timestamp(text_str)
+                general_limit = LimitDetectionInfo(
+                    type="general_limit",
+                    timestamp=timestamp,
+                    content=text_str,
+                    raw_data=entry,
+                    block_context=block_context,
+                )
+                if reset_time is not None:
+                    general_limit["reset_time"] = reset_time
+
+                return general_limit
             except (ValueError, TypeError):
                 continue
 
         return None
 
     def _extract_block_context(
-        self, raw_data: Dict[str, Any], message: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """Extract block context from raw data."""
-        context: Dict[str, Any] = {
-            "message_id": raw_data.get("messageId") or raw_data.get("message_id"),
-            "request_id": raw_data.get("requestId") or raw_data.get("request_id"),
-            "session_id": raw_data.get("sessionId") or raw_data.get("session_id"),
-            "version": raw_data.get("version"),
-            "model": raw_data.get("model"),
-        }
+        self,
+        entry: ClaudeMessageEntry,
+        message: (AssistantMessage | SystemMessage | UserMessage) | None = None,
+    ) -> dict[str, str | int]:
+        """Extract block context from entry data."""
+        context = dict[str, str | int]()
+
+        # Safe extraction with defaults
+        message_id = entry.get("messageId") or entry.get("message_id")
+        if isinstance(message_id, (str, int)):
+            context["message_id"] = message_id
+
+        request_id = entry.get("requestId") or entry.get("request_id")
+        if isinstance(request_id, (str, int)):
+            context["request_id"] = request_id
+
+        session_id = entry.get("sessionId") or entry.get("session_id")
+        if isinstance(session_id, (str, int)):
+            context["session_id"] = session_id
+
+        version = entry.get("version")
+        if isinstance(version, (str, int)):
+            context["version"] = version
+
+        model = entry.get("model")
+        if isinstance(model, (str, int)):
+            context["model"] = model
 
         if message:
-            context["message_id"] = message.get("id") or context["message_id"]
-            context["model"] = message.get("model") or context["model"]
-            context["usage"] = message.get("usage", {})
-            context["stop_reason"] = message.get("stop_reason")
+            msg_id = message.get("id")
+            if isinstance(msg_id, (str, int)):
+                context["message_id"] = msg_id
+
+            msg_model = message.get("model")
+            if isinstance(msg_model, (str, int)):
+                context["model"] = msg_model
+
+            stop_reason = message.get("stop_reason")
+            if isinstance(stop_reason, (str, int)):
+                context["stop_reason"] = stop_reason
 
         return context
 
@@ -353,7 +418,12 @@ class SessionAnalyzer:
         if "opus" not in content_lower:
             return False
 
-        limit_phrases = ["rate limit", "limit exceeded", "limit reached", "limit hit"]
+        limit_phrases = [
+            "rate limit",
+            "limit exceeded",
+            "limit reached",
+            "limit hit",
+        ]
         return (
             any(phrase in content_lower for phrase in limit_phrases)
             or "limit" in content_lower
@@ -361,7 +431,7 @@ class SessionAnalyzer:
 
     def _extract_wait_time(
         self, content: str, timestamp: datetime
-    ) -> Tuple[Optional[datetime], Optional[int]]:
+    ) -> tuple[datetime | None, int | None]:
         """Extract wait time and calculate reset time from content."""
         wait_match = re.search(r"wait\s+(\d+)\s+minutes?", content.lower())
         if wait_match:
@@ -370,7 +440,7 @@ class SessionAnalyzer:
             return reset_time, wait_minutes
         return None, None
 
-    def _parse_reset_timestamp(self, text: str) -> Optional[datetime]:
+    def _parse_reset_timestamp(self, text: str) -> datetime | None:
         """Parse reset timestamp from limit message using centralized processor."""
         from claude_monitor.core.data_processors import TimestampProcessor
 

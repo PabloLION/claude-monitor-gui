@@ -1,11 +1,12 @@
 """Tests for table views module."""
 
-from typing import Any, Dict, List
+from typing import cast
 
 import pytest
 from rich.panel import Panel
 from rich.table import Table
 
+from claude_monitor.types import CompleteAggregatedUsage, UsageTotals
 from claude_monitor.ui.table_views import TableViewsController
 
 
@@ -18,133 +19,146 @@ class TestTableViewsController:
         return TableViewsController()
 
     @pytest.fixture
-    def sample_daily_data(self) -> List[Dict[str, Any]]:
+    def sample_daily_data(self) -> list[CompleteAggregatedUsage]:
         """Create sample daily aggregated data."""
-        return [
-            {
-                "date": "2024-01-01",
-                "input_tokens": 1000,
-                "output_tokens": 500,
-                "cache_creation_tokens": 100,
-                "cache_read_tokens": 50,
-                "total_cost": 0.05,
-                "models_used": ["claude-3-haiku", "claude-3-sonnet"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 600,
-                        "output_tokens": 300,
-                        "cache_creation_tokens": 60,
-                        "cache_read_tokens": 30,
-                        "cost": 0.03,
-                        "count": 6,
+        return cast(
+            list[CompleteAggregatedUsage],
+            [
+                {
+                    "date": "2024-01-01",
+                    "input_tokens": 1000,
+                    "output_tokens": 500,
+                    "cache_creation_tokens": 100,
+                    "cache_read_tokens": 50,
+                    "total_cost": 0.05,
+                    "models_used": ["claude-3-haiku", "claude-3-sonnet"],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 600,
+                            "output_tokens": 300,
+                            "cache_creation_tokens": 60,
+                            "cache_read_tokens": 30,
+                            "cost": 0.03,
+                            "count": 6,
+                        },
+                        "claude-3-sonnet": {
+                            "input_tokens": 400,
+                            "output_tokens": 200,
+                            "cache_creation_tokens": 40,
+                            "cache_read_tokens": 20,
+                            "cost": 0.02,
+                            "count": 4,
+                        },
                     },
-                    "claude-3-sonnet": {
-                        "input_tokens": 400,
-                        "output_tokens": 200,
-                        "cache_creation_tokens": 40,
-                        "cache_read_tokens": 20,
-                        "cost": 0.02,
-                        "count": 4,
-                    },
+                    "entries_count": 10,
                 },
-                "entries_count": 10,
-            },
-            {
-                "date": "2024-01-02",
-                "input_tokens": 2000,
-                "output_tokens": 1000,
-                "cache_creation_tokens": 200,
-                "cache_read_tokens": 100,
-                "total_cost": 0.10,
-                "models_used": ["claude-3-opus"],
-                "model_breakdowns": {
-                    "claude-3-opus": {
-                        "input_tokens": 2000,
-                        "output_tokens": 1000,
-                        "cache_creation_tokens": 200,
-                        "cache_read_tokens": 100,
-                        "cost": 0.10,
-                        "count": 20,
+                {
+                    "date": "2024-01-02",
+                    "input_tokens": 2000,
+                    "output_tokens": 1000,
+                    "cache_creation_tokens": 200,
+                    "cache_read_tokens": 100,
+                    "total_cost": 0.10,
+                    "models_used": ["claude-3-opus"],
+                    "model_breakdowns": {
+                        "claude-3-opus": {
+                            "input_tokens": 2000,
+                            "output_tokens": 1000,
+                            "cache_creation_tokens": 200,
+                            "cache_read_tokens": 100,
+                            "cost": 0.10,
+                            "count": 20,
+                        },
                     },
+                    "entries_count": 20,
                 },
-                "entries_count": 20,
-            },
-        ]
+            ],
+        )
 
     @pytest.fixture
-    def sample_monthly_data(self) -> List[Dict[str, Any]]:
+    def sample_monthly_data(self) -> list[CompleteAggregatedUsage]:
         """Create sample monthly aggregated data."""
-        return [
-            {
-                "month": "2024-01",
-                "input_tokens": 30000,
-                "output_tokens": 15000,
-                "cache_creation_tokens": 3000,
-                "cache_read_tokens": 1500,
-                "total_cost": 1.50,
-                "models_used": ["claude-3-haiku", "claude-3-sonnet", "claude-3-opus"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
+        return cast(
+            list[CompleteAggregatedUsage],
+            [
+                {
+                    "month": "2024-01",
+                    "input_tokens": 30000,
+                    "output_tokens": 15000,
+                    "cache_creation_tokens": 3000,
+                    "cache_read_tokens": 1500,
+                    "total_cost": 1.50,
+                    "models_used": [
+                        "claude-3-haiku",
+                        "claude-3-sonnet",
+                        "claude-3-opus",
+                    ],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
+                        "claude-3-sonnet": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
+                        "claude-3-opus": {
+                            "input_tokens": 10000,
+                            "output_tokens": 5000,
+                            "cache_creation_tokens": 1000,
+                            "cache_read_tokens": 500,
+                            "cost": 0.50,
+                            "count": 100,
+                        },
                     },
-                    "claude-3-sonnet": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
-                    },
-                    "claude-3-opus": {
-                        "input_tokens": 10000,
-                        "output_tokens": 5000,
-                        "cache_creation_tokens": 1000,
-                        "cache_read_tokens": 500,
-                        "cost": 0.50,
-                        "count": 100,
-                    },
+                    "entries_count": 300,
                 },
-                "entries_count": 300,
-            },
-            {
-                "month": "2024-02",
-                "input_tokens": 20000,
-                "output_tokens": 10000,
-                "cache_creation_tokens": 2000,
-                "cache_read_tokens": 1000,
-                "total_cost": 1.00,
-                "models_used": ["claude-3-haiku"],
-                "model_breakdowns": {
-                    "claude-3-haiku": {
-                        "input_tokens": 20000,
-                        "output_tokens": 10000,
-                        "cache_creation_tokens": 2000,
-                        "cache_read_tokens": 1000,
-                        "cost": 1.00,
-                        "count": 200,
+                {
+                    "month": "2024-02",
+                    "input_tokens": 20000,
+                    "output_tokens": 10000,
+                    "cache_creation_tokens": 2000,
+                    "cache_read_tokens": 1000,
+                    "total_cost": 1.00,
+                    "models_used": ["claude-3-haiku"],
+                    "model_breakdowns": {
+                        "claude-3-haiku": {
+                            "input_tokens": 20000,
+                            "output_tokens": 10000,
+                            "cache_creation_tokens": 2000,
+                            "cache_read_tokens": 1000,
+                            "cost": 1.00,
+                            "count": 200,
+                        },
                     },
+                    "entries_count": 200,
                 },
-                "entries_count": 200,
-            },
-        ]
+            ],
+        )
 
     @pytest.fixture
-    def sample_totals(self) -> Dict[str, Any]:
+    def sample_totals(self) -> UsageTotals:
         """Create sample totals data."""
-        return {
-            "input_tokens": 50000,
-            "output_tokens": 25000,
-            "cache_creation_tokens": 5000,
-            "cache_read_tokens": 2500,
-            "total_tokens": 82500,
-            "total_cost": 2.50,
-            "entries_count": 500,
-        }
+        return cast(
+            UsageTotals,
+            {
+                "input_tokens": 50000,
+                "output_tokens": 25000,
+                "cache_creation_tokens": 5000,
+                "cache_read_tokens": 2500,
+                "total_tokens": 82500,
+                "total_cost": 2.50,
+                "entries_count": 500,
+            },
+        )
 
     def test_init_styles(self, controller: TableViewsController) -> None:
         """Test controller initialization with styles."""
@@ -160,8 +174,8 @@ class TestTableViewsController:
     def test_create_daily_table_structure(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test creation of daily table structure."""
         table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
@@ -189,8 +203,8 @@ class TestTableViewsController:
     def test_create_daily_table_data(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test daily table data population."""
         table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
@@ -205,8 +219,8 @@ class TestTableViewsController:
     def test_create_monthly_table_structure(
         self,
         controller: TableViewsController,
-        sample_monthly_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_monthly_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test creation of monthly table structure."""
         table = controller.create_monthly_table(
@@ -236,8 +250,8 @@ class TestTableViewsController:
     def test_create_monthly_table_data(
         self,
         controller: TableViewsController,
-        sample_monthly_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_monthly_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test monthly table data population."""
         table = controller.create_monthly_table(
@@ -252,7 +266,9 @@ class TestTableViewsController:
         assert table.row_count == 4
 
     def test_create_summary_panel(
-        self, controller: TableViewsController, sample_totals: Dict[str, Any]
+        self,
+        controller: TableViewsController,
+        sample_totals: UsageTotals,
     ) -> None:
         """Test creation of summary panel."""
         panel = controller.create_summary_panel("daily", sample_totals, "Last 30 days")
@@ -266,12 +282,12 @@ class TestTableViewsController:
 
     def test_format_models_single(self, controller: TableViewsController) -> None:
         """Test formatting single model."""
-        result = controller._format_models(["claude-3-haiku"])
+        result = controller._format_models(["claude-3-haiku"])  # type: ignore[misc]
         assert result == "claude-3-haiku"
 
     def test_format_models_multiple(self, controller: TableViewsController) -> None:
         """Test formatting multiple models."""
-        result = controller._format_models(
+        result = controller._format_models(  # type: ignore[misc]
             ["claude-3-haiku", "claude-3-sonnet", "claude-3-opus"]
         )
         expected = "• claude-3-haiku\n• claude-3-sonnet\n• claude-3-opus"
@@ -279,7 +295,7 @@ class TestTableViewsController:
 
     def test_format_models_empty(self, controller: TableViewsController) -> None:
         """Test formatting empty models list."""
-        result = controller._format_models([])
+        result = controller._format_models([])  # type: ignore[misc]
         assert result == "No models"
 
     def test_create_no_data_display(self, controller: TableViewsController) -> None:
@@ -296,8 +312,8 @@ class TestTableViewsController:
     def test_create_aggregate_table_daily(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test create_aggregate_table for daily view."""
         table = controller.create_aggregate_table(
@@ -310,8 +326,8 @@ class TestTableViewsController:
     def test_create_aggregate_table_monthly(
         self,
         controller: TableViewsController,
-        sample_monthly_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_monthly_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test create_aggregate_table for monthly view."""
         table = controller.create_aggregate_table(
@@ -324,8 +340,8 @@ class TestTableViewsController:
     def test_create_aggregate_table_invalid_view_type(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test create_aggregate_table with invalid view type."""
         with pytest.raises(ValueError, match="Invalid view type"):
@@ -336,8 +352,8 @@ class TestTableViewsController:
     def test_daily_table_timezone_display(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test daily table displays correct timezone."""
         table = controller.create_daily_table(
@@ -350,8 +366,8 @@ class TestTableViewsController:
     def test_monthly_table_timezone_display(
         self,
         controller: TableViewsController,
-        sample_monthly_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_monthly_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test monthly table displays correct timezone."""
         table = controller.create_monthly_table(
@@ -361,29 +377,35 @@ class TestTableViewsController:
 
     def test_table_with_zero_tokens(self, controller: TableViewsController) -> None:
         """Test table with entries having zero tokens."""
-        data = [
+        data = cast(
+            list[CompleteAggregatedUsage],
+            [
+                {
+                    "date": "2024-01-01",
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "total_cost": 0.0,
+                    "models_used": ["claude-3-haiku"],
+                    "model_breakdowns": {},
+                    "entries_count": 0,
+                }
+            ],
+        )
+
+        totals = cast(
+            UsageTotals,
             {
-                "date": "2024-01-01",
                 "input_tokens": 0,
                 "output_tokens": 0,
                 "cache_creation_tokens": 0,
                 "cache_read_tokens": 0,
+                "total_tokens": 0,
                 "total_cost": 0.0,
-                "models_used": ["claude-3-haiku"],
-                "model_breakdowns": {},
                 "entries_count": 0,
-            }
-        ]
-
-        totals = {
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "cache_creation_tokens": 0,
-            "cache_read_tokens": 0,
-            "total_tokens": 0,
-            "total_cost": 0.0,
-            "entries_count": 0,
-        }
+            },
+        )
 
         table = controller.create_daily_table(data, totals, "UTC")
         # Table should have 3 rows:
@@ -394,7 +416,9 @@ class TestTableViewsController:
         assert table.row_count in [3, 4]  # Allow for version differences
 
     def test_summary_panel_different_periods(
-        self, controller: TableViewsController, sample_totals: Dict[str, Any]
+        self,
+        controller: TableViewsController,
+        sample_totals: UsageTotals,
     ) -> None:
         """Test summary panel with different period descriptions."""
         periods = [
@@ -422,8 +446,8 @@ class TestTableViewsController:
     def test_number_formatting_integration(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test that number formatting is integrated correctly."""
         # Test that the table can be created with real formatting functions
@@ -436,8 +460,8 @@ class TestTableViewsController:
     def test_currency_formatting_integration(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test that currency formatting is integrated correctly."""
         # Test that the table can be created with real formatting functions
@@ -450,8 +474,8 @@ class TestTableViewsController:
     def test_table_column_alignment(
         self,
         controller: TableViewsController,
-        sample_daily_data: List[Dict[str, Any]],
-        sample_totals: Dict[str, Any],
+        sample_daily_data: list[CompleteAggregatedUsage],
+        sample_totals: UsageTotals,
     ) -> None:
         """Test that numeric columns are right-aligned."""
         table = controller.create_daily_table(sample_daily_data, sample_totals, "UTC")
@@ -462,15 +486,18 @@ class TestTableViewsController:
 
     def test_empty_data_lists(self, controller: TableViewsController) -> None:
         """Test handling of empty data lists."""
-        empty_totals = {
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "cache_creation_tokens": 0,
-            "cache_read_tokens": 0,
-            "total_tokens": 0,
-            "total_cost": 0.0,
-            "entries_count": 0,
-        }
+        empty_totals = cast(
+            UsageTotals,
+            {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_creation_tokens": 0,
+                "cache_read_tokens": 0,
+                "total_tokens": 0,
+                "total_cost": 0.0,
+                "entries_count": 0,
+            },
+        )
 
         # Daily table with empty data
         daily_table = controller.create_daily_table([], empty_totals, "UTC")

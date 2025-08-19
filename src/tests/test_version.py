@@ -1,11 +1,13 @@
 """Tests for version management."""
 
-from typing import Dict
 from unittest.mock import mock_open, patch
 
 import pytest
 
-from claude_monitor._version import _get_version_from_pyproject, get_version
+from claude_monitor._version import (
+    _get_version_from_pyproject,  # type: ignore[misc]
+    get_version,
+)
 
 
 def test_get_version_from_metadata() -> None:
@@ -34,7 +36,7 @@ version = "3.0.0"
         ):
             try:
                 with patch("tomllib.load") as mock_load:
-                    mock_load.return_value: Dict[str, Dict[str, str]] = {
+                    mock_load.return_value = {
                         "project": {"version": "3.0.0"}
                     }
                     version = _get_version_from_pyproject()
@@ -42,7 +44,7 @@ version = "3.0.0"
             except ImportError:
                 # Python < 3.11, use tomli
                 with patch("tomli.load") as mock_load:
-                    mock_load.return_value: Dict[str, Dict[str, str]] = {
+                    mock_load.return_value = {
                         "project": {"version": "3.0.0"}
                     }
                     version = _get_version_from_pyproject()
@@ -107,11 +109,11 @@ def test_version_matches_pyproject() -> None:
                 expected_version = data["project"]["version"]
         except ImportError:
             # Python < 3.11, use tomli
-            import tomli
+            import tomli  # type: ignore[import-untyped]
 
             with open(pyproject_path, "rb") as f:
-                data = tomli.load(f)
-                expected_version = data["project"]["version"]
+                data = tomli.load(f)  # type: ignore[misc]
+                expected_version = data["project"]["version"]  # type: ignore[misc]
 
         # Compare with module version (only in installed package)
         from claude_monitor import __version__

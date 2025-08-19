@@ -7,20 +7,16 @@ import sys
 import threading
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-# Windows-compatible imports with graceful fallbacks
-try:
-    import select
-    import termios
-    import tty
-
-    HAS_TERMIOS: bool = True
-except ImportError:
-    HAS_TERMIOS: bool = False
+from typing import Any
 
 from rich.console import Console
 from rich.theme import Theme
+
+from claude_monitor.types import VelocityIndicator
+
+# Platform-specific imports
+from claude_monitor.utils.backports import HAS_TERMINAL_CONTROL as HAS_TERMIOS
+from claude_monitor.utils.backports import select, termios, tty
 
 
 class BackgroundType(Enum):
@@ -43,8 +39,8 @@ class ThemeConfig:
     """
 
     name: str
-    colors: Dict[str, str]
-    symbols: Dict[str, Union[str, List[str]]]
+    colors: dict[str, str]
+    symbols: dict[str, str | list[str]]
     rich_theme: Theme
 
     def get_color(self, key: str, default: str = "default") -> str:
@@ -293,7 +289,7 @@ class BackgroundDetector:
 
         try:
             # COLORFGBG format: "foreground;background"
-            parts: List[str] = colorfgbg.split(";")
+            parts: list[str] = colorfgbg.split(";")
             if len(parts) >= 2:
                 bg_color: int = int(parts[-1])
                 # Colors 0-7 are typically dark, 8-15 are bright
@@ -353,7 +349,7 @@ class BackgroundDetector:
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             return BackgroundType.UNKNOWN
 
-        old_settings: Optional[List[Any]] = None
+        old_settings: list[Any] | None = None
         try:
             # Save terminal settings
             old_settings = termios.tcgetattr(sys.stdin)
@@ -366,7 +362,7 @@ class BackgroundDetector:
             sys.stdout.flush()
 
             # Wait for response with timeout
-            ready_streams: List[Any] = select.select([sys.stdin], [], [], 0.1)[0]
+            ready_streams: list[Any] = select.select([sys.stdin], [], [], 0.1)[0]
             if ready_streams:
                 # Read available data without blocking
                 response: str = ""
@@ -430,12 +426,14 @@ class BackgroundDetector:
                         )
 
             # Restore terminal settings
-            if old_settings is not None:
+            if (
+                old_settings
+            ):  # old_settings is list[Any] if set, None if tcgetattr failed
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
         except (OSError, termios.error, AttributeError):
             # Restore terminal settings on any error
-            if old_settings is not None:
+            if old_settings:
                 try:
                     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 except (OSError, termios.error, AttributeError) as e:
@@ -452,13 +450,13 @@ class BackgroundDetector:
 class ThemeManager:
     """Manages themes with auto-detection and thread safety."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._current_theme: Optional[ThemeConfig] = None
-        self._forced_theme: Optional[str] = None
+        self._current_theme: ThemeConfig | None = None
+        self._forced_theme: str | None = None
         self.themes = self._load_themes()
 
-    def _load_themes(self) -> Dict[str, ThemeConfig]:
+    def _load_themes(self) -> dict[str, ThemeConfig]:
         """Load all available themes.
 
         Creates theme configurations for light, dark, and classic themes
@@ -467,7 +465,7 @@ class ThemeManager:
         Returns:
             Dictionary mapping theme names to ThemeConfig objects.
         """
-        themes: Dict[str, ThemeConfig] = {}
+        themes = dict[str, ThemeConfig]()
 
         # Load themes with Rich theme objects
         light_rich: Theme = AdaptiveColorScheme.get_light_background_theme()
@@ -497,9 +495,7 @@ class ThemeManager:
 
         return themes
 
-    def _get_symbols_for_theme(
-        self, theme_name: str
-    ) -> Dict[str, Union[str, List[str]]]:
+    def _get_symbols_for_theme(self, theme_name: str) -> dict[str, str | list[str]]:
         """Get symbols based on theme.
 
         Args:
@@ -549,7 +545,7 @@ class ThemeManager:
         return "dark"
 
     def get_theme(
-        self, name: Optional[str] = None, force_detection: bool = False
+        self, name: str | None = None, force_detection: bool = False
     ) -> ThemeConfig:
         """Get theme by name or auto-detect.
 
@@ -579,7 +575,7 @@ class ThemeManager:
             return theme
 
     def get_console(
-        self, theme_name: Optional[str] = None, force_detection: bool = False
+        self, theme_name: str | None = None, force_detection: bool = False
     ) -> Console:
         """Get themed console instance.
 
@@ -593,7 +589,7 @@ class ThemeManager:
         theme: ThemeConfig = self.get_theme(theme_name, force_detection)
         return Console(theme=theme.rich_theme, force_terminal=True)
 
-    def get_current_theme(self) -> Optional[ThemeConfig]:
+    def get_current_theme(self) -> ThemeConfig | None:
         """Get currently active theme.
 
         Returns:
@@ -603,21 +599,21 @@ class ThemeManager:
 
 
 # Cost-based styles with thresholds (moved from ui/styles.py)
-COST_STYLES: Dict[str, str] = {
+COST_STYLES: dict[str, str] = {
     "low": "cost.low",  # Green - costs under $1
     "medium": "cost.medium",  # Yellow - costs $1-$10
     "high": "cost.high",  # Red - costs over $10
 }
 
 # Cost thresholds for automatic style selection
-COST_THRESHOLDS: List[Tuple[float, str]] = [
+COST_THRESHOLDS: list[tuple[float, str]] = [
     (10.0, COST_STYLES["high"]),
     (1.0, COST_STYLES["medium"]),
     (0.0, COST_STYLES["low"]),
 ]
 
 # Velocity/burn rate emojis and labels
-VELOCITY_INDICATORS: Dict[str, Dict[str, Union[str, float]]] = {
+VELOCITY_INDICATORS: dict[str, dict[str, str | float]] = {
     "slow": {"emoji": "🐌", "label": "Slow", "threshold": 50},
     "normal": {"emoji": "➡️", "label": "Normal", "threshold": 150},
     "fast": {"emoji": "🚀", "label": "Fast", "threshold": 300},
@@ -641,7 +637,7 @@ def get_cost_style(cost: float) -> str:
     return COST_STYLES["low"]
 
 
-def get_velocity_indicator(burn_rate: float) -> Dict[str, str]:
+def get_velocity_indicator(burn_rate: float) -> VelocityIndicator:
     """Get velocity indicator based on burn rate.
 
     Args:
@@ -662,7 +658,7 @@ def get_velocity_indicator(burn_rate: float) -> Dict[str, str]:
 _theme_manager: ThemeManager = ThemeManager()
 
 
-def get_theme(name: Optional[str] = None) -> Theme:
+def get_theme(name: str | None = None) -> Theme:
     """Get Rich theme by name or auto-detect.
 
     Args:
@@ -675,7 +671,7 @@ def get_theme(name: Optional[str] = None) -> Theme:
     return theme_config.rich_theme
 
 
-def get_themed_console(force_theme: Optional[Union[str, bool]] = None) -> Console:
+def get_themed_console(force_theme: str | bool | None = None) -> Console:
     """Get themed console - backward compatibility wrapper.
 
     Args:

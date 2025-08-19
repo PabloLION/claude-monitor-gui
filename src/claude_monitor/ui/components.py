@@ -3,11 +3,16 @@
 Consolidates display indicators, error/loading screens, and advanced custom display.
 """
 
-from typing import Any, Dict, List, Optional
-
 from rich.console import Console, RenderableType
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
+from claude_monitor.types import (
+    Percentiles,
+    SerializedBlock,
+    SessionCollection,
+    SessionPercentiles,
+)
+from claude_monitor.types.analysis import SessionMonitoringData
 from claude_monitor.ui.layouts import HeaderManager
 
 
@@ -85,7 +90,7 @@ class ErrorDisplayComponent:
 
     def format_error_screen(
         self, plan: str = "pro", timezone: str = "Europe/Warsaw"
-    ) -> List[str]:
+    ) -> list[str]:
         """Format error screen for failed data fetch.
 
         Args:
@@ -95,7 +100,7 @@ class ErrorDisplayComponent:
         Returns:
             List of formatted error screen lines
         """
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))
@@ -121,8 +126,8 @@ class LoadingScreenComponent:
         self,
         plan: str = "pro",
         timezone: str = "Europe/Warsaw",
-        custom_message: Optional[str] = None,
-    ) -> List[str]:
+        custom_message: str | None = None,
+    ) -> list[str]:
         """Create loading screen content.
 
         Args:
@@ -132,7 +137,7 @@ class LoadingScreenComponent:
         Returns:
             List of loading screen lines
         """
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))
@@ -162,7 +167,7 @@ class LoadingScreenComponent:
         self,
         plan: str = "pro",
         timezone: str = "Europe/Warsaw",
-        custom_message: Optional[str] = None,
+        custom_message: str | None = None,
     ) -> RenderableType:
         """Create Rich renderable for loading screen.
 
@@ -184,36 +189,47 @@ class LoadingScreenComponent:
 class AdvancedCustomLimitDisplay:
     """Display component for session-based P90 limits from general_limit sessions."""
 
-    def __init__(self, console: Console) -> None:
-        self.console = console
+    def __init__(self, console: Console | None) -> None:
+        self.console = console or Console()
 
-    def _collect_session_data(
-        self, blocks: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
+    def collect_session_data(
+        self, blocks: list[SerializedBlock] | None = None
+    ) -> SessionCollection:
         """Collect session data and identify limit sessions."""
         if not blocks:
-            return {
-                "all_sessions": [],
-                "limit_sessions": [],
-                "current_session": {"tokens": 0, "cost": 0.0, "messages": 0},
-                "total_sessions": 0,
-                "active_sessions": 0,
-            }
+            default_session = SessionMonitoringData(tokens=0, cost=0.0, messages=0)
+            return SessionCollection(
+                all_sessions=list[SessionMonitoringData](),
+                limit_sessions=list[SessionMonitoringData](),
+                current_session=default_session,
+                total_sessions=0,
+                active_sessions=0,
+            )
 
-        all_sessions = []
-        limit_sessions = []
-        current_session = {"tokens": 0, "cost": 0.0, "messages": 0}
+        all_sessions = list[SessionMonitoringData]()
+        limit_sessions = list[SessionMonitoringData]()
+        current_session = SessionMonitoringData(tokens=0, cost=0.0, messages=0)
         active_sessions = 0
 
         for block in blocks:
             if block.get("isGap", False):
                 continue
 
-            session = {
-                "tokens": block.get("totalTokens", 0),
-                "cost": block.get("costUSD", 0.0),
-                "messages": block.get("sentMessagesCount", 0),
-            }
+            # Extract values with proper type casting
+            tokens_raw = block.get("totalTokens", 0)
+            cost_raw = block.get("costUSD", 0.0)
+            messages_raw = block.get("sentMessagesCount", 0)
+
+            # Convert to required types (BlockDict already guarantees compatible types)
+            tokens = int(tokens_raw)  # tokens_raw is int from BlockDict
+            cost = float(cost_raw)  # cost_raw is float from BlockDict
+            messages = int(messages_raw)  # messages_raw is int from BlockDict
+
+            session = SessionMonitoringData(
+                tokens=tokens,
+                cost=cost,
+                messages=messages,
+            )
 
             if block.get("isActive", False):
                 active_sessions += 1
@@ -224,15 +240,15 @@ class AdvancedCustomLimitDisplay:
                 if self._is_limit_session(session):
                     limit_sessions.append(session)
 
-        return {
-            "all_sessions": all_sessions,
-            "limit_sessions": limit_sessions,
-            "current_session": current_session,
-            "total_sessions": len(all_sessions) + active_sessions,
-            "active_sessions": active_sessions,
-        }
+        return SessionCollection(
+            all_sessions=all_sessions,
+            limit_sessions=limit_sessions,
+            current_session=current_session,
+            total_sessions=len(all_sessions) + active_sessions,
+            active_sessions=active_sessions,
+        )
 
-    def _is_limit_session(self, session: Dict[str, Any]) -> bool:
+    def _is_limit_session(self, session: SessionMonitoringData) -> bool:
         """Check if session hit a general limit."""
         tokens = session["tokens"]
 
@@ -247,18 +263,18 @@ class AdvancedCustomLimitDisplay:
 
         return False
 
-    def _calculate_session_percentiles(
-        self, sessions: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def calculate_session_percentiles(
+        self, sessions: list[SessionMonitoringData]
+    ) -> SessionPercentiles:
         """Calculate percentiles from session data."""
         if not sessions:
-            return {
-                "tokens": {"p50": 19000, "p75": 66000, "p90": 88000, "p95": 110000},
-                "costs": {"p50": 100.0, "p75": 150.0, "p90": 200.0, "p95": 250.0},
-                "messages": {"p50": 150, "p75": 200, "p90": 250, "p95": 300},
-                "averages": {"tokens": 19000, "cost": 100.0, "messages": 150},
-                "count": 0,
-            }
+            return SessionPercentiles(
+                tokens=Percentiles(p50=19000, p75=66000, p90=88000, p95=110000),
+                costs=Percentiles(p50=100.0, p75=150.0, p90=200.0, p95=250.0),
+                messages=Percentiles(p50=150, p75=200, p90=250, p95=300),
+                averages={"tokens": 19000, "cost": 100.0, "messages": 150},
+                count=0,
+            )
 
         import numpy as np
 
@@ -266,37 +282,37 @@ class AdvancedCustomLimitDisplay:
         costs = [s["cost"] for s in sessions]
         messages = [s["messages"] for s in sessions]
 
-        return {
-            "tokens": {
-                "p50": int(np.percentile(tokens, 50)),
-                "p75": int(np.percentile(tokens, 75)),
-                "p90": int(np.percentile(tokens, 90)),
-                "p95": int(np.percentile(tokens, 95)),
-            },
-            "costs": {
-                "p50": float(np.percentile(costs, 50)),
-                "p75": float(np.percentile(costs, 75)),
-                "p90": float(np.percentile(costs, 90)),
-                "p95": float(np.percentile(costs, 95)),
-            },
-            "messages": {
-                "p50": int(np.percentile(messages, 50)),
-                "p75": int(np.percentile(messages, 75)),
-                "p90": int(np.percentile(messages, 90)),
-                "p95": int(np.percentile(messages, 95)),
-            },
-            "averages": {
+        return SessionPercentiles(
+            tokens=Percentiles(
+                p50=int(np.percentile(tokens, 50)),
+                p75=int(np.percentile(tokens, 75)),
+                p90=int(np.percentile(tokens, 90)),
+                p95=int(np.percentile(tokens, 95)),
+            ),
+            costs=Percentiles(
+                p50=float(np.percentile(costs, 50)),
+                p75=float(np.percentile(costs, 75)),
+                p90=float(np.percentile(costs, 90)),
+                p95=float(np.percentile(costs, 95)),
+            ),
+            messages=Percentiles(
+                p50=int(np.percentile(messages, 50)),
+                p75=int(np.percentile(messages, 75)),
+                p90=int(np.percentile(messages, 90)),
+                p95=int(np.percentile(messages, 95)),
+            ),
+            averages={
                 "tokens": float(np.mean(tokens)),
                 "cost": float(np.mean(costs)),
                 "messages": float(np.mean(messages)),
             },
-            "count": len(sessions),
-        }
+            count=len(sessions),
+        )
 
 
 def format_error_screen(
     plan: str = "pro", timezone: str = "Europe/Warsaw"
-) -> List[str]:
+) -> list[str]:
     """Legacy function - format error screen.
 
     Maintained for backward compatibility.

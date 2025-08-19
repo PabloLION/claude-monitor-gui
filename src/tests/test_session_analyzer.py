@@ -1,10 +1,11 @@
 """Tests for session analyzer module."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Union
+from typing import cast
 
 from claude_monitor.core.models import SessionBlock, TokenCounts, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
+from claude_monitor.types import ClaudeMessageEntry
 
 
 class TestSessionAnalyzer:
@@ -55,7 +56,7 @@ class TestSessionAnalyzer:
         analyzer = SessionAnalyzer()
 
         base_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
-        entries: List[UsageEntry] = [
+        entries: list[UsageEntry] = [
             UsageEntry(
                 timestamp=base_time,
                 input_tokens=100,
@@ -82,7 +83,7 @@ class TestSessionAnalyzer:
         analyzer = SessionAnalyzer()
 
         base_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
-        entries: List[UsageEntry] = [
+        entries: list[UsageEntry] = [
             UsageEntry(
                 timestamp=base_time,
                 input_tokens=100,
@@ -134,15 +135,15 @@ class TestSessionAnalyzer:
             model="claude-3-haiku",
         )
 
-        assert not analyzer._should_create_new_block(block, entry1)
-        assert analyzer._should_create_new_block(block, entry2)
+        assert not analyzer._should_create_new_block(block, entry1)  # type: ignore[misc]
+        assert analyzer._should_create_new_block(block, entry2)  # type: ignore[misc]
 
     def test_round_to_hour(self) -> None:
         """Test _round_to_hour functionality."""
         analyzer = SessionAnalyzer()
 
         # Test various timestamps
-        test_cases: List[tuple[datetime, datetime]] = [
+        test_cases: list[tuple[datetime, datetime]] = [
             (
                 datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
                 datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
@@ -158,7 +159,7 @@ class TestSessionAnalyzer:
         ]
 
         for input_time, expected in test_cases:
-            result = analyzer._round_to_hour(input_time)
+            result = analyzer._round_to_hour(input_time)  # type: ignore[misc]
             assert result == expected
 
     def test_create_new_block(self) -> None:
@@ -173,7 +174,7 @@ class TestSessionAnalyzer:
             model="claude-3-haiku",
         )
 
-        block = analyzer._create_new_block(entry)
+        block = analyzer._create_new_block(entry)  # type: ignore[misc]
 
         assert block.start_time == datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
         assert block.end_time == datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc)
@@ -201,7 +202,7 @@ class TestSessionAnalyzer:
             message_id="msg_123",
         )
 
-        analyzer._add_entry_to_block(block, entry)
+        analyzer._add_entry_to_block(block, entry)  # type: ignore[misc]
 
         assert len(block.entries) == 1
         assert block.entries[0] == entry
@@ -232,7 +233,7 @@ class TestSessionAnalyzer:
             ],
         )
 
-        analyzer._finalize_block(block)
+        analyzer._finalize_block(block)  # type: ignore[misc]
 
         # Should set actual_end_time to last entry timestamp
         assert block.actual_end_time == datetime(
@@ -250,7 +251,7 @@ class TestSessionAnalyzer:
         """Test detect_limits with no limit messages."""
         analyzer = SessionAnalyzer()
 
-        raw_entries: List[Dict[str, str]] = [
+        raw_entries: list[dict[str, str]] = [
             {
                 "timestamp": "2024-01-01T12:00:00Z",
                 "content": "Regular response content",
@@ -258,7 +259,7 @@ class TestSessionAnalyzer:
             }
         ]
 
-        result = analyzer.detect_limits(raw_entries)
+        result = analyzer.detect_limits(cast(list[ClaudeMessageEntry], raw_entries))  # Simplified test data
 
         assert result == []
 
@@ -266,7 +267,7 @@ class TestSessionAnalyzer:
         """Test _detect_single_limit with rate limit message."""
         analyzer = SessionAnalyzer()
 
-        raw_data: Dict[str, Union[str, List[Dict[str, str]]]] = {
+        raw_data: dict[str, str | list[dict[str, str]]] = {
             "timestamp": "2024-01-01T12:00:00Z",
             "content": [
                 {
@@ -277,7 +278,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(raw_data)
+        result = analyzer._detect_single_limit(cast(ClaudeMessageEntry, raw_data))  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
@@ -288,7 +289,7 @@ class TestSessionAnalyzer:
         """Test _detect_single_limit with Opus daily limit."""
         analyzer = SessionAnalyzer()
 
-        raw_data: Dict[str, Union[str, List[Dict[str, str]]]] = {
+        raw_data: dict[str, str | list[dict[str, str]]] = {
             "timestamp": "2024-01-01T12:00:00Z",
             "content": [
                 {
@@ -299,7 +300,7 @@ class TestSessionAnalyzer:
             "type": "assistant",
         }
 
-        result = analyzer._detect_single_limit(raw_data)
+        result = analyzer._detect_single_limit(cast(ClaudeMessageEntry, raw_data))  # type: ignore[misc]
 
         # May or may not detect limit depending on implementation
         if result is not None:
@@ -311,30 +312,30 @@ class TestSessionAnalyzer:
         analyzer = SessionAnalyzer()
 
         # Test cases that should be detected as Opus limits
-        opus_cases: List[str] = [
+        opus_cases: list[str] = [
             "you've reached your daily limit for claude 3 opus",
             "daily opus limit reached",
             "claude 3 opus usage limit",
         ]
 
         # Test cases that should NOT be detected
-        non_opus_cases: List[str] = [
+        non_opus_cases: list[str] = [
             "general rate limit message",
             "sonnet limit reached",
             "you've reached capacity",
         ]
 
         for case in opus_cases:
-            assert analyzer._is_opus_limit(case) is True
+            assert analyzer._is_opus_limit(case) is True  # type: ignore[misc]
 
         for case in non_opus_cases:
-            assert analyzer._is_opus_limit(case) is False
+            assert analyzer._is_opus_limit(case) is False  # type: ignore[misc]
 
     def test_extract_wait_time(self) -> None:
         """Test _extract_wait_time functionality."""
         analyzer = SessionAnalyzer()
 
-        test_cases: List[tuple[str, Optional[int]]] = [
+        test_cases: list[tuple[str, int | None]] = [
             ("wait 5 minutes", 5),
             ("wait 30 minutes", 30),
             ("wait 60 minutes", 60),
@@ -346,7 +347,7 @@ class TestSessionAnalyzer:
         timestamp = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
 
         for text, expected_minutes in test_cases:
-            reset_time, wait_minutes = analyzer._extract_wait_time(text, timestamp)
+            reset_time, wait_minutes = analyzer._extract_wait_time(text, timestamp)  # type: ignore[misc]
             assert wait_minutes == expected_minutes
 
     def test_parse_reset_timestamp(self) -> None:
@@ -354,14 +355,14 @@ class TestSessionAnalyzer:
         analyzer = SessionAnalyzer()
 
         # Test with various timestamp formats
-        test_cases: List[str] = [
+        test_cases: list[str] = [
             "Resets at 2024-01-01T15:00:00Z",
             "Your limit resets on 2024-01-01 at 15:00",
             "Available again at 15:00 UTC",
         ]
 
         for text in test_cases:
-            result = analyzer._parse_reset_timestamp(text)
+            result = analyzer._parse_reset_timestamp(text)  # type: ignore[misc]
             # Should either return a datetime or None
             assert result is None or isinstance(result, datetime)
 
@@ -370,7 +371,7 @@ class TestSessionAnalyzer:
         analyzer = SessionAnalyzer()
 
         now = datetime.now(timezone.utc)
-        blocks: List[SessionBlock] = [
+        blocks: list[SessionBlock] = [
             SessionBlock(
                 id="old_block",
                 start_time=now - timedelta(hours=10),
@@ -385,7 +386,7 @@ class TestSessionAnalyzer:
             ),
         ]
 
-        analyzer._mark_active_blocks(blocks)
+        analyzer._mark_active_blocks(blocks)  # type: ignore[misc]
 
         # Old block should not be active
         assert blocks[0].is_active is False
@@ -402,7 +403,7 @@ class TestSessionAnalyzerIntegration:
 
         # Create realistic usage entries
         base_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
-        entries: List[UsageEntry] = [
+        entries: list[UsageEntry] = [
             UsageEntry(
                 timestamp=base_time,
                 input_tokens=100,
@@ -448,7 +449,7 @@ class TestSessionAnalyzerIntegration:
         """Test limit detection workflow."""
         analyzer = SessionAnalyzer()
 
-        raw_entries: List[Dict[str, Union[str, List[Dict[str, str]]]]] = [
+        raw_entries: list[dict[str, str | list[dict[str, str]]]] = [
             {
                 "timestamp": "2024-01-01T12:00:00Z",
                 "content": [
@@ -471,7 +472,7 @@ class TestSessionAnalyzerIntegration:
             },
         ]
 
-        limits = analyzer.detect_limits(raw_entries)
+        limits = analyzer.detect_limits(cast(list[ClaudeMessageEntry], raw_entries))  # Simplified test data
 
         # May or may not detect limits depending on implementation
         assert isinstance(limits, list)
@@ -524,7 +525,7 @@ class TestSessionAnalyzerEdgeCases:
         analyzer = SessionAnalyzer()
 
         base_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
-        entries: List[UsageEntry] = [
+        entries: list[UsageEntry] = [
             UsageEntry(
                 timestamp=base_time,
                 input_tokens=100,

@@ -2,13 +2,14 @@
 
 import threading
 import time
-from typing import Any, Dict, List, Tuple, Union
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
 
 from claude_monitor.core.plans import DEFAULT_TOKEN_LIMIT
 from claude_monitor.monitoring.orchestrator import MonitoringOrchestrator
+from claude_monitor.types import AnalysisResult, JSONSerializable, MonitoringState
 
 
 @pytest.fixture
@@ -54,7 +55,7 @@ def orchestrator(
             return_value=mock_session_monitor,
         ),
     ):
-        return MonitoringOrchestrator(update_interval=1)
+        return MonitoringOrchestrator(update_interval=1.0)
 
 
 class TestMonitoringOrchestratorInit:
@@ -63,17 +64,21 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_defaults(self) -> None:
         """Test initialization with default parameters."""
         with (
-            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
-            patch("claude_monitor.monitoring.orchestrator.SessionMonitor") as mock_sm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.DataManager"
+            ) as mock_dm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.SessionMonitor"
+            ) as mock_sm,
         ):
             orchestrator = MonitoringOrchestrator()
 
             assert orchestrator.update_interval == 10
-            assert not orchestrator._monitoring
-            assert orchestrator._monitor_thread is None
-            assert orchestrator._args is None
-            assert orchestrator._last_valid_data is None
-            assert len(orchestrator._update_callbacks) == 0
+            assert not orchestrator._monitoring  # type: ignore[misc]
+            assert orchestrator._monitor_thread is None  # type: ignore[misc]
+            assert orchestrator._args is None  # type: ignore[misc]
+            assert orchestrator._last_valid_data is None  # type: ignore[misc]
+            assert len(orchestrator._update_callbacks) == 0  # type: ignore[misc]
 
             mock_dm.assert_called_once_with(cache_ttl=5, data_path=None)
             mock_sm.assert_called_once()
@@ -81,7 +86,9 @@ class TestMonitoringOrchestratorInit:
     def test_init_with_custom_params(self) -> None:
         """Test initialization with custom parameters."""
         with (
-            patch("claude_monitor.monitoring.orchestrator.DataManager") as mock_dm,
+            patch(
+                "claude_monitor.monitoring.orchestrator.DataManager"
+            ) as mock_dm,
             patch("claude_monitor.monitoring.orchestrator.SessionMonitor"),
         ):
             orchestrator = MonitoringOrchestrator(
@@ -89,23 +96,27 @@ class TestMonitoringOrchestratorInit:
             )
 
             assert orchestrator.update_interval == 5
-            mock_dm.assert_called_once_with(cache_ttl=5, data_path="/custom/path")
+            mock_dm.assert_called_once_with(
+                cache_ttl=5, data_path="/custom/path"
+            )
 
 
 class TestMonitoringOrchestratorLifecycle:
     """Test orchestrator start/stop lifecycle."""
 
-    def test_start_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_start_monitoring(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test starting monitoring creates thread."""
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.start()
 
-        assert orchestrator._monitoring
-        assert orchestrator._monitor_thread is not None
-        assert orchestrator._monitor_thread.is_alive()
-        assert orchestrator._monitor_thread.name == "MonitoringThread"
-        assert orchestrator._monitor_thread.daemon
+        assert orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is not None  # type: ignore[misc]
+        assert orchestrator._monitor_thread.is_alive()  # type: ignore[misc]
+        assert orchestrator._monitor_thread.name == "MonitoringThread"  # type: ignore[misc]
+        assert orchestrator._monitor_thread.daemon  # type: ignore[misc]
 
         orchestrator.stop()
 
@@ -113,32 +124,38 @@ class TestMonitoringOrchestratorLifecycle:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test starting monitoring when already running."""
-        orchestrator._monitoring = True
+        orchestrator._monitoring = True  # type: ignore[misc]
 
-        with patch("claude_monitor.monitoring.orchestrator.logger") as mock_logger:
+        with patch(
+            "claude_monitor.monitoring.orchestrator.logger"
+        ) as mock_logger:
             orchestrator.start()
 
-            mock_logger.warning.assert_called_once_with("Monitoring already running")
+            mock_logger.warning.assert_called_once_with(
+                "Monitoring already running"
+            )
 
-    def test_stop_monitoring(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_stop_monitoring(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test stopping monitoring."""
         orchestrator.start()
-        assert orchestrator._monitoring
+        assert orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.stop()
 
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
 
     def test_stop_monitoring_not_running(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test stopping monitoring when not running."""
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
         orchestrator.stop()  # Should not raise
 
-        assert not orchestrator._monitoring
+        assert not orchestrator._monitoring  # type: ignore[misc]
 
     def test_stop_monitoring_with_timeout(
         self, orchestrator: MonitoringOrchestrator
@@ -149,7 +166,7 @@ class TestMonitoringOrchestratorLifecycle:
         # Mock thread that doesn't die quickly
         mock_thread = Mock()
         mock_thread.is_alive.return_value = True
-        orchestrator._monitor_thread = mock_thread
+        orchestrator._monitor_thread = mock_thread  # type: ignore[misc]
 
         orchestrator.stop()
 
@@ -167,7 +184,7 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_update_callback(callback)
 
-        assert callback in orchestrator._update_callbacks
+        assert callback in orchestrator._update_callbacks  # type: ignore[misc]
 
     def test_register_duplicate_callback(
         self, orchestrator: MonitoringOrchestrator
@@ -178,7 +195,7 @@ class TestMonitoringOrchestratorCallbacks:
         orchestrator.register_update_callback(callback)
         orchestrator.register_update_callback(callback)
 
-        assert orchestrator._update_callbacks.count(callback) == 1
+        assert orchestrator._update_callbacks.count(callback) == 1  # type: ignore[misc]
 
     def test_register_session_callback(
         self, orchestrator: MonitoringOrchestrator
@@ -188,7 +205,9 @@ class TestMonitoringOrchestratorCallbacks:
 
         orchestrator.register_session_callback(callback)
 
-        orchestrator.session_monitor.register_callback.assert_called_once_with(callback)
+        orchestrator.session_monitor.register_callback.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            callback
+        )
 
 
 class TestMonitoringOrchestratorDataProcessing:
@@ -196,19 +215,27 @@ class TestMonitoringOrchestratorDataProcessing:
 
     def test_force_refresh(self, orchestrator: MonitoringOrchestrator) -> None:
         """Test force refresh calls data manager."""
-        expected_data: Dict[str, List[Dict[str, str]]] = {"blocks": [{"id": "test"}]}
-        orchestrator.data_manager.get_data.return_value = expected_data
+        expected_data: dict[str, list[dict[str, str]]] = {
+            "blocks": [{"id": "test"}]
+        }
+        orchestrator.data_manager.get_data.return_value = expected_data  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         result = orchestrator.force_refresh()
 
         assert result is not None
         assert "data" in result
         assert result["data"] == expected_data
-        orchestrator.data_manager.get_data.assert_called_once_with(force_refresh=True)
+        orchestrator.data_manager.get_data.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            force_refresh=True
+        )
 
-    def test_force_refresh_no_data(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_force_refresh_no_data(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test force refresh when no data available."""
-        orchestrator.data_manager.get_data.return_value = None
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            None
+        )
 
         result = orchestrator.force_refresh()
 
@@ -221,7 +248,7 @@ class TestMonitoringOrchestratorDataProcessing:
 
         orchestrator.set_args(args)
 
-        assert orchestrator._args == args
+        assert orchestrator._args == args  # type: ignore[misc]
 
     def test_wait_for_initial_data_success(
         self, orchestrator: MonitoringOrchestrator
@@ -231,7 +258,7 @@ class TestMonitoringOrchestratorDataProcessing:
         orchestrator.start()
 
         # Mock the first data event as set
-        orchestrator._first_data_event.set()
+        orchestrator._first_data_event.set()  # type: ignore[misc]
 
         result = orchestrator.wait_for_initial_data(timeout=1.0)
 
@@ -255,7 +282,9 @@ class TestMonitoringOrchestratorMonitoringLoop:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop performs initial fetch."""
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             # Start and quickly stop to test initial fetch
@@ -272,27 +301,31 @@ class TestMonitoringOrchestratorMonitoringLoop:
         """Test monitoring loop performs periodic updates."""
         orchestrator.update_interval = 0.1  # Very fast for testing
 
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
             time.sleep(0.3)  # Let it run for multiple intervals
             orchestrator.stop()
 
-            # Should have called fetch multiple times
+            # Should have called fetch multiple times (initial + at least 1 periodic)
             assert mock_fetch.call_count >= 2
 
     def test_monitoring_loop_stop_event(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring loop respects stop event."""
-        with patch.object(orchestrator, "_fetch_and_process_data") as mock_fetch:
+        with patch.object(
+            orchestrator, "_fetch_and_process_data"
+        ) as mock_fetch:
             mock_fetch.return_value = {"test": "data"}
 
             orchestrator.start()
             # Stop immediately
-            orchestrator._stop_event.set()
-            orchestrator._monitoring = False
+            orchestrator._stop_event.set()  # type: ignore[misc]
+            orchestrator._monitoring = False  # type: ignore[misc]
             time.sleep(0.1)  # Give it time to stop
 
             # Should have minimal calls
@@ -306,7 +339,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test successful data fetch and processing."""
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -316,8 +349,13 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
-        orchestrator.session_monitor.update.return_value = (True, [])
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
+        orchestrator.session_monitor.update.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            True,
+            [],
+        )
 
         # Set args for token limit calculation
         args = Mock()
@@ -328,7 +366,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is not None
         assert result["data"] == test_data
@@ -336,15 +374,17 @@ class TestMonitoringOrchestratorFetchAndProcess:
         assert result["args"] == args
         assert result["session_id"] == "session_1"
         assert result["session_count"] == 1
-        assert orchestrator._last_valid_data == result
+        assert orchestrator._last_valid_data == result  # type: ignore[misc]
 
     def test_fetch_and_process_no_data(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process when no data available."""
-        orchestrator.data_manager.get_data.return_value = None
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            None
+        )
 
-        result = orchestrator._fetch_and_process_data()
+        result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
 
@@ -352,11 +392,16 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process with validation failure."""
-        test_data: Dict[str, List[Any]] = {"blocks": []}
-        orchestrator.data_manager.get_data.return_value = test_data
-        orchestrator.session_monitor.update.return_value = (False, ["Validation error"])
+        test_data: dict[str, list[JSONSerializable]] = {"blocks": []}
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
+        orchestrator.session_monitor.update.return_value = (  # pyright: ignore[reportAttributeAccessIssue]
+            False,
+            ["Validation error"],
+        )
 
-        result = orchestrator._fetch_and_process_data()
+        result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
 
@@ -364,12 +409,19 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process calls callbacks successfully."""
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
-                {"id": "test", "isActive": True, "totalTokens": 100, "costUSD": 0.01}
+                {
+                    "id": "test",
+                    "isActive": True,
+                    "totalTokens": 100,
+                    "costUSD": 0.01,
+                }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
 
         callback1 = Mock()
         callback2 = Mock()
@@ -380,7 +432,7 @@ class TestMonitoringOrchestratorFetchAndProcess:
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is not None
         callback1.assert_called_once()
@@ -395,12 +447,19 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process handles callback errors."""
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
-                {"id": "test", "isActive": True, "totalTokens": 100, "costUSD": 0.01}
+                {
+                    "id": "test",
+                    "isActive": True,
+                    "totalTokens": 100,
+                    "costUSD": 0.01,
+                }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
 
         callback_error = Mock(side_effect=Exception("Callback failed"))
         callback_success = Mock()
@@ -412,11 +471,15 @@ class TestMonitoringOrchestratorFetchAndProcess:
                 "claude_monitor.monitoring.orchestrator.get_token_limit",
                 return_value=200000,
             ),
-            patch("claude_monitor.monitoring.orchestrator.report_error") as mock_report,
+            patch(
+                "claude_monitor.monitoring.orchestrator.report_error"
+            ) as mock_report,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert result is not None  # Should still return data despite callback error
+        assert (
+            result is not None
+        )  # Should still return data despite callback error
         callback_success.assert_called_once()  # Other callbacks should still work
         mock_report.assert_called_once()
 
@@ -424,12 +487,14 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process handles exceptions."""
-        orchestrator.data_manager.get_data.side_effect = Exception("Fetch failed")
+        orchestrator.data_manager.get_data.side_effect = Exception(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            "Fetch failed"
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
         ) as mock_report:
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
         assert result is None
         mock_report.assert_called_once()
@@ -438,22 +503,29 @@ class TestMonitoringOrchestratorFetchAndProcess:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test fetch and process sets first data event."""
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
-                {"id": "test", "isActive": True, "totalTokens": 100, "costUSD": 0.01}
+                {
+                    "id": "test",
+                    "isActive": True,
+                    "totalTokens": 100,
+                    "costUSD": 0.01,
+                }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
 
-        assert not orchestrator._first_data_event.is_set()
+        assert not orchestrator._first_data_event.is_set()  # type: ignore[misc]
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            orchestrator._fetch_and_process_data()
+            orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert orchestrator._first_data_event.is_set()
+        assert orchestrator._first_data_event.is_set()  # type: ignore[misc]
 
 
 class TestMonitoringOrchestratorTokenLimitCalculation:
@@ -463,9 +535,9 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test token limit calculation without args."""
-        data: Dict[str, List[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
-        result = orchestrator._calculate_token_limit(data)
+        result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -477,13 +549,13 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         args.plan = "pro"
         orchestrator.set_args(args)
 
-        data: Dict[str, List[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == 200000
         mock_get_limit.assert_called_once_with("pro")
@@ -496,17 +568,17 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         args.plan = "custom"
         orchestrator.set_args(args)
 
-        blocks_data: List[Dict[str, int]] = [
+        blocks_data: list[dict[str, int]] = [
             {"totalTokens": 1000},
             {"totalTokens": 1500},
         ]
-        data: Dict[str, List[Dict[str, int]]] = {"blocks": blocks_data}
+        data: dict[str, list[dict[str, int]]] = {"blocks": blocks_data}
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=175000,
         ) as mock_get_limit:
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == 175000
         mock_get_limit.assert_called_once_with("custom", blocks_data)
@@ -519,13 +591,13 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
         args.plan = "pro"
         orchestrator.set_args(args)
 
-        data: Dict[str, List[Any]] = {"blocks": []}
+        data: dict[str, list[JSONSerializable]] = {"blocks": []}
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             side_effect=Exception("Calculation failed"),
         ):
-            result = orchestrator._calculate_token_limit(data)
+            result = orchestrator._calculate_token_limit(cast(AnalysisResult, data))  # type: ignore[misc]
 
         assert result == DEFAULT_TOKEN_LIMIT
 
@@ -533,10 +605,12 @@ class TestMonitoringOrchestratorTokenLimitCalculation:
 class TestMonitoringOrchestratorIntegration:
     """Test integration scenarios."""
 
-    def test_full_monitoring_cycle(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_full_monitoring_cycle(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test complete monitoring cycle."""
         # Setup test data
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -546,12 +620,12 @@ class TestMonitoringOrchestratorIntegration:
                 }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
+        orchestrator.data_manager.get_data.return_value = test_data  # pyright: ignore[reportAttributeAccessIssue]  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         # Setup callback to capture monitoring data
-        captured_data: List[Dict[str, Any]] = []
+        captured_data: list[MonitoringState] = list[MonitoringState]()
 
-        def capture_callback(data: Dict[str, Any]) -> None:
+        def capture_callback(data: MonitoringState) -> None:
             captured_data.append(data)
 
         orchestrator.register_update_callback(capture_callback)
@@ -588,7 +662,7 @@ class TestMonitoringOrchestratorIntegration:
     ) -> None:
         """Test monitoring responds to session changes."""
         # Setup initial data
-        initial_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        initial_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -600,7 +674,7 @@ class TestMonitoringOrchestratorIntegration:
         }
 
         # Setup changed data
-        changed_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        changed_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_2",
@@ -616,42 +690,49 @@ class TestMonitoringOrchestratorIntegration:
 
         def mock_get_data(
             force_refresh: bool = False,
-        ) -> Dict[str, List[Dict[str, Union[str, bool, int, float]]]]:
+        ) -> dict[str, list[dict[str, str | bool | int | float]]]:
             nonlocal call_count
             call_count += 1
             return initial_data if call_count == 1 else changed_data
 
-        orchestrator.data_manager.get_data.side_effect = mock_get_data
+        orchestrator.data_manager.get_data.side_effect = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            mock_get_data
+        )
 
         # Mock session monitor to return different session IDs
         session_call_count = 0
 
-        def mock_update(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+        def mock_update(data: MonitoringState) -> tuple[bool, list[str]]:
             nonlocal session_call_count
             session_call_count += 1
-            orchestrator.session_monitor.current_session_id = (
+            # Use type ignore for property assignment during testing
+            orchestrator.session_monitor.current_session_id = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
                 f"session_{session_call_count}"
             )
-            orchestrator.session_monitor.session_count = session_call_count
+            orchestrator.session_monitor.session_count = session_call_count  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             return (True, [])
 
-        orchestrator.session_monitor.update.side_effect = mock_update
+        orchestrator.session_monitor.update.side_effect = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            mock_update
+        )
 
         # Capture callback data
-        captured_data: List[Dict[str, Any]] = []
-        orchestrator.register_update_callback(lambda data: captured_data.append(data))
+        captured_data: list[MonitoringState] = list[MonitoringState]()
+        orchestrator.register_update_callback(
+            lambda data: captured_data.append(data)
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
             # Process initial data
-            result1 = orchestrator._fetch_and_process_data()
-            assert result1["session_id"] == "session_1"
+            result1 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
+            assert result1 is not None and result1["session_id"] == "session_1"
 
             # Process changed data
-            result2 = orchestrator._fetch_and_process_data()
-            assert result2["session_id"] == "session_2"
+            result2 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
+            assert result2 is not None and result2["session_id"] == "session_2"
 
         # Verify both updates were captured
         assert len(captured_data) >= 2
@@ -664,8 +745,8 @@ class TestMonitoringOrchestratorIntegration:
         call_count = 0
 
         def mock_get_data(
-            force_refresh: bool = False,
-        ) -> Dict[str, List[Dict[str, Union[str, bool, int, float]]]]:
+            force_refresh: bool = False,  # pyright: ignore[reportUnusedParameter]
+        ) -> dict[str, list[dict[str, str | bool | int | float]]]:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -681,13 +762,13 @@ class TestMonitoringOrchestratorIntegration:
                 ]
             }
 
-        orchestrator.data_manager.get_data.side_effect = mock_get_data
+        orchestrator.data_manager.get_data.side_effect = mock_get_data  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         with patch(
             "claude_monitor.monitoring.orchestrator.report_error"
         ) as mock_report:
             # First call should fail
-            result1 = orchestrator._fetch_and_process_data()
+            result1 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result1 is None
             mock_report.assert_called_once()
 
@@ -696,7 +777,7 @@ class TestMonitoringOrchestratorIntegration:
                 "claude_monitor.monitoring.orchestrator.get_token_limit",
                 return_value=200000,
             ):
-                result2 = orchestrator._fetch_and_process_data()
+                result2 = orchestrator._fetch_and_process_data()  # type: ignore[misc]
             assert result2 is not None
             assert result2["data"]["blocks"][0]["id"] == "test"
 
@@ -708,7 +789,7 @@ class TestMonitoringOrchestratorThreadSafety:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test thread-safe callback registration."""
-        callbacks: List[Mock] = []
+        callbacks: list[Mock] = list[Mock]()
 
         def register_callbacks() -> None:
             for i in range(10):
@@ -718,7 +799,7 @@ class TestMonitoringOrchestratorThreadSafety:
                 orchestrator.register_update_callback(callback)
 
         # Register callbacks from multiple threads
-        threads = []
+        threads = list[threading.Thread]()
         for _ in range(3):
             thread = threading.Thread(target=register_callbacks)
             threads.append(thread)
@@ -728,9 +809,11 @@ class TestMonitoringOrchestratorThreadSafety:
             thread.join()
 
         # All callbacks should be registered
-        assert len(orchestrator._update_callbacks) == 30
+        assert len(orchestrator._update_callbacks) == 30  # type: ignore[misc]
 
-    def test_concurrent_start_stop(self, orchestrator: MonitoringOrchestrator) -> None:
+    def test_concurrent_start_stop(
+        self, orchestrator: MonitoringOrchestrator
+    ) -> None:
         """Test thread-safe start/stop operations."""
 
         def start_stop_loop() -> None:
@@ -741,7 +824,7 @@ class TestMonitoringOrchestratorThreadSafety:
                 time.sleep(0.01)
 
         # Start/stop from multiple threads
-        threads = []
+        threads = list[threading.Thread]()
         for _ in range(3):
             thread = threading.Thread(target=start_stop_loop)
             threads.append(thread)
@@ -751,8 +834,8 @@ class TestMonitoringOrchestratorThreadSafety:
             thread.join()
 
         # Should end in stopped state
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
 
 
 class TestMonitoringOrchestratorProperties:
@@ -762,38 +845,45 @@ class TestMonitoringOrchestratorProperties:
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test last valid data is stored correctly."""
-        test_data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        test_data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
-                {"id": "test", "isActive": True, "totalTokens": 100, "costUSD": 0.01}
+                {
+                    "id": "test",
+                    "isActive": True,
+                    "totalTokens": 100,
+                    "costUSD": 0.01,
+                }
             ]
         }
-        orchestrator.data_manager.get_data.return_value = test_data
+        orchestrator.data_manager.get_data.return_value = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            test_data
+        )
 
         with patch(
             "claude_monitor.monitoring.orchestrator.get_token_limit",
             return_value=200000,
         ):
-            result = orchestrator._fetch_and_process_data()
+            result = orchestrator._fetch_and_process_data()  # type: ignore[misc]
 
-        assert orchestrator._last_valid_data == result
-        assert orchestrator._last_valid_data["data"] == test_data
+        assert orchestrator._last_valid_data == result  # type: ignore[misc]
+        assert orchestrator._last_valid_data is not None and orchestrator._last_valid_data["data"] == test_data  # type: ignore[misc]
 
     def test_monitoring_state_consistency(
         self, orchestrator: MonitoringOrchestrator
     ) -> None:
         """Test monitoring state remains consistent."""
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
-        assert not orchestrator._stop_event.is_set()
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
+        assert not orchestrator._stop_event.is_set()  # type: ignore[misc]
 
         orchestrator.start()
-        assert orchestrator._monitoring
-        assert orchestrator._monitor_thread is not None
-        assert not orchestrator._stop_event.is_set()
+        assert orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is not None  # type: ignore[misc]
+        assert not orchestrator._stop_event.is_set()  # type: ignore[misc]
 
         orchestrator.stop()
-        assert not orchestrator._monitoring
-        assert orchestrator._monitor_thread is None
+        assert not orchestrator._monitoring  # type: ignore[misc]
+        assert orchestrator._monitor_thread is None  # type: ignore[misc]
         # stop_event may remain set after stopping
 
 
@@ -806,9 +896,9 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        assert monitor._current_session_id is None
-        assert monitor._session_callbacks == []
-        assert monitor._session_history == []
+        assert monitor._current_session_id is None  # type: ignore[misc]
+        assert monitor._session_callbacks == []  # type: ignore[misc]
+        assert monitor._session_history == []  # type: ignore[misc]
 
     def test_session_monitor_update_valid_data(self) -> None:
         """Test updating session monitor with valid data."""
@@ -816,7 +906,7 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -828,7 +918,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(data)
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert is_valid is True
         assert errors == []
@@ -839,8 +931,8 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        # Test with None data
-        is_valid, errors = monitor.update(None)
+        # Test with None data - using cast to bypass type checking for test
+        is_valid, errors = monitor.update(cast(AnalysisResult, None))
         assert is_valid is False
         assert len(errors) > 0
 
@@ -851,7 +943,9 @@ class TestSessionMonitor:
         monitor = SessionMonitor()
 
         # Test empty dict
-        is_valid, errors = monitor.validate_data({})
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, {})
+        )  # Simplified test data
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
 
@@ -861,8 +955,10 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, Dict[str, str]] = {"metadata": {"version": "1.0"}}
-        is_valid, errors = monitor.validate_data(data)
+        data = {"metadata": {"version": "1.0"}}
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
@@ -873,8 +969,10 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, str] = {"blocks": "not_a_list"}
-        is_valid, errors = monitor.validate_data(data)
+        data = {"blocks": "not_a_list"}
+        is_valid, errors = monitor.validate_data(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert is_valid is False
         assert len(errors) > 0
@@ -888,7 +986,7 @@ class TestSessionMonitor:
 
         monitor.register_callback(callback)
 
-        assert callback in monitor._session_callbacks
+        assert callback in monitor._session_callbacks  # type: ignore[misc]
 
     def test_session_monitor_callback_execution(self) -> None:
         """Test that callbacks are executed on session change."""
@@ -899,7 +997,7 @@ class TestSessionMonitor:
         monitor.register_callback(callback)
 
         # First update - should trigger callback for new session
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -911,11 +1009,11 @@ class TestSessionMonitor:
             ]
         }
 
-        monitor.update(data)
+        monitor.update(cast(AnalysisResult, data))  # Simplified test data
 
         # Callback may or may not be called depending on implementation
         # Just verify the structure is maintained
-        assert isinstance(monitor._session_callbacks, list)
+        assert isinstance(monitor._session_callbacks, list)  # type: ignore[misc]
 
     def test_session_monitor_session_history(self) -> None:
         """Test session history tracking."""
@@ -923,7 +1021,7 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -935,10 +1033,10 @@ class TestSessionMonitor:
             ]
         }
 
-        monitor.update(data)
+        monitor.update(cast(AnalysisResult, data))  # Simplified test data
 
         # History may or may not change depending on implementation
-        assert isinstance(monitor._session_history, list)
+        assert isinstance(monitor._session_history, list)  # type: ignore[misc]
 
     def test_session_monitor_current_session_tracking(self) -> None:
         """Test current session ID tracking."""
@@ -946,7 +1044,7 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -958,10 +1056,10 @@ class TestSessionMonitor:
             ]
         }
 
-        monitor.update(data)
+        monitor.update(cast(AnalysisResult, data))  # Simplified test data
 
         # Current session ID may be set depending on implementation
-        assert isinstance(monitor._current_session_id, (str, type(None)))
+        assert isinstance(monitor._current_session_id, (str, type(None)))  # type: ignore[misc]
 
     def test_session_monitor_multiple_blocks(self) -> None:
         """Test session monitor with multiple blocks."""
@@ -969,7 +1067,7 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -988,7 +1086,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(data)
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)
@@ -999,7 +1099,7 @@ class TestSessionMonitor:
 
         monitor = SessionMonitor()
 
-        data: Dict[str, List[Dict[str, Union[str, bool, int, float]]]] = {
+        data: dict[str, list[dict[str, str | bool | int | float]]] = {
             "blocks": [
                 {
                     "id": "session_1",
@@ -1011,7 +1111,9 @@ class TestSessionMonitor:
             ]
         }
 
-        is_valid, errors = monitor.update(data)
+        is_valid, errors = monitor.update(
+            cast(AnalysisResult, data)
+        )  # Simplified test data
 
         assert isinstance(is_valid, bool)
         assert isinstance(errors, list)

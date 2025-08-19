@@ -1,9 +1,10 @@
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from statistics import quantiles
-from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from claude_monitor.types import LegacyBlockData
 
 
 @dataclass(frozen=True)
@@ -19,29 +20,32 @@ def _did_hit_limit(tokens: int, common_limits: Sequence[int], threshold: float) 
 
 
 def _extract_sessions(
-    blocks: Sequence[Dict[str, Any]], filter_fn: Callable[[Dict[str, Any]], bool]
-) -> List[int]:
-    return [
-        block["totalTokens"]
-        for block in blocks
-        if filter_fn(block) and block.get("totalTokens", 0) > 0
-    ]
+    blocks: Sequence[LegacyBlockData],
+    filter_fn: Callable[[LegacyBlockData], bool],
+) -> list[int]:
+    tokens = list[int]()
+    for block in blocks:
+        if filter_fn(block):
+            total_tokens = block.get("totalTokens", 0)
+            if total_tokens > 0:
+                tokens.append(total_tokens)
+    return tokens
 
 
-def _calculate_p90_from_blocks(blocks: Sequence[Dict[str, Any]], cfg: P90Config) -> int:
-    hits = _extract_sessions(
-        blocks,
-        lambda b: (
-            not b.get("isGap", False)
-            and not b.get("isActive", False)
-            and _did_hit_limit(
-                b.get("totalTokens", 0), cfg.common_limits, cfg.limit_threshold
-            )
-        ),
-    )
+def _calculate_p90_from_blocks(
+    blocks: Sequence[LegacyBlockData], cfg: P90Config
+) -> int:
+    def hit_limit_filter(b: LegacyBlockData) -> bool:
+        if b.get("isGap", False) or b.get("isActive", False):
+            return False
+        total_tokens = b.get("totalTokens", 0)
+        return _did_hit_limit(total_tokens, cfg.common_limits, cfg.limit_threshold)
+
+    hits = _extract_sessions(blocks, hit_limit_filter)
     if not hits:
         hits = _extract_sessions(
-            blocks, lambda b: not b.get("isGap", False) and not b.get("isActive", False)
+            blocks,
+            lambda b: not b.get("isGap", False) and not b.get("isActive", False),
         )
     if not hits:
         return cfg.default_min_limit
@@ -50,7 +54,7 @@ def _calculate_p90_from_blocks(blocks: Sequence[Dict[str, Any]], cfg: P90Config)
 
 
 class P90Calculator:
-    def __init__(self, config: Optional[P90Config] = None) -> None:
+    def __init__(self, config: P90Config | None = None) -> None:
         if config is None:
             from claude_monitor.core.plans import (
                 COMMON_TOKEN_LIMITS,
@@ -68,28 +72,28 @@ class P90Calculator:
 
     @lru_cache(maxsize=1)
     def _cached_calc(
-        self, key: int, blocks_tuple: Tuple[Tuple[bool, bool, int], ...]
+        self, key: int, blocks_tuple: tuple[tuple[bool, bool, int], ...]
     ) -> int:
-        blocks: List[Dict[str, Any]] = [
+        blocks: list[LegacyBlockData] = [
             {"isGap": g, "isActive": a, "totalTokens": t} for g, a, t in blocks_tuple
         ]
         return _calculate_p90_from_blocks(blocks, self._cfg)
 
     def calculate_p90_limit(
         self,
-        blocks: Optional[List[Dict[str, Any]]] = None,
+        blocks: list[LegacyBlockData] | None = None,
         use_cache: bool = True,
-    ) -> Optional[int]:
+    ) -> int | None:
         if not blocks:
             return None
         if not use_cache:
             return _calculate_p90_from_blocks(blocks, self._cfg)
         ttl: int = self._cfg.cache_ttl_seconds
         expire_key: int = int(time.time() // ttl)
-        blocks_tuple: Tuple[Tuple[bool, bool, int], ...] = tuple(
+        blocks_tuple: tuple[tuple[bool, bool, int], ...] = tuple(
             (
-                b.get("isGap", False),
-                b.get("isActive", False),
+                bool(b.get("isGap", False)),
+                bool(b.get("isActive", False)),
                 b.get("totalTokens", 0),
             )
             for b in blocks

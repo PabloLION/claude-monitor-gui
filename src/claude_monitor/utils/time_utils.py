@@ -1,5 +1,6 @@
 """Unified time utilities module combining timezone and system time functionality."""
 
+import argparse
 import contextlib
 import locale
 import logging
@@ -8,119 +9,113 @@ import platform
 import re
 import subprocess
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Union
 
 import pytz
 from pytz import BaseTzInfo
 
-try:
-    from babel.dates import get_timezone_location
+from claude_monitor.utils.backports import (  # type: ignore[attr-defined]
+    HAS_BABEL,
+    get_timezone_location,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
+)
 
-    HAS_BABEL = True
-except ImportError:
-    HAS_BABEL = False
+# Comprehensive timezone to location mapping for fallback when babel returns None
+_TIMEZONE_TO_LOCATION: dict[str, str] = {
+    # United States
+    "America/New_York": "United States",
+    "America/Chicago": "United States",
+    "America/Denver": "United States",
+    "America/Los_Angeles": "United States",
+    "America/Phoenix": "United States",
+    "America/Anchorage": "United States",
+    "America/Honolulu": "United States",
+    "US/Eastern": "United States",
+    "US/Central": "United States",
+    "US/Mountain": "United States",
+    "US/Pacific": "United States",
+    # Canada
+    "America/Toronto": "Canada",
+    "America/Montreal": "Canada",
+    "America/Vancouver": "Canada",
+    "America/Edmonton": "Canada",
+    "America/Winnipeg": "Canada",
+    "America/Halifax": "Canada",
+    "Canada/Eastern": "Canada",
+    "Canada/Central": "Canada",
+    "Canada/Mountain": "Canada",
+    "Canada/Pacific": "Canada",
+    # Australia
+    "Australia/Sydney": "Australia",
+    "Australia/Melbourne": "Australia",
+    "Australia/Brisbane": "Australia",
+    "Australia/Perth": "Australia",
+    "Australia/Adelaide": "Australia",
+    "Australia/Darwin": "Australia",
+    "Australia/Hobart": "Australia",
+    # United Kingdom
+    "Europe/London": "United Kingdom",
+    "GMT": "United Kingdom",
+    "Europe/Belfast": "United Kingdom",
+    # Germany (24h example)
+    "Europe/Berlin": "Germany",
+    "Europe/Munich": "Germany",
+    # Other common timezones for 12h countries
+    "Pacific/Auckland": "New Zealand",
+    "Asia/Manila": "Philippines",
+    "Asia/Kolkata": "India",
+    "Africa/Cairo": "Egypt",
+    "Asia/Riyadh": "Saudi Arabia",
+    "America/Bogota": "Colombia",
+    "Asia/Karachi": "Pakistan",
+    "Asia/Kuala_Lumpur": "Malaysia",
+    "Africa/Accra": "Ghana",
+    "Africa/Nairobi": "Kenya",
+    "Africa/Lagos": "Nigeria",
+    "America/Lima": "Peru",
+    "Africa/Johannesburg": "South Africa",
+    "Asia/Colombo": "Sri Lanka",
+    "Asia/Dhaka": "Bangladesh",
+    "Asia/Amman": "Jordan",
+    "Asia/Singapore": "Singapore",
+    "Europe/Dublin": "Ireland",
+    "Europe/Malta": "Malta",
+}
 
-    def get_timezone_location(
-        timezone_name: str, locale_name: str = "en_US"
-    ) -> Optional[str]:
-        """Fallback implementation for get_timezone_location when Babel is not available."""
-        # Mapping of timezone names to their locations/countries
-        timezone_to_location: Dict[str, str] = {
-            # United States
-            "America/New_York": "United States",
-            "America/Chicago": "United States",
-            "America/Denver": "United States",
-            "America/Los_Angeles": "United States",
-            "America/Phoenix": "United States",
-            "America/Anchorage": "United States",
-            "America/Honolulu": "United States",
-            "US/Eastern": "United States",
-            "US/Central": "United States",
-            "US/Mountain": "United States",
-            "US/Pacific": "United States",
-            # Canada
-            "America/Toronto": "Canada",
-            "America/Montreal": "Canada",
-            "America/Vancouver": "Canada",
-            "America/Edmonton": "Canada",
-            "America/Winnipeg": "Canada",
-            "America/Halifax": "Canada",
-            "Canada/Eastern": "Canada",
-            "Canada/Central": "Canada",
-            "Canada/Mountain": "Canada",
-            "Canada/Pacific": "Canada",
-            # Australia
-            "Australia/Sydney": "Australia",
-            "Australia/Melbourne": "Australia",
-            "Australia/Brisbane": "Australia",
-            "Australia/Perth": "Australia",
-            "Australia/Adelaide": "Australia",
-            "Australia/Darwin": "Australia",
-            "Australia/Hobart": "Australia",
-            # United Kingdom
-            "Europe/London": "United Kingdom",
-            "GMT": "United Kingdom",
-            "Europe/Belfast": "United Kingdom",
-            # Germany (24h example)
-            "Europe/Berlin": "Germany",
-            "Europe/Munich": "Germany",
-            # Other common timezones for 12h countries
-            "Pacific/Auckland": "New Zealand",
-            "Asia/Manila": "Philippines",
-            "Asia/Kolkata": "India",
-            "Africa/Cairo": "Egypt",
-            "Asia/Riyadh": "Saudi Arabia",
-            "America/Bogota": "Colombia",
-            "Asia/Karachi": "Pakistan",
-            "Asia/Kuala_Lumpur": "Malaysia",
-            "Africa/Accra": "Ghana",
-            "Africa/Nairobi": "Kenya",
-            "Africa/Lagos": "Nigeria",
-            "America/Lima": "Peru",
-            "Africa/Johannesburg": "South Africa",
-            "Asia/Colombo": "Sri Lanka",
-            "Asia/Dhaka": "Bangladesh",
-            "Asia/Amman": "Jordan",
-            "Asia/Singapore": "Singapore",
-            "Europe/Dublin": "Ireland",
-            "Europe/Malta": "Malta",
-        }
+_COUNTRY_CODES: dict[str, str] = {
+    "United States": "US",
+    "Canada": "CA",
+    "Australia": "AU",
+    "United Kingdom": "GB",
+    "New Zealand": "NZ",
+    "Philippines": "PH",
+    "India": "IN",
+    "Egypt": "EG",
+    "Saudi Arabia": "SA",
+    "Colombia": "CO",
+    "Pakistan": "PK",
+    "Malaysia": "MY",
+    "Ghana": "GH",
+    "Kenya": "KE",
+    "Nigeria": "NG",
+    "Peru": "PE",
+    "South Africa": "ZA",
+    "Sri Lanka": "LK",
+    "Bangladesh": "BD",
+    "Jordan": "JO",
+    "Singapore": "SG",
+    "Ireland": "IE",
+    "Malta": "MT",
+}
 
-        location: Optional[str] = timezone_to_location.get(timezone_name)
-        if location:
-            # Add country codes for 12h countries to match expected test behavior
-            country_codes: Dict[str, str] = {
-                "United States": "US",
-                "Canada": "CA",
-                "Australia": "AU",
-                "United Kingdom": "GB",
-                "New Zealand": "NZ",
-                "Philippines": "PH",
-                "India": "IN",
-                "Egypt": "EG",
-                "Saudi Arabia": "SA",
-                "Colombia": "CO",
-                "Pakistan": "PK",
-                "Malaysia": "MY",
-                "Ghana": "GH",
-                "Kenya": "KE",
-                "Nigeria": "NG",
-                "Peru": "PE",
-                "South Africa": "ZA",
-                "Sri Lanka": "LK",
-                "Bangladesh": "BD",
-                "Jordan": "JO",
-                "Singapore": "SG",
-                "Ireland": "IE",
-                "Malta": "MT",
-            }
 
-            country_code: Optional[str] = country_codes.get(location)
-            if country_code:
-                return f"{location} {country_code}"
-            return location
-
-        return None
+def _get_timezone_location_fallback(timezone_name: str) -> str | None:
+    """Enhanced fallback when babel is not available or returns None."""
+    location = _TIMEZONE_TO_LOCATION.get(timezone_name)
+    if location:
+        country_code = _COUNTRY_CODES.get(location)
+        if country_code:
+            return f"{location} {country_code}"
+        return location
+    return None
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -129,7 +124,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 class TimeFormatDetector:
     """Unified time format detection using multiple strategies."""
 
-    TWELVE_HOUR_COUNTRIES: Set[str] = {
+    TWELVE_HOUR_COUNTRIES: set[str] = {
         "US",
         "CA",
         "AU",
@@ -156,7 +151,7 @@ class TimeFormatDetector:
     }
 
     @classmethod
-    def detect_from_cli(cls, args: Any) -> Optional[bool]:
+    def detect_from_cli(cls, args: argparse.Namespace) -> bool | None:
         """Detect from CLI arguments.
 
         Returns:
@@ -170,7 +165,7 @@ class TimeFormatDetector:
         return None
 
     @classmethod
-    def detect_from_timezone(cls, timezone_name: str) -> Optional[bool]:
+    def detect_from_timezone(cls, timezone_name: str) -> bool | None:
         """Detect using Babel/timezone data.
 
         Returns:
@@ -180,12 +175,17 @@ class TimeFormatDetector:
             return None
 
         try:
-            location: Optional[str] = get_timezone_location(
+            # Type: ignore needed as get_timezone_location may come from babel (untyped)
+            location: str | None = get_timezone_location(  # type: ignore[misc]
                 timezone_name, locale_name="en_US"
             )
+            # Use fallback if babel returns None
+            if location is None:
+                location = _get_timezone_location_fallback(timezone_name)
+
             if location:
                 for country_code in cls.TWELVE_HOUR_COUNTRIES:
-                    if country_code in location or location.endswith(country_code):
+                    if country_code in location or location.endswith(country_code):  # type: ignore[misc]
                         return True
             return False
         except Exception:
@@ -221,7 +221,12 @@ class TimeFormatDetector:
         if system == "Darwin":
             try:
                 result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["defaults", "read", "NSGlobalDomain", "AppleICUForce12HourTime"],
+                    [
+                        "defaults",
+                        "read",
+                        "NSGlobalDomain",
+                        "AppleICUForce12HourTime",
+                    ],
                     capture_output=True,
                     text=True,
                     check=False,
@@ -241,7 +246,10 @@ class TimeFormatDetector:
         elif system == "Linux":
             try:
                 locale_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["locale", "LC_TIME"], capture_output=True, text=True, check=True
+                    ["locale", "LC_TIME"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
                 )
                 lc_time: str = locale_result.stdout.strip().split("=")[-1].strip('"')
                 if lc_time and any(x in lc_time for x in ["en_US", "en_CA", "en_AU"]):
@@ -251,14 +259,15 @@ class TimeFormatDetector:
 
         elif system == "Windows":
             try:
-                import winreg
+                from claude_monitor.utils.backports import winreg
 
-                with winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER, r"Control Panel\International"
-                ) as key:
-                    time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]
-                    if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
-                        return "12h"
+                if winreg is not None:
+                    with winreg.OpenKey(  # type: ignore[misc]
+                        winreg.HKEY_CURRENT_USER, r"Control Panel\International"
+                    ) as key:  # type: ignore[misc]
+                        time_fmt: str = winreg.QueryValueEx(key, "sTimeFormat")[0]  # type: ignore[misc]
+                        if "h" in time_fmt and ("tt" in time_fmt or "t" in time_fmt):
+                            return "12h"
             except Exception:
                 pass
 
@@ -266,15 +275,17 @@ class TimeFormatDetector:
 
     @classmethod
     def get_preference(
-        cls, args: Any = None, timezone_name: Optional[str] = None
+        cls,
+        args: argparse.Namespace | None = None,
+        timezone_name: str | None = None,
     ) -> bool:
         """Main entry point - returns True for 12h, False for 24h."""
-        cli_pref: Optional[bool] = cls.detect_from_cli(args)
+        cli_pref: bool | None = cls.detect_from_cli(args) if args is not None else None
         if cli_pref is not None:
             return cli_pref
 
         if timezone_name:
-            tz_pref: Optional[bool] = cls.detect_from_timezone(timezone_name)
+            tz_pref: bool | None = cls.detect_from_timezone(timezone_name)
             if tz_pref is not None:
                 return tz_pref
 
@@ -287,7 +298,7 @@ class SystemTimeDetector:
     @staticmethod
     def get_timezone() -> str:
         """Detect system timezone."""
-        tz: Optional[str] = os.environ.get("TZ")
+        tz: str | None = os.environ.get("TZ")
         if tz:
             return tz
 
@@ -333,7 +344,10 @@ class SystemTimeDetector:
         elif system == "Windows":
             with contextlib.suppress(Exception):
                 tzutil_result: subprocess.CompletedProcess[str] = subprocess.run(
-                    ["tzutil", "/g"], capture_output=True, text=True, check=True
+                    ["tzutil", "/g"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
                 )
                 return tzutil_result.stdout.strip()
 
@@ -360,7 +374,8 @@ class TimezoneHandler:
             logger.warning(f"Unknown timezone '{tz_name}', using UTC")
             return pytz.UTC
 
-    def parse_timestamp(self, timestamp_str: str) -> Optional[datetime]:
+    # #TODO: remove the "None" return type.
+    def parse_timestamp(self, timestamp_str: str) -> datetime | None:
         """Parse various timestamp formats."""
         if not timestamp_str:
             return None
@@ -368,7 +383,7 @@ class TimezoneHandler:
         iso_tz_pattern: str = (
             r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})?"
         )
-        match: Optional[re.Match[str]] = re.match(iso_tz_pattern, timestamp_str)
+        match: re.Match[str] | None = re.match(iso_tz_pattern, timestamp_str)
         if match:
             try:
                 base_str: str = match.group(1)
@@ -380,12 +395,14 @@ class TimezoneHandler:
                 if tz_str == "Z":
                     return dt.replace(tzinfo=pytz.UTC)
                 if tz_str:
-                    return datetime.fromisoformat(timestamp_str)
-                return self.default_tz.localize(dt)
+                    result: datetime = datetime.fromisoformat(timestamp_str)
+                    return result
+                localized_result: datetime = self.default_tz.localize(dt)
+                return localized_result
             except Exception as e:
                 logger.debug(f"Failed to parse ISO timestamp: {e}")
 
-        formats: List[str] = [
+        formats: list[str] = [
             "%Y-%m-%d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%d/%m/%Y %H:%M:%S",
@@ -397,7 +414,8 @@ class TimezoneHandler:
         for fmt in formats:
             try:
                 parsed_dt: datetime = datetime.strptime(timestamp_str, fmt)
-                return self.default_tz.localize(parsed_dt)
+                localized_dt: datetime = self.default_tz.localize(parsed_dt)
+                return localized_dt
             except ValueError:
                 continue
 
@@ -412,7 +430,8 @@ class TimezoneHandler:
     def ensure_timezone(self, dt: datetime) -> datetime:
         """Ensure datetime has timezone info."""
         if dt.tzinfo is None:
-            return self.default_tz.localize(dt)
+            localized_dt: datetime = self.default_tz.localize(dt)
+            return localized_dt
         return dt
 
     def validate_timezone(self, tz_name: str) -> bool:
@@ -438,18 +457,21 @@ class TimezoneHandler:
         """Convert to UTC (assumes naive datetime is in default tz)."""
         return self.ensure_utc(dt)
 
-    def to_timezone(self, dt: datetime, tz_name: Optional[str] = None) -> datetime:
+    def to_timezone(self, dt: datetime, tz_name: str | None = None) -> datetime:
         """Convert to timezone (defaults to default_tz)."""
         if tz_name is None:
-            tz_name = self.default_tz.zone
+            # Use string representation instead of accessing .zone attribute
+            tz_name = str(self.default_tz)
         return self.convert_to_timezone(dt, tz_name)
 
-    def format_datetime(self, dt: datetime, use_12_hour: Optional[bool] = None) -> str:
+    def format_datetime(self, dt: datetime, use_12_hour: bool | None = None) -> str:
         """Format datetime with timezone info."""
         if use_12_hour is None:
-            use_12_hour = TimeFormatDetector.get_preference(
-                timezone_name=dt.tzinfo.zone if dt.tzinfo else None
-            )
+            # Handle timezone name safely
+            tz_name = None
+            if dt.tzinfo and hasattr(dt.tzinfo, "zone"):
+                tz_name = getattr(dt.tzinfo, "zone", None)
+            use_12_hour = TimeFormatDetector.get_preference(timezone_name=tz_name)
 
         dt = self.ensure_timezone(dt)
 
@@ -458,7 +480,7 @@ class TimezoneHandler:
         return dt.strftime(fmt)
 
 
-def get_time_format_preference(args: Any = None) -> bool:
+def get_time_format_preference(args: argparse.Namespace | None = None) -> bool:
     """Get time format preference - returns True for 12h, False for 24h."""
     return TimeFormatDetector.get_preference(args)
 
@@ -473,7 +495,7 @@ def get_system_time_format() -> str:
     return SystemTimeDetector.get_time_format()
 
 
-def format_time(minutes: Union[int, float]) -> str:
+def format_time(minutes: int | float) -> str:
     """Format minutes into human-readable time (e.g., '3h 45m')."""
     if minutes < 60:
         return f"{int(minutes)}m"
@@ -503,7 +525,7 @@ def percentage(part: float, whole: float, decimal_places: int = 1) -> float:
 
 def format_display_time(
     dt_obj: datetime,
-    use_12h_format: Optional[bool] = None,
+    use_12h_format: bool | None = None,
     include_seconds: bool = True,
 ) -> str:
     """Central time formatting with 12h/24h support."""

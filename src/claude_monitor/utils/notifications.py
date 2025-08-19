@@ -3,7 +3,8 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+
+from claude_monitor.types import NotificationValidation
 
 
 class NotificationManager:
@@ -11,17 +12,15 @@ class NotificationManager:
 
     def __init__(self, config_dir: Path) -> None:
         self.notification_file: Path = config_dir / "notification_states.json"
-        self.states: Dict[str, Dict[str, Union[bool, Optional[datetime]]]] = (
-            self._load_states()
-        )
+        self.states: dict[str, dict[str, bool | datetime | None]] = self._load_states()
 
-        self.default_states: Dict[str, Dict[str, Union[bool, Optional[datetime]]]] = {
+        self.default_states: dict[str, dict[str, bool | datetime | None]] = {
             "switch_to_custom": {"triggered": False, "timestamp": None},
             "exceed_max_limit": {"triggered": False, "timestamp": None},
             "tokens_will_run_out": {"triggered": False, "timestamp": None},
         }
 
-    def _load_states(self) -> Dict[str, Dict[str, Union[bool, Optional[datetime]]]]:
+    def _load_states(self) -> dict[str, dict[str, bool | datetime | None]]:
         """Load notification states from file."""
         if not self.notification_file.exists():
             return {
@@ -32,19 +31,20 @@ class NotificationManager:
 
         try:
             with open(self.notification_file) as f:
-                states: Dict[str, Dict[str, Any]] = json.load(f)
+                states: dict[str, NotificationValidation] = json.load(f)
                 # Convert timestamp strings back to datetime objects
-                parsed_states: Dict[
-                    str, Dict[str, Union[bool, Optional[datetime]]]
-                ] = {}
+                parsed_states: dict[str, dict[str, bool | datetime | None]] = dict[
+                    str, dict[str, bool | datetime | None]
+                ]()
                 for key, state in states.items():
-                    parsed_state: Dict[str, Union[bool, Optional[datetime]]] = {
+                    parsed_state: dict[str, bool | datetime | None] = {
                         "triggered": bool(state.get("triggered", False)),
                         "timestamp": None,
                     }
-                    if state.get("timestamp"):
+                    timestamp_value = state.get("timestamp")
+                    if timestamp_value and isinstance(timestamp_value, str):
                         parsed_state["timestamp"] = datetime.fromisoformat(
-                            state["timestamp"]
+                            timestamp_value
                         )
                     parsed_states[key] = parsed_state
                 return parsed_states
@@ -54,9 +54,9 @@ class NotificationManager:
     def _save_states(self) -> None:
         """Save notification states to file."""
         try:
-            states_to_save: Dict[str, Dict[str, Union[bool, Optional[str]]]] = {}
+            states_to_save = dict[str, dict[str, bool | str | None]]()
             for key, state in self.states.items():
-                timestamp_str: Optional[str] = None
+                timestamp_str: str | None = None
                 timestamp_value = state["timestamp"]
                 if isinstance(timestamp_value, datetime):
                     timestamp_str = timestamp_value.isoformat()
@@ -75,7 +75,7 @@ class NotificationManager:
                 f"Failed to save notification states to {self.notification_file}: {e}"
             )
 
-    def should_notify(self, key: str, cooldown_hours: Union[int, float] = 24) -> bool:
+    def should_notify(self, key: str, cooldown_hours: int | float = 24) -> bool:
         """Check if notification should be shown."""
         if key not in self.states:
             self.states[key] = {"triggered": False, "timestamp": None}
@@ -103,11 +103,9 @@ class NotificationManager:
         self.states[key] = {"triggered": True, "timestamp": now}
         self._save_states()
 
-    def get_notification_state(
-        self, key: str
-    ) -> Dict[str, Union[bool, Optional[datetime]]]:
+    def get_notification_state(self, key: str) -> dict[str, bool | datetime | None]:
         """Get current notification state."""
-        default_state: Dict[str, Union[bool, Optional[datetime]]] = {
+        default_state: dict[str, bool | datetime | None] = {
             "triggered": False,
             "timestamp": None,
         }

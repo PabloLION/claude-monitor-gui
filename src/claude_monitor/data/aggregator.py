@@ -6,18 +6,20 @@ by day and month, similar to ccusage's functionality.
 
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import cast
 
 from claude_monitor.core.models import SessionBlock, UsageEntry, normalize_model_name
+from claude_monitor.types import CompleteAggregatedUsage, UsageStatistics, UsageTotals
 from claude_monitor.utils.time_utils import TimezoneHandler
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AggregatedStats:
+class AggregatedStatsData:
     """Statistics for aggregated usage data."""
 
     input_tokens: int = 0
@@ -36,16 +38,21 @@ class AggregatedStats:
         self.cost += entry.cost_usd
         self.count += 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> UsageStatistics:
         """Convert to dictionary format."""
-        return {
-            "input_tokens": self.input_tokens,
-            "output_tokens": self.output_tokens,
-            "cache_creation_tokens": self.cache_creation_tokens,
-            "cache_read_tokens": self.cache_read_tokens,
-            "cost": self.cost,
-            "count": self.count,
-        }
+        from typing import cast
+
+        return cast(
+            UsageStatistics,
+            {
+                "input_tokens": self.input_tokens,
+                "output_tokens": self.output_tokens,
+                "cache_creation_tokens": self.cache_creation_tokens,
+                "cache_read_tokens": self.cache_read_tokens,
+                "cost": self.cost,
+                "count": self.count,
+            },
+        )
 
 
 @dataclass
@@ -53,10 +60,10 @@ class AggregatedPeriod:
     """Aggregated data for a time period (day or month)."""
 
     period_key: str
-    stats: AggregatedStats = field(default_factory=AggregatedStats)
-    models_used: set = field(default_factory=set)
-    model_breakdowns: Dict[str, AggregatedStats] = field(
-        default_factory=lambda: defaultdict(AggregatedStats)
+    stats: AggregatedStatsData = field(default_factory=AggregatedStatsData)
+    models_used: set[str] = field(default_factory=set[str])
+    model_breakdowns: dict[str, AggregatedStatsData] = field(
+        default_factory=lambda: defaultdict(AggregatedStatsData)
     )
 
     def add_entry(self, entry: UsageEntry) -> None:
@@ -71,10 +78,9 @@ class AggregatedPeriod:
         # Add to model-specific stats
         self.model_breakdowns[model].add_entry(entry)
 
-    def to_dict(self, period_type: str) -> Dict[str, Any]:
+    def to_dict(self, period_type: str) -> CompleteAggregatedUsage:
         """Convert to dictionary format for display."""
-        result = {
-            period_type: self.period_key,
+        result: CompleteAggregatedUsage = {
             "input_tokens": self.stats.input_tokens,
             "output_tokens": self.stats.output_tokens,
             "cache_creation_tokens": self.stats.cache_creation_tokens,
@@ -82,10 +88,18 @@ class AggregatedPeriod:
             "total_cost": self.stats.cost,
             "models_used": sorted(list(self.models_used)),
             "model_breakdowns": {
-                model: stats.to_dict() for model, stats in self.model_breakdowns.items()
+                model: cast(dict[str, int | float], stats.to_dict())
+                for model, stats in self.model_breakdowns.items()
             },
             "entries_count": self.stats.count,
         }
+
+        # Add the period-specific key
+        if period_type == "date":
+            result["date"] = self.period_key
+        elif period_type == "month":
+            result["month"] = self.period_key
+
         return result
 
 
@@ -93,7 +107,10 @@ class UsageAggregator:
     """Aggregates usage data for daily and monthly reports."""
 
     def __init__(
-        self, data_path: str, aggregation_mode: str = "daily", timezone: str = "UTC"
+        self,
+        data_path: str,
+        aggregation_mode: str = "daily",
+        timezone: str = "UTC",
     ):
         """Initialize the aggregator.
 
@@ -109,12 +126,12 @@ class UsageAggregator:
 
     def _aggregate_by_period(
         self,
-        entries: List[UsageEntry],
+        entries: list[UsageEntry],
         period_key_func: Callable[[datetime], str],
         period_type: str,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[CompleteAggregatedUsage]:
         """Generic aggregation by time period.
 
         Args:
@@ -127,7 +144,7 @@ class UsageAggregator:
         Returns:
             List of aggregated data dictionaries
         """
-        period_data: Dict[str, AggregatedPeriod] = {}
+        period_data = dict[str, AggregatedPeriod]()
 
         for entry in entries:
             # Apply date filters
@@ -147,7 +164,7 @@ class UsageAggregator:
             period_data[period_key].add_entry(entry)
 
         # Convert to list and sort
-        result = []
+        result = list[CompleteAggregatedUsage]()
         for period_key in sorted(period_data.keys()):
             period = period_data[period_key]
             result.append(period.to_dict(period_type))
@@ -156,10 +173,10 @@ class UsageAggregator:
 
     def aggregate_daily(
         self,
-        entries: List[UsageEntry],
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        entries: list[UsageEntry],
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[CompleteAggregatedUsage]:
         """Aggregate usage data by day.
 
         Args:
@@ -180,10 +197,10 @@ class UsageAggregator:
 
     def aggregate_monthly(
         self,
-        entries: List[UsageEntry],
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        entries: list[UsageEntry],
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[CompleteAggregatedUsage]:
         """Aggregate usage data by month.
 
         Args:
@@ -203,8 +220,8 @@ class UsageAggregator:
         )
 
     def aggregate_from_blocks(
-        self, blocks: List[SessionBlock], view_type: str = "daily"
-    ) -> List[Dict[str, Any]]:
+        self, blocks: list[SessionBlock], view_type: str = "daily"
+    ) -> list[CompleteAggregatedUsage]:
         """Aggregate data from session blocks.
 
         Args:
@@ -221,7 +238,7 @@ class UsageAggregator:
             )
 
         # Extract all entries from blocks
-        all_entries = []
+        all_entries = list[UsageEntry]()
         for block in blocks:
             if not block.is_gap:
                 all_entries.extend(block.entries)
@@ -232,7 +249,9 @@ class UsageAggregator:
         else:
             return self.aggregate_monthly(all_entries)
 
-    def calculate_totals(self, aggregated_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def calculate_totals(
+        self, aggregated_data: list[CompleteAggregatedUsage]
+    ) -> UsageTotals:
         """Calculate totals from aggregated data.
 
         Args:
@@ -241,15 +260,15 @@ class UsageAggregator:
         Returns:
             Dictionary with total statistics
         """
-        total_stats = AggregatedStats()
+        total_stats = AggregatedStatsData()
 
         for data in aggregated_data:
-            total_stats.input_tokens += data.get("input_tokens", 0)
-            total_stats.output_tokens += data.get("output_tokens", 0)
-            total_stats.cache_creation_tokens += data.get("cache_creation_tokens", 0)
-            total_stats.cache_read_tokens += data.get("cache_read_tokens", 0)
-            total_stats.cost += data.get("total_cost", 0.0)
-            total_stats.count += data.get("entries_count", 0)
+            total_stats.input_tokens += data["input_tokens"]
+            total_stats.output_tokens += data["output_tokens"]
+            total_stats.cache_creation_tokens += data["cache_creation_tokens"]
+            total_stats.cache_read_tokens += data["cache_read_tokens"]
+            total_stats.cost += data["total_cost"]
+            total_stats.count += data["entries_count"]
 
         return {
             "input_tokens": total_stats.input_tokens,
@@ -266,7 +285,7 @@ class UsageAggregator:
             "entries_count": total_stats.count,
         }
 
-    def aggregate(self) -> List[Dict[str, Any]]:
+    def aggregate(self) -> list[CompleteAggregatedUsage]:
         """Main aggregation method that reads data and returns aggregated results.
 
         Returns:

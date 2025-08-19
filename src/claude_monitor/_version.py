@@ -7,7 +7,8 @@ as the single source of truth, avoiding version duplication across the codebase.
 import importlib.metadata
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+
+from claude_monitor.utils.backports import HAS_TOMLLIB, tomllib
 
 
 def get_version() -> str:
@@ -34,16 +35,10 @@ def _get_version_from_pyproject() -> str:
     Returns:
         Version string or "unknown" if cannot be determined
     """
-    try:
-        # Python 3.11+
-        import tomllib
-    except ImportError:
-        try:
-            # Python < 3.11 fallback
-            import tomli as tomllib  # type: ignore[import-untyped]
-        except ImportError:
-            # No TOML library available
-            return "unknown"
+
+    if not HAS_TOMLLIB:
+        # No TOML library available
+        return "unknown"
 
     try:
         # Find pyproject.toml - go up from this file's directory
@@ -52,8 +47,11 @@ def _get_version_from_pyproject() -> str:
             pyproject_path = current_dir / "pyproject.toml"
             if pyproject_path.exists():
                 with open(pyproject_path, "rb") as f:
-                    data: Dict[str, Any] = tomllib.load(f)
-                    project_data: Dict[str, Any] = data.get("project", {})
+                    data: dict[str, str | dict[str, str]] = tomllib.load(f)
+                    project_raw = data.get("project", {})
+                    if not isinstance(project_raw, dict):
+                        return "unknown"
+                    project_data: dict[str, str] = project_raw
                     version: str = project_data.get("version", "unknown")
                     return version
             current_dir = current_dir.parent
@@ -63,7 +61,7 @@ def _get_version_from_pyproject() -> str:
         return "unknown"
 
 
-def get_package_info() -> Dict[str, Optional[str]]:
+def get_package_info() -> dict[str, str | None]:
     """Get comprehensive package information.
 
     Returns:
@@ -92,7 +90,7 @@ def get_package_info() -> Dict[str, Optional[str]]:
         }
 
 
-def get_version_info() -> Dict[str, Any]:
+def get_version_info() -> dict[str, str | dict[str, int] | dict[str, str | None]]:
     """Get detailed version and system information.
 
     Returns:
@@ -112,7 +110,7 @@ def get_version_info() -> Dict[str, Any]:
     }
 
 
-def find_project_root(start_path: Optional[Union[str, Path]] = None) -> Optional[Path]:
+def find_project_root(start_path: str | Path | None = None) -> Path | None:
     """Find the project root directory containing pyproject.toml.
 
     Args:

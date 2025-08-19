@@ -5,13 +5,18 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Literal
 
 import pytz
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 from claude_monitor import __version__
+from claude_monitor.types import UserPreferences
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +24,7 @@ logger = logging.getLogger(__name__)
 class LastUsedParams:
     """Manages last used parameters persistence (moved from last_used.py)."""
 
-    def __init__(self, config_dir: Optional[Path] = None) -> None:
+    def __init__(self, config_dir: Path | None = None) -> None:
         """Initialize with config directory."""
         self.config_dir = config_dir or Path.home() / ".claude-monitor"
         self.params_file = self.config_dir / "last_used.json"
@@ -52,14 +57,14 @@ class LastUsedParams:
         except Exception as e:
             logger.warning(f"Failed to save last used params: {e}")
 
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> UserPreferences:
         """Load last used parameters."""
         if not self.params_file.exists():
-            return {}
+            return UserPreferences()
 
         try:
             with open(self.params_file) as f:
-                params = json.load(f)
+                params: UserPreferences = json.load(f)
 
             params.pop("timestamp", None)
 
@@ -68,7 +73,7 @@ class LastUsedParams:
 
         except Exception as e:
             logger.warning(f"Failed to load last used params: {e}")
-            return {}
+            return UserPreferences()
 
     def clear(self) -> None:
         """Clear last used parameters."""
@@ -138,7 +143,7 @@ class Settings(BaseSettings):
         description="Display theme (light, dark, classic, auto)",
     )
 
-    custom_limit_tokens: Optional[int] = Field(
+    custom_limit_tokens: int | None = Field(
         default=None, gt=0, description="Token limit for custom plan"
     )
 
@@ -153,13 +158,16 @@ class Settings(BaseSettings):
         description="Display refresh rate per second (0.1-20 Hz). Higher values use more CPU",
     )
 
-    reset_hour: Optional[int] = Field(
-        default=None, ge=0, le=23, description="Reset hour for daily limits (0-23)"
+    reset_hour: int | None = Field(
+        default=None,
+        ge=0,
+        le=23,
+        description="Reset hour for daily limits (0-23)",
     )
 
     log_level: str = Field(default="INFO", description="Logging level")
 
-    log_file: Optional[Path] = Field(default=None, description="Log file path")
+    log_file: Path | None = Field(default=None, description="Log file path")
 
     debug: bool = Field(
         default=False,
@@ -170,9 +178,21 @@ class Settings(BaseSettings):
 
     clear: bool = Field(default=False, description="Clear saved configuration")
 
+    def __init__(self, _cli_parse_args: list[str] | None = None, **data: Any) -> None:
+        """Initialize Settings with optional CLI arguments parsing.
+
+        Args:
+            _cli_parse_args: List of CLI arguments to parse. If None, no CLI parsing.
+            **data: Additional field values to set.
+        """
+        # Handle the special _cli_parse_args parameter for Pydantic
+        if _cli_parse_args is not None:
+            data["_cli_parse_args"] = _cli_parse_args
+        super().__init__(**data)
+
     @field_validator("plan", mode="before")
     @classmethod
-    def validate_plan(cls, v: Any) -> str:
+    def validate_plan(cls, v: str | None) -> str:
         """Validate and normalize plan value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -182,11 +202,11 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid plan: {v}. Must be one of: {', '.join(valid_plans)}"
             )
-        return v
+        return "custom"  # Default plan if None
 
     @field_validator("view", mode="before")
     @classmethod
-    def validate_view(cls, v: Any) -> str:
+    def validate_view(cls, v: str | None) -> str:
         """Validate and normalize view value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -196,11 +216,11 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid view: {v}. Must be one of: {', '.join(valid_views)}"
             )
-        return v
+        return "realtime"  # Default view if None
 
     @field_validator("theme", mode="before")
     @classmethod
-    def validate_theme(cls, v: Any) -> str:
+    def validate_theme(cls, v: str | None) -> str:
         """Validate and normalize theme value."""
         if isinstance(v, str):
             v_lower = v.lower()
@@ -210,7 +230,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"Invalid theme: {v}. Must be one of: {', '.join(valid_themes)}"
             )
-        return v
+        return "auto"  # Default theme if None
 
     @field_validator("timezone")
     @classmethod
@@ -243,12 +263,12 @@ class Settings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Any,
-        init_settings: Any,
-        env_settings: Any,
-        dotenv_settings: Any,
-        file_secret_settings: Any,
-    ) -> Tuple[Any, ...]:
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Custom sources - only init and last used."""
         _ = (
             settings_cls,
@@ -259,7 +279,7 @@ class Settings(BaseSettings):
         return (init_settings,)
 
     @classmethod
-    def load_with_last_used(cls, argv: Optional[List[str]] = None) -> "Settings":
+    def load_with_last_used(cls, argv: list[str] | None = None) -> "Settings":
         """Load settings with last used params support (default behavior)."""
         if argv and "--version" in argv:
             print(f"claude-monitor {__version__}")
@@ -268,6 +288,7 @@ class Settings(BaseSettings):
             sys.exit(0)
 
         clear_config = argv and "--clear" in argv
+        cli_provided_fields: set[str] = set()
 
         if clear_config:
             last_used = LastUsedParams()
@@ -278,10 +299,8 @@ class Settings(BaseSettings):
             last_params = last_used.load()
 
             settings = cls(_cli_parse_args=argv)
-
-            cli_provided_fields = set()
             if argv:
-                for _i, arg in enumerate(argv):
+                for arg in argv:
                     if arg.startswith("--"):
                         field_name = arg[2:].replace("-", "_")
                         if field_name in cls.model_fields:

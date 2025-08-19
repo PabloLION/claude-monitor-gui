@@ -1,6 +1,6 @@
 """Tests for error handling module."""
 
-from typing import Dict
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -34,7 +34,7 @@ class TestReportError:
             return e
 
     @pytest.fixture
-    def sample_context_data(self) -> Dict[str, str]:
+    def sample_context_data(self) -> dict[str, str | int | float | None]:
         """Sample context data for testing."""
         return {
             "user_id": "12345",
@@ -43,7 +43,7 @@ class TestReportError:
         }
 
     @pytest.fixture
-    def sample_tags(self) -> Dict[str, str]:
+    def sample_tags(self) -> dict[str, str]:
         """Sample tags for testing."""
         return {"environment": "test", "version": "1.0.0"}
 
@@ -66,8 +66,8 @@ class TestReportError:
         self,
         mock_get_logger: Mock,
         sample_exception: ValueError,
-        sample_context_data: Dict[str, str],
-        sample_tags: Dict[str, str],
+        sample_context_data: dict[str, str],
+        sample_tags: dict[str, str],
     ) -> None:
         """Test error reporting with full context."""
         mock_logger = Mock()
@@ -77,7 +77,7 @@ class TestReportError:
             exception=sample_exception,
             component="test_component",
             context_name="test_context",
-            context_data=sample_context_data,
+            context_data=cast(dict[str, str | int | float | None], sample_context_data),  # Cast for test compatibility
             tags=sample_tags,
             level=ErrorLevel.ERROR,
         )
@@ -131,7 +131,7 @@ class TestReportError:
         self,
         mock_get_logger: Mock,
         sample_exception: ValueError,
-        sample_context_data: Dict[str, str],
+        sample_context_data: dict[str, str],
     ) -> None:
         """Test error reporting with context data."""
         mock_logger = Mock()
@@ -141,7 +141,7 @@ class TestReportError:
             exception=sample_exception,
             component="test_component",
             context_name="test_context",
-            context_data=sample_context_data,
+            context_data=cast(dict[str, str | int | float | None], sample_context_data),  # Cast for test compatibility
         )
 
         # Verify logger was created and used
@@ -173,7 +173,7 @@ class TestReportError:
             mock_logger = Mock()
             mock_get_logger.return_value = mock_logger
 
-            report_error(exception=None, component="test_component")
+            report_error(exception=None, component="test_component")  # type: ignore[arg-type]
 
             # Should still log something
             mock_logger.error.assert_called()
@@ -307,7 +307,7 @@ class TestErrorHandlingEdgeCases:
             exception=unicode_exception,
             component="test_component",
             context_name="unicode_test",
-            context_data=unicode_context,
+            context_data=cast(dict[str, str | int | float | None], unicode_context),  # Cast for test compatibility
         )
 
         # Should handle unicode data properly

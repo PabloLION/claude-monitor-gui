@@ -1,24 +1,37 @@
 """Tests for data aggregator module."""
 
 from datetime import datetime, timezone
-from typing import List
+from pathlib import Path
 
 import pytest
 
 from claude_monitor.core.models import UsageEntry
 from claude_monitor.data.aggregator import (
     AggregatedPeriod,
-    AggregatedStats,
+    AggregatedStatsData,
     UsageAggregator,
 )
+from claude_monitor.types import CompleteAggregatedUsage
+
+
+def get_daily_result_date(result: CompleteAggregatedUsage) -> str:
+    """Get date from daily aggregation result, which should always have date set."""
+    assert "date" in result, "Daily aggregation result should have date field"
+    return result["date"]  # type: ignore[return-value,no-any-return]  # Daily aggregation always sets date
+
+
+def get_monthly_result_month(result: CompleteAggregatedUsage) -> str:
+    """Get month from monthly aggregation result, which should always have month set."""
+    assert "month" in result, "Monthly aggregation result should have month field"
+    return result["month"]  # type: ignore[return-value,no-any-return]  # Monthly aggregation always sets month
 
 
 class TestAggregatedStats:
-    """Test cases for AggregatedStats dataclass."""
+    """Test cases for AggregatedStatsData dataclass."""
 
     def test_init_default_values(self) -> None:
-        """Test default initialization of AggregatedStats."""
-        stats = AggregatedStats()
+        """Test default initialization of AggregatedStatsData."""
+        stats = AggregatedStatsData()
         assert stats.input_tokens == 0
         assert stats.output_tokens == 0
         assert stats.cache_creation_tokens == 0
@@ -28,7 +41,7 @@ class TestAggregatedStats:
 
     def test_add_entry_single(self, sample_usage_entry: UsageEntry) -> None:
         """Test adding a single entry to stats."""
-        stats = AggregatedStats()
+        stats = AggregatedStatsData()
         stats.add_entry(sample_usage_entry)
 
         assert stats.input_tokens == 100
@@ -40,7 +53,7 @@ class TestAggregatedStats:
 
     def test_add_entry_multiple(self) -> None:
         """Test adding multiple entries to stats."""
-        stats = AggregatedStats()
+        stats = AggregatedStatsData()
 
         # Create multiple entries
         entry1 = UsageEntry(
@@ -78,8 +91,8 @@ class TestAggregatedStats:
         assert stats.count == 2
 
     def test_to_dict(self) -> None:
-        """Test converting AggregatedStats to dictionary."""
-        stats = AggregatedStats(
+        """Test converting AggregatedStatsData to dictionary."""
+        stats = AggregatedStatsData(
             input_tokens=1000,
             output_tokens=500,
             cache_creation_tokens=100,
@@ -108,7 +121,7 @@ class TestAggregatedPeriod:
         period = AggregatedPeriod(period_key="2024-01-01")
 
         assert period.period_key == "2024-01-01"
-        assert isinstance(period.stats, AggregatedStats)
+        assert isinstance(period.stats, AggregatedStatsData)
         assert period.stats.count == 0
         assert len(period.models_used) == 0
         assert len(period.model_breakdowns) == 0
@@ -207,7 +220,7 @@ class TestAggregatedPeriod:
             cache_creation_tokens=0,
             cache_read_tokens=0,
             cost_usd=0.001,
-            model=None,
+            model="unknown",
             message_id="msg_1",
             request_id="req_1",
         )
@@ -220,7 +233,7 @@ class TestAggregatedPeriod:
     def test_to_dict_daily(self) -> None:
         """Test converting AggregatedPeriod to dictionary for daily view."""
         period = AggregatedPeriod(period_key="2024-01-01")
-        period.stats = AggregatedStats(
+        period.stats = AggregatedStatsData(
             input_tokens=1000,
             output_tokens=500,
             cache_creation_tokens=100,
@@ -229,7 +242,7 @@ class TestAggregatedPeriod:
             count=10,
         )
         period.models_used = {"claude-3-haiku", "claude-3-sonnet"}
-        period.model_breakdowns["claude-3-haiku"] = AggregatedStats(
+        period.model_breakdowns["claude-3-haiku"] = AggregatedStatsData(
             input_tokens=600,
             output_tokens=300,
             cache_creation_tokens=60,
@@ -237,7 +250,7 @@ class TestAggregatedPeriod:
             cost=0.03,
             count=6,
         )
-        period.model_breakdowns["claude-3-sonnet"] = AggregatedStats(
+        period.model_breakdowns["claude-3-sonnet"] = AggregatedStatsData(
             input_tokens=400,
             output_tokens=200,
             cache_creation_tokens=40,
@@ -248,7 +261,7 @@ class TestAggregatedPeriod:
 
         result = period.to_dict("date")
 
-        assert result["date"] == "2024-01-01"
+        assert get_daily_result_date(result) == "2024-01-01"
         assert result["input_tokens"] == 1000
         assert result["output_tokens"] == 500
         assert result["cache_creation_tokens"] == 100
@@ -262,7 +275,7 @@ class TestAggregatedPeriod:
     def test_to_dict_monthly(self) -> None:
         """Test converting AggregatedPeriod to dictionary for monthly view."""
         period = AggregatedPeriod(period_key="2024-01")
-        period.stats = AggregatedStats(
+        period.stats = AggregatedStatsData(
             input_tokens=10000,
             output_tokens=5000,
             cache_creation_tokens=1000,
@@ -274,7 +287,7 @@ class TestAggregatedPeriod:
 
         result = period.to_dict("month")
 
-        assert result["month"] == "2024-01"
+        assert get_monthly_result_month(result) == "2024-01"
         assert result["input_tokens"] == 10000
         assert result["total_cost"] == 0.5
 
@@ -283,14 +296,14 @@ class TestUsageAggregator:
     """Test cases for UsageAggregator class."""
 
     @pytest.fixture
-    def aggregator(self, tmp_path) -> UsageAggregator:
+    def aggregator(self, tmp_path: Path) -> UsageAggregator:
         """Create a UsageAggregator instance."""
         return UsageAggregator(data_path=str(tmp_path))
 
     @pytest.fixture
-    def sample_entries(self) -> List[UsageEntry]:
+    def sample_entries(self) -> list[UsageEntry]:
         """Create sample usage entries spanning multiple days and months."""
-        entries = []
+        entries = list[UsageEntry]()
 
         # January 2024 entries
         for day in [1, 1, 2, 2, 15, 15, 31]:
@@ -326,7 +339,7 @@ class TestUsageAggregator:
         return entries
 
     def test_aggregate_daily_basic(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test basic daily aggregation."""
         result = aggregator.aggregate_daily(sample_entries)
@@ -336,7 +349,7 @@ class TestUsageAggregator:
 
         # Check first day (Jan 1 - 4 entries: 2 at 10AM, 2 at 2PM)
         jan1 = result[0]
-        assert jan1["date"] == "2024-01-01"
+        assert get_daily_result_date(jan1) == "2024-01-01"
         assert jan1["input_tokens"] == 400  # 4 entries * 100
         assert jan1["output_tokens"] == 200  # 4 entries * 50
         assert jan1["total_cost"] == 0.004  # 4 entries * 0.001
@@ -344,7 +357,7 @@ class TestUsageAggregator:
         assert set(jan1["models_used"]) == {"claude-3-haiku", "claude-3-sonnet"}
 
     def test_aggregate_daily_with_date_filter(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test daily aggregation with date filters."""
         start_date = datetime(2024, 1, 15, tzinfo=timezone.utc)
@@ -356,11 +369,11 @@ class TestUsageAggregator:
 
         # Should have Jan 15 and Jan 31 (entries on those days are within the filter)
         assert len(result) == 2
-        assert result[0]["date"] == "2024-01-15"
-        assert result[1]["date"] == "2024-01-31"
+        assert get_daily_result_date(result[0]) == "2024-01-15"
+        assert get_daily_result_date(result[1]) == "2024-01-31"
 
     def test_aggregate_monthly_basic(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test basic monthly aggregation."""
         result = aggregator.aggregate_monthly(sample_entries)
@@ -370,7 +383,7 @@ class TestUsageAggregator:
 
         # Check January
         jan = result[0]
-        assert jan["month"] == "2024-01"
+        assert get_monthly_result_month(jan) == "2024-01"
         assert jan["input_tokens"] == 1400  # 14 entries * 100
         assert jan["output_tokens"] == 700  # 14 entries * 50
         assert (
@@ -381,7 +394,7 @@ class TestUsageAggregator:
 
         # Check February
         feb = result[1]
-        assert feb["month"] == "2024-02"
+        assert get_monthly_result_month(feb) == "2024-02"
         assert feb["input_tokens"] == 600  # 3 entries * 200
         assert feb["output_tokens"] == 300  # 3 entries * 100
         assert feb["total_cost"] == 0.006  # 3 entries * 0.002
@@ -389,7 +402,7 @@ class TestUsageAggregator:
         assert feb["models_used"] == ["claude-3-opus"]
 
     def test_aggregate_monthly_with_date_filter(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test monthly aggregation with date filters."""
         start_date = datetime(2024, 2, 1, tzinfo=timezone.utc)
@@ -398,10 +411,10 @@ class TestUsageAggregator:
 
         # Should only have February
         assert len(result) == 1
-        assert result[0]["month"] == "2024-02"
+        assert get_monthly_result_month(result[0]) == "2024-02"
 
     def test_aggregate_from_blocks_daily(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test aggregating from session blocks for daily view."""
         # Create mock session blocks
@@ -436,10 +449,10 @@ class TestUsageAggregator:
         result = aggregator.aggregate_from_blocks(blocks, "daily")
 
         assert len(result) >= 2  # At least 2 days of data
-        assert result[0]["date"] == "2024-01-01"
+        assert get_daily_result_date(result[0]) == "2024-01-01"
 
     def test_aggregate_from_blocks_monthly(
-        self, aggregator: UsageAggregator, sample_entries: List[UsageEntry]
+        self, aggregator: UsageAggregator, sample_entries: list[UsageEntry]
     ) -> None:
         """Test aggregating from session blocks for monthly view."""
         from claude_monitor.core.models import SessionBlock
@@ -455,8 +468,8 @@ class TestUsageAggregator:
         result = aggregator.aggregate_from_blocks([block], "monthly")
 
         assert len(result) == 2  # Jan and Feb
-        assert result[0]["month"] == "2024-01"
-        assert result[1]["month"] == "2024-02"
+        assert get_monthly_result_month(result[0]) == "2024-01"
+        assert get_monthly_result_month(result[1]) == "2024-02"
 
     def test_aggregate_from_blocks_invalid_view_type(
         self, aggregator: UsageAggregator
@@ -489,25 +502,31 @@ class TestUsageAggregator:
 
     def test_calculate_totals_with_data(self, aggregator: UsageAggregator) -> None:
         """Test calculating totals with aggregated data."""
-        aggregated_data = [
-            {
-                "date": "2024-01-01",
-                "input_tokens": 1000,
-                "output_tokens": 500,
-                "cache_creation_tokens": 100,
-                "cache_read_tokens": 50,
-                "total_cost": 0.05,
-                "entries_count": 10,
-            },
-            {
-                "date": "2024-01-02",
-                "input_tokens": 2000,
-                "output_tokens": 1000,
-                "cache_creation_tokens": 200,
-                "cache_read_tokens": 100,
-                "total_cost": 0.10,
-                "entries_count": 20,
-            },
+        from claude_monitor.types import CompleteAggregatedUsage
+
+        aggregated_data: list[CompleteAggregatedUsage] = [
+            CompleteAggregatedUsage(
+                date="2024-01-01",
+                input_tokens=1000,
+                output_tokens=500,
+                cache_creation_tokens=100,
+                cache_read_tokens=50,
+                total_cost=0.05,
+                entries_count=10,
+                models_used=[],
+                model_breakdowns={},
+            ),
+            CompleteAggregatedUsage(
+                date="2024-01-02",
+                input_tokens=2000,
+                output_tokens=1000,
+                cache_creation_tokens=200,
+                cache_read_tokens=100,
+                total_cost=0.10,
+                entries_count=20,
+                models_used=[],
+                model_breakdowns={},
+            ),
         ]
 
         result = aggregator.calculate_totals(aggregated_data)
@@ -574,9 +593,9 @@ class TestUsageAggregator:
         # Test daily sorting
         daily_result = aggregator.aggregate_daily(entries)
         assert len(daily_result) == 3
-        assert daily_result[0]["date"] == "2024-01-01"
-        assert daily_result[1]["date"] == "2024-01-10"
-        assert daily_result[2]["date"] == "2024-01-15"
+        assert get_daily_result_date(daily_result[0]) == "2024-01-01"
+        assert get_daily_result_date(daily_result[1]) == "2024-01-10"
+        assert get_daily_result_date(daily_result[2]) == "2024-01-15"
 
         # Test monthly sorting
         monthly_entries = [
@@ -617,6 +636,6 @@ class TestUsageAggregator:
 
         monthly_result = aggregator.aggregate_monthly(monthly_entries)
         assert len(monthly_result) == 3
-        assert monthly_result[0]["month"] == "2024-01"
-        assert monthly_result[1]["month"] == "2024-02"
-        assert monthly_result[2]["month"] == "2024-03"
+        assert get_monthly_result_month(monthly_result[0]) == "2024-01"
+        assert get_monthly_result_month(monthly_result[1]) == "2024-02"
+        assert get_monthly_result_month(monthly_result[2]) == "2024-03"

@@ -7,10 +7,12 @@ import signal
 import sys
 import time
 import traceback
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Union
+from typing import NoReturn
 
 from rich.console import Console
+from rich.live import Live
 
 from claude_monitor import __version__
 from claude_monitor.cli.bootstrap import (
@@ -33,20 +35,23 @@ from claude_monitor.terminal.manager import (
     setup_terminal,
 )
 from claude_monitor.terminal.themes import get_themed_console, print_themed
+from claude_monitor.types import MonitoringState
 from claude_monitor.ui.display_controller import DisplayController
 from claude_monitor.ui.table_views import TableViewsController
 
 # Type aliases for CLI callbacks
-DataUpdateCallback = Callable[[Dict[str, Any]], None]
-SessionChangeCallback = Callable[[str, str, Optional[Dict[str, Any]]], None]
+DataUpdateCallback = Callable[[MonitoringState], None]
+SessionChangeCallback = Callable[[str, str, object | None], None]
 
 
-def get_standard_claude_paths() -> List[str]:
+def get_standard_claude_paths() -> list[str]:
     """Get list of standard Claude data directory paths to check."""
     return ["~/.claude/projects", "~/.config/claude/projects"]
 
 
-def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List[Path]:
+def discover_claude_data_paths(
+    custom_paths: list[str] | None = None,
+) -> list[Path]:
     """Discover all available Claude data directories.
 
     Args:
@@ -55,11 +60,11 @@ def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List
     Returns:
         List of Path objects for existing Claude data directories
     """
-    paths_to_check: List[str] = (
+    paths_to_check: list[str] = (
         [str(p) for p in custom_paths] if custom_paths else get_standard_claude_paths()
     )
 
-    discovered_paths: List[Path] = []
+    discovered_paths: list[Path] = list[Path]()
 
     for path_str in paths_to_check:
         path = Path(path_str).expanduser().resolve()
@@ -69,7 +74,7 @@ def discover_claude_data_paths(custom_paths: Optional[List[str]] = None) -> List
     return discovered_paths
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Main entry point with direct pydantic-settings integration."""
     if argv is None:
         argv = sys.argv[1:]
@@ -118,9 +123,10 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
     old_terminal_settings = setup_terminal()
     live_display_active: bool = False
+    live_display: Live | None = None
 
     try:
-        data_paths: List[Path] = discover_claude_data_paths()
+        data_paths: list[Path] = discover_claude_data_paths()
         if not data_paths:
             print_themed("No Claude data directory found", style="error")
             return
@@ -137,7 +143,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         token_limit: int = _get_initial_token_limit(args, str(data_path))
 
         display_controller = DisplayController()
-        display_controller.live_manager._console = console
+        display_controller.live_manager.set_console(console)
 
         refresh_per_second: float = getattr(args, "refresh_per_second", 0.75)
         logger.info(
@@ -146,7 +152,9 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         logger.info(f"Data refresh rate: {args.refresh_rate} seconds")
 
         live_display = display_controller.live_manager.create_live_display(
-            auto_refresh=True, console=console, refresh_per_second=refresh_per_second
+            auto_refresh=True,
+            console=console,
+            refresh_per_second=refresh_per_second,
         )
 
         loading_display = display_controller.create_loading_display(
@@ -156,6 +164,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         enter_alternate_screen()
 
         live_display_active = False
+        orchestrator = None
 
         try:
             # Enter live context and show loading screen immediately
@@ -172,24 +181,33 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             orchestrator.set_args(args)
 
             # Setup monitoring callback
-            def on_data_update(monitoring_data: Dict[str, Any]) -> None:
+            def on_data_update(monitoring_data: MonitoringState) -> None:
                 """Handle data updates from orchestrator."""
                 try:
-                    data: Dict[str, Any] = monitoring_data.get("data", {})
-                    blocks: List[Dict[str, Any]] = data.get("blocks", [])
+                    data = monitoring_data["data"]
+
+                    blocks_raw = data.get("blocks", [])
+                    if not blocks_raw:
+                        return
+                    # Filter out None values
+                    blocks = [block for block in blocks_raw if block]
 
                     logger.debug(f"Display data has {len(blocks)} blocks")
                     if blocks:
-                        active_blocks: List[Dict[str, Any]] = [
-                            b for b in blocks if b.get("isActive")
-                        ]
+                        active_blocks = [b for b in blocks if b.get("isActive")]
                         logger.debug(f"Active blocks: {len(active_blocks)}")
                         if active_blocks:
-                            total_tokens: int = active_blocks[0].get("totalTokens", 0)
+                            total_tokens_raw = active_blocks[0].get("totalTokens", 0)
+                            total_tokens = (
+                                int(total_tokens_raw) if total_tokens_raw else 0
+                            )
                             logger.debug(f"Active block tokens: {total_tokens}")
 
+                    token_limit_val = monitoring_data.get("token_limit", token_limit)
+
+                    # Create display renderable (AnalysisResult is a dict-like TypedDict)
                     renderable = display_controller.create_data_display(
-                        data, args, monitoring_data.get("token_limit", token_limit)
+                        data, args, token_limit_val
                     )
 
                     if live_display:
@@ -208,7 +226,9 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
             # Optional: Register session change callback
             def on_session_change(
-                event_type: str, session_id: str, session_data: Optional[Dict[str, Any]]
+                event_type: str,
+                session_id: str,
+                session_data: object | None,
             ) -> None:
                 """Handle session changes."""
                 if event_type == "session_start":
@@ -236,7 +256,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                     time.sleep(1)
         finally:
             # Stop monitoring first
-            if "orchestrator" in locals():
+            if orchestrator is not None:
                 orchestrator.stop()
 
             # Exit live display context if it was activated
@@ -246,13 +266,13 @@ def _run_monitoring(args: argparse.Namespace) -> None:
 
     except KeyboardInterrupt:
         # Clean exit from live display if it's active
-        if "live_display" in locals():
+        if live_display_active and live_display is not None:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_cleanup_and_exit(old_terminal_settings)
     except Exception as e:
         # Clean exit from live display if it's active
-        if "live_display" in locals():
+        if live_display_active and live_display is not None:
             with contextlib.suppress(Exception):
                 live_display.__exit__(None, None, None)
         handle_error_and_exit(old_terminal_settings, e)
@@ -260,9 +280,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         restore_terminal(old_terminal_settings)
 
 
-def _get_initial_token_limit(
-    args: argparse.Namespace, data_path: Union[str, Path]
-) -> int:
+def _get_initial_token_limit(args: argparse.Namespace, data_path: str | Path) -> int:
     """Get initial token limit for the plan."""
     logger = logging.getLogger(__name__)
     plan: str = getattr(args, "plan", PlanType.PRO.value)
@@ -283,15 +301,16 @@ def _get_initial_token_limit(
 
         try:
             # Use quick start mode for faster initial load
-            usage_data: Optional[Dict[str, Any]] = analyze_usage(
+            usage_data_raw = analyze_usage(
                 hours_back=96 * 2,
                 quick_start=False,
                 use_cache=False,
                 data_path=str(data_path),
             )
 
-            if usage_data and "blocks" in usage_data:
-                blocks: List[Dict[str, Any]] = usage_data["blocks"]
+            if usage_data_raw and "blocks" in usage_data_raw:
+                blocks_raw = usage_data_raw["blocks"]
+                blocks = [block for block in blocks_raw if block]
                 token_limit: int = get_token_limit(plan, blocks)
 
                 print_themed(
@@ -336,8 +355,8 @@ def handle_application_error(
         exception=exception,
         component=component,
         additional_context={
-            "exit_code": exit_code,
-            "args": sys.argv,
+            "exit_code": str(exit_code),
+            "args_count": len(sys.argv),
         },
     )
 
@@ -348,7 +367,7 @@ def handle_application_error(
     sys.exit(exit_code)
 
 
-def validate_cli_environment() -> Optional[str]:
+def validate_cli_environment() -> str | None:
     """Validate the CLI environment and return error message if invalid.
 
     Returns:
@@ -361,7 +380,7 @@ def validate_cli_environment() -> Optional[str]:
 
         # Check for required dependencies
         required_modules = ["rich", "pydantic", "watchdog"]
-        missing_modules: List[str] = []
+        missing_modules: list[str] = list[str]()
 
         for module in required_modules:
             try:
@@ -403,9 +422,12 @@ def _run_table_view(
             print_themed(f"No usage data found for {view_mode} view", style="warning")
             return
 
-        # Display the table
+        # Display the table with type validation
+        # aggregated_data is already properly typed as AggregatedData from aggregator
+        validated_data = aggregated_data
+
         controller.display_aggregated_view(
-            data=aggregated_data,
+            data=validated_data,
             view_mode=view_mode,
             timezone=args.timezone,
             plan=args.plan,

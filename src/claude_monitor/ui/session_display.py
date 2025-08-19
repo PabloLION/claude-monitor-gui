@@ -3,9 +3,10 @@
 Handles formatting of active session screens and session data display.
 """
 
+import argparse
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import pytz
 
@@ -21,6 +22,9 @@ from claude_monitor.utils.time_utils import (
     get_time_format_preference,
     percentage,
 )
+
+from ..types.common import RawJSONEntry
+from ..types.sessions import ModelUsageStats
 
 
 @dataclass
@@ -40,9 +44,9 @@ class SessionDisplayData:
     total_session_minutes: float
     burn_rate: float
     session_cost: float
-    per_model_stats: dict[str, Any]
+    per_model_stats: dict[str, ModelUsageStats]
     sent_messages: int
-    entries: list[dict]
+    entries: list[RawJSONEntry]
     predicted_end_str: str
     reset_time_str: str
     current_time_str: str
@@ -55,7 +59,7 @@ class SessionDisplayData:
 class SessionDisplayComponent:
     """Main component for displaying active session information."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize session display component with sub-components."""
         self.token_progress = TokenProgressBar()
         self.time_progress = TimeProgressBar()
@@ -82,15 +86,9 @@ class SessionDisplayComponent:
         progress_bar = TokenProgressBar(width=50)
         bar_style = get_cost_style(percentage)
 
-        capped_percentage = min(percentage, 100.0)
-        filled = progress_bar._calculate_filled_segments(capped_percentage, 100.0)
-
-        if percentage >= 100:
-            filled_bar = progress_bar._render_bar(50, filled_style=bar_style)
-        else:
-            filled_bar = progress_bar._render_bar(
-                filled, filled_style=bar_style, empty_style="table.border"
-            )
+        filled_bar = progress_bar.render_with_style(
+            percentage, filled_style=bar_style, empty_style="table.border"
+        )
 
         return f"{color} [{filled_bar}]"
 
@@ -140,9 +138,9 @@ class SessionDisplayComponent:
         total_session_minutes: float,
         burn_rate: float,
         session_cost: float,
-        per_model_stats: dict[str, Any],
+        per_model_stats: dict[str, ModelUsageStats],
         sent_messages: int,
-        entries: list[dict],
+        entries: list[RawJSONEntry],
         predicted_end_str: str,
         reset_time_str: str,
         current_time_str: str,
@@ -150,7 +148,7 @@ class SessionDisplayComponent:
         show_exceed_notification: bool = False,
         show_tokens_will_run_out: bool = False,
         original_limit: int = 0,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[str]:
         """Format complete active session screen.
 
@@ -180,7 +178,7 @@ class SessionDisplayComponent:
             List of formatted screen lines
         """
 
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))
@@ -380,8 +378,8 @@ class SessionDisplayComponent:
         plan: str,
         timezone: str,
         token_limit: int,
-        current_time: Optional[datetime] = None,
-        args: Optional[Any] = None,
+        current_time: datetime | None = None,
+        args: argparse.Namespace | None = None,
     ) -> list[str]:
         """Format screen for no active session state.
 
@@ -396,7 +394,7 @@ class SessionDisplayComponent:
             List of formatted screen lines
         """
 
-        screen_buffer = []
+        screen_buffer = list[str]()
 
         header_manager = HeaderManager()
         screen_buffer.extend(header_manager.create_header(plan, timezone))

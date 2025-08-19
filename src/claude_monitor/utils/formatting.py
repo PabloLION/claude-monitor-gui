@@ -3,17 +3,19 @@
 This module provides formatting functions for currency, time, and display output.
 """
 
+import argparse
 import logging
 from datetime import datetime
-from typing import Any, Optional, Union
 
-from claude_monitor.utils.time_utils import format_display_time as _format_display_time
+from claude_monitor.utils.time_utils import (
+    format_display_time as _format_display_time,
+)
 from claude_monitor.utils.time_utils import get_time_format_preference
 
 logger = logging.getLogger(__name__)
 
 
-def format_number(value: Union[int, float], decimals: int = 0) -> str:
+def format_number(value: int | float, decimals: int = 0) -> str:
     """Format number with thousands separator.
 
     Args:
@@ -38,13 +40,13 @@ def format_currency(amount: float, currency: str = "USD") -> str:
     Returns:
         Formatted currency string
     """
-    amount: float = round(amount, 2)
+    rounded_amount: float = round(amount, 2)
 
     if currency == "USD":
-        if amount >= 0:
-            return f"${amount:,.2f}"
-        return f"$-{abs(amount):,.2f}"
-    return f"{amount:,.2f} {currency}"
+        if rounded_amount >= 0:
+            return f"${rounded_amount:,.2f}"
+        return f"$-{abs(rounded_amount):,.2f}"
+    return f"{rounded_amount:,.2f} {currency}"
 
 
 def format_time(minutes: float) -> str:
@@ -65,7 +67,7 @@ def format_time(minutes: float) -> str:
 
 def format_display_time(
     dt_obj: datetime,
-    use_12h_format: Optional[bool] = None,
+    use_12h_format: bool | None = None,
     include_seconds: bool = True,
 ) -> str:
     """Format datetime for display with 12h/24h support.
@@ -83,7 +85,10 @@ def format_display_time(
     return _format_display_time(dt_obj, use_12h_format, include_seconds)
 
 
-def _get_pref(args: Any) -> bool:
+# #TODO: make use of this function
+def _get_pref(  # pyright: ignore[reportUnusedFunction]
+    args: argparse.Namespace | None,
+) -> bool:
     """Internal helper function for getting time format preference.
 
     Args:

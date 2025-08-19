@@ -1,11 +1,14 @@
-"""Data models for Claude Monitor.
-Core data structures for usage tracking, session management, and token calculations.
+"""Core business models for Claude Monitor.
+
+Contains dataclasses, enums, and business logic models.
+TypedDicts have been moved to the types/ package for better organization.
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+
+from claude_monitor.types import FormattedLimitInfo
 
 
 class CostMode(Enum):
@@ -75,19 +78,23 @@ class SessionBlock:
     id: str
     start_time: datetime
     end_time: datetime
-    entries: List[UsageEntry] = field(default_factory=list)
+    entries: list[UsageEntry] = field(default_factory=list[UsageEntry])
     token_counts: TokenCounts = field(default_factory=TokenCounts)
     is_active: bool = False
     is_gap: bool = False
-    burn_rate: Optional[BurnRate] = None
-    actual_end_time: Optional[datetime] = None
-    per_model_stats: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    models: List[str] = field(default_factory=list)
+    burn_rate: BurnRate | None = None
+    actual_end_time: datetime | None = None
+    per_model_stats: dict[str, dict[str, int | float]] = field(
+        default_factory=dict[str, dict[str, int | float]]
+    )
+    models: list[str] = field(default_factory=list[str])
     sent_messages_count: int = 0
     cost_usd: float = 0.0
-    limit_messages: List[Dict[str, Any]] = field(default_factory=list)
-    projection_data: Optional[Dict[str, Any]] = None
-    burn_rate_snapshot: Optional[BurnRate] = None
+    limit_messages: list[FormattedLimitInfo] = field(
+        default_factory=list[FormattedLimitInfo]
+    )
+    projection_data: dict[str, int | float] | None = None
+    burn_rate_snapshot: BurnRate | None = None
 
     @property
     def total_tokens(self) -> int:

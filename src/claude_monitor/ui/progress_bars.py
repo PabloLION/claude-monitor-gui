@@ -5,9 +5,10 @@ Provides token usage, time progress, and model usage progress bars.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Any, Final, Protocol, TypedDict
+from abc import ABC
+from typing import Final, Protocol, TypedDict
 
+from claude_monitor.types.sessions import ModelUsageStats
 from claude_monitor.utils.time_utils import percentage
 
 
@@ -37,11 +38,27 @@ class ThresholdConfig(TypedDict):
     style: str
 
 
-class ProgressBarRenderer(Protocol):
-    """Protocol for progress bar rendering."""
+class TokenProgressRenderer(Protocol):
+    """Protocol for token progress bar rendering."""
 
-    def render(self, *args: Any, **kwargs: Any) -> str:
-        """Render the progress bar."""
+    def render(self, percentage: float) -> str:
+        """Render token progress bar."""
+        ...
+
+
+class TimeProgressRenderer(Protocol):
+    """Protocol for time progress bar rendering."""
+
+    def render(self, elapsed_minutes: float, total_minutes: float) -> str:
+        """Render time progress bar."""
+        ...
+
+
+class ModelProgressRenderer(Protocol):
+    """Protocol for model progress bar rendering."""
+
+    def render(self, per_model_stats: dict[str, ModelUsageStats]) -> str:
+        """Render model progress bar."""
         ...
 
 
@@ -152,16 +169,6 @@ class BaseProgressBar(ABC):
                 return style
         return thresholds[-1][1] if thresholds else ""
 
-    @abstractmethod
-    def render(self, *args, **kwargs) -> str:
-        """Render the progress bar.
-
-        This method must be implemented by subclasses.
-
-        Returns:
-            Formatted progress bar string
-        """
-
 
 class TokenProgressBar(BaseProgressBar):
     """Token usage progress bar component."""
@@ -205,9 +212,11 @@ class TokenProgressBar(BaseProgressBar):
         bar: str = self._render_bar(
             filled,
             filled_style=filled_style,
-            empty_style=self.BORDER_STYLE
-            if percentage < self.HIGH_USAGE_THRESHOLD
-            else self.MEDIUM_USAGE_STYLE,
+            empty_style=(
+                self.BORDER_STYLE
+                if percentage < self.HIGH_USAGE_THRESHOLD
+                else self.MEDIUM_USAGE_STYLE
+            ),
         )
 
         if percentage >= self.HIGH_USAGE_THRESHOLD:
@@ -219,6 +228,34 @@ class TokenProgressBar(BaseProgressBar):
 
         percentage_str: str = self._format_percentage(percentage)
         return f"{icon} [{bar}] {percentage_str}"
+
+    def render_with_style(
+        self,
+        percentage: float,
+        filled_style: str,
+        empty_style: str = "table.border",
+    ) -> str:
+        """Render token usage progress bar with custom styling.
+
+        Args:
+            percentage: Usage percentage (can be > 100)
+            filled_style: Custom style for filled portion
+            empty_style: Custom style for empty portion
+
+        Returns:
+            Formatted progress bar string with custom styling
+        """
+        capped_percentage = min(percentage, 100.0)
+        filled: int = self._calculate_filled_segments(capped_percentage)
+
+        if percentage >= 100:
+            bar: str = self._render_bar(50, filled_style=filled_style)
+        else:
+            bar = self._render_bar(
+                filled, filled_style=filled_style, empty_style=empty_style
+            )
+
+        return bar
 
 
 class TimeProgressBar(BaseProgressBar):
@@ -239,7 +276,9 @@ class TimeProgressBar(BaseProgressBar):
         if total_minutes <= 0:
             progress_percentage = 0
         else:
-            progress_percentage = min(100, percentage(elapsed_minutes, total_minutes))
+            progress_percentage = int(
+                min(100, percentage(elapsed_minutes, total_minutes))
+            )
 
         filled = self._calculate_filled_segments(progress_percentage)
         bar = self._render_bar(
@@ -253,7 +292,7 @@ class TimeProgressBar(BaseProgressBar):
 class ModelUsageBar(BaseProgressBar):
     """Model usage progress bar showing Sonnet vs Opus distribution."""
 
-    def render(self, per_model_stats: dict[str, Any]) -> str:
+    def render(self, per_model_stats: dict[str, ModelUsageStats]) -> str:
         """Render model usage progress bar.
 
         Args:
@@ -276,7 +315,13 @@ class ModelUsageBar(BaseProgressBar):
         other_tokens = 0
 
         for model_name, stats in per_model_stats.items():
-            model_tokens = stats.get("input_tokens", 0) + stats.get("output_tokens", 0)
+            # stats is ModelStats TypedDict, so no need for isinstance check
+            input_tokens_raw = stats.get("input_tokens", 0)
+            output_tokens_raw = stats.get("output_tokens", 0)
+            # These are already int from ModelStats, no isinstance check needed
+            input_tokens = int(input_tokens_raw)
+            output_tokens = int(output_tokens_raw)
+            model_tokens = input_tokens + output_tokens
 
             if "sonnet" in model_name.lower():
                 sonnet_tokens += model_tokens
@@ -313,7 +358,7 @@ class ModelUsageBar(BaseProgressBar):
         sonnet_bar = "█" * sonnet_filled
         opus_bar = "█" * opus_filled
 
-        bar_segments = []
+        bar_segments = list[str]()
         if sonnet_filled > 0:
             bar_segments.append(f"[info]{sonnet_bar}[/]")
         if opus_filled > 0:

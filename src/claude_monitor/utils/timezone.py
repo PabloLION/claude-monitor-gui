@@ -4,16 +4,18 @@ This module provides timezone handling functionality, re-exporting from time_uti
 for backward compatibility.
 """
 
+import argparse
 import logging
 from datetime import datetime
-from typing import Any, Optional
 
 from claude_monitor.utils.time_utils import TimezoneHandler, get_time_format_preference
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def _detect_timezone_time_preference(args: Any = None) -> bool:
+def detect_timezone_time_preference(args: argparse.Namespace | None = None) -> bool:
+    # TODO: This function is fully implemented and tested but never used in the codebase.
+    # Consider integrating it where timezone/time preferences need to be detected.
     """Detect timezone and time preference.
 
     This is a backward compatibility function that delegates to the new
@@ -28,7 +30,7 @@ def _detect_timezone_time_preference(args: Any = None) -> bool:
     return get_time_format_preference(args)
 
 
-def parse_timestamp(timestamp_str: str, default_tz: str = "UTC") -> Optional[datetime]:
+def parse_timestamp(timestamp_str: str, default_tz: str = "UTC") -> datetime | None:
     """Parse timestamp string with timezone handling.
 
     Args:

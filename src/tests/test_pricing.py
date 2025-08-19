@@ -1,11 +1,12 @@
 """Comprehensive tests for PricingCalculator class."""
 
-from typing import Dict, List, Union
+from typing import cast
 
 import pytest
 
 from claude_monitor.core.models import CostMode, TokenCounts
 from claude_monitor.core.pricing import PricingCalculator
+from claude_monitor.types import ProcessedEntry, RawJSONEntry
 
 
 class TestPricingCalculator:
@@ -17,7 +18,7 @@ class TestPricingCalculator:
         return PricingCalculator()
 
     @pytest.fixture
-    def custom_pricing(self) -> Dict[str, Dict[str, float]]:
+    def custom_pricing(self) -> dict[str, dict[str, float]]:
         """Custom pricing configuration for testing."""
         return {
             "test-model": {
@@ -30,13 +31,13 @@ class TestPricingCalculator:
 
     @pytest.fixture
     def custom_calculator(
-        self, custom_pricing: Dict[str, Dict[str, float]]
+        self, custom_pricing: dict[str, dict[str, float]]
     ) -> PricingCalculator:
         """Create a PricingCalculator with custom pricing."""
         return PricingCalculator(custom_pricing)
 
     @pytest.fixture
-    def sample_entry_data(self) -> Dict[str, Union[str, int, None]]:
+    def sample_entry_data(self) -> dict[str, str | int | None]:
         """Sample entry data for testing."""
         return {
             "model": "claude-3-haiku",
@@ -64,16 +65,16 @@ class TestPricingCalculator:
         assert "claude-3-sonnet" in calculator.pricing
         assert "claude-3-haiku" in calculator.pricing
         assert "claude-3-5-sonnet" in calculator.pricing
-        assert calculator._cost_cache == {}
+        assert calculator._cost_cache == {}  # type: ignore[misc]
 
     def test_init_custom_pricing(
         self,
         custom_calculator: PricingCalculator,
-        custom_pricing: Dict[str, Dict[str, float]],
+        custom_pricing: dict[str, dict[str, float]],
     ) -> None:
         """Test initialization with custom pricing."""
         assert custom_calculator.pricing == custom_pricing
-        assert custom_calculator._cost_cache == {}
+        assert custom_calculator._cost_cache == {}  # type: ignore[misc]
 
     def test_fallback_pricing_structure(self, calculator: PricingCalculator) -> None:
         """Test that fallback pricing has correct structure."""
@@ -210,10 +211,10 @@ class TestPricingCalculator:
     def test_calculate_cost_for_entry_auto_mode(
         self,
         calculator: PricingCalculator,
-        sample_entry_data: Dict[str, Union[str, int, None]],
+        sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with AUTO mode."""
-        cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.AUTO)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, sample_entry_data), CostMode.AUTO)  # Simplified test data
 
         expected = (
             1000 * 0.25  # input
@@ -227,23 +228,23 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with CACHED mode and existing cost."""
-        entry_data: Dict[str, Union[str, int, float]] = {
+        entry_data: dict[str, str | int | float] = {
             "model": "claude-3-haiku",
             "input_tokens": 1000,
             "output_tokens": 500,
             "cost_usd": 0.123,  # Pre-existing cost
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.CACHED)
+        cost = calculator.calculate_cost_for_entry(cast(ProcessedEntry, entry_data), CostMode.CACHED)  # Simplified test data
         assert cost == 0.123
 
     def test_calculate_cost_for_entry_cached_mode_without_existing_cost(
         self,
         calculator: PricingCalculator,
-        sample_entry_data: Dict[str, Union[str, int, None]],
+        sample_entry_data: dict[str, str | int | None],
     ) -> None:
         """Test calculate_cost_for_entry with CACHED mode but no existing cost."""
-        cost = calculator.calculate_cost_for_entry(sample_entry_data, CostMode.CACHED)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, sample_entry_data), CostMode.CACHED)  # Simplified test data
 
         # Should fall back to calculation since no existing cost
         expected = (1000 * 0.25 + 500 * 1.25 + 100 * 0.3 + 50 * 0.03) / 1000000
@@ -253,14 +254,14 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with CALCULATED mode."""
-        entry_data: Dict[str, Union[str, int, float]] = {
+        entry_data: dict[str, str | int | float] = {
             "model": "claude-3-opus",
             "input_tokens": 500,
             "output_tokens": 250,
             "cost_usd": 0.999,  # Should be ignored in CALCULATED mode
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.CALCULATED)
+        cost = calculator.calculate_cost_for_entry(cast(ProcessedEntry, entry_data), CostMode.CALCULATED)  # Simplified test data
 
         # Should calculate cost regardless of existing cost_usd
         expected = (500 * 15.0 + 250 * 75.0) / 1000000
@@ -270,25 +271,25 @@ class TestPricingCalculator:
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with missing model."""
-        entry_data: Dict[str, int] = {
+        entry_data: dict[str, int] = {
             "input_tokens": 1000,
             "output_tokens": 500,
             # Missing "model" key
         }
 
         with pytest.raises(KeyError):
-            calculator.calculate_cost_for_entry(entry_data, CostMode.AUTO)
+            calculator.calculate_cost_for_entry(cast(RawJSONEntry, entry_data), CostMode.AUTO)  # Simplified test data
 
     def test_calculate_cost_for_entry_with_defaults(
         self, calculator: PricingCalculator
     ) -> None:
         """Test calculate_cost_for_entry with minimal data (should use defaults)."""
-        entry_data: Dict[str, str] = {
+        entry_data: dict[str, str] = {
             "model": "claude-3-haiku"
             # Missing token counts - should default to 0
         }
 
-        cost = calculator.calculate_cost_for_entry(entry_data, CostMode.AUTO)
+        cost = calculator.calculate_cost_for_entry(cast(RawJSONEntry, entry_data), CostMode.AUTO)  # Simplified test data
         assert cost == 0.0
 
     def test_custom_pricing_calculator(
@@ -327,7 +328,7 @@ class TestPricingCalculator:
 
     def test_all_supported_models(self, calculator: PricingCalculator) -> None:
         """Test that all supported models can calculate costs."""
-        supported_models: List[str] = [
+        supported_models: list[str] = [
             "claude-3-opus",
             "claude-3-sonnet",
             "claude-3-haiku",
@@ -375,7 +376,7 @@ class TestPricingCalculator:
     ) -> None:
         """Test integration with model name normalization."""
         # Test with various model name formats that should normalize
-        test_cases: List[tuple[str, str]] = [
+        test_cases: list[tuple[str, str]] = [
             ("claude-3-haiku-20240307", "claude-3-haiku"),
             ("claude-3-opus-20240229", "claude-3-opus"),
             ("claude-3-5-sonnet-20241022", "claude-3-5-sonnet"),

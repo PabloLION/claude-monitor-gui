@@ -5,22 +5,35 @@ Contains the main analyze_usage function and related analysis components.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import cast
 
 from claude_monitor.core.calculations import BurnRateCalculator
 from claude_monitor.core.models import CostMode, SessionBlock, UsageEntry
 from claude_monitor.data.analyzer import SessionAnalyzer
 from claude_monitor.data.reader import load_usage_entries
+from claude_monitor.types import (
+    AnalysisMetadata,
+    AnalysisResult,
+    BlockEntry,
+    BurnRateData,
+    FormattedLimitInfo,
+    LimitDetectionInfo,
+    ModelUsageStats,
+    PartialBlock,
+    SerializedBlock,
+    SessionProjectionJson,
+    TokenCountsData,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def analyze_usage(
-    hours_back: Optional[int] = 96,
+    hours_back: int | None = 96,
     use_cache: bool = True,
     quick_start: bool = False,
-    data_path: Optional[str] = None,
-) -> Dict[str, Any]:
+    data_path: str | None = None,
+) -> AnalysisResult:
     """
     Main entry point to generate response_final.json.
 
@@ -71,6 +84,7 @@ def analyze_usage(
 
     limits_detected = 0
     if raw_entries:
+        # raw_entries are already ClaudeJSONEntry from load_usage_entries with include_raw=True
         limit_detections = analyzer.detect_limits(raw_entries)
         limits_detected = len(limit_detections)
 
@@ -83,7 +97,7 @@ def analyze_usage(
             if block_limits:
                 block.limit_messages = block_limits
 
-    metadata: Dict[str, Any] = {
+    metadata: AnalysisMetadata = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "hours_analyzed": hours_back or "all",
         "entries_processed": len(entries),
@@ -101,7 +115,7 @@ def analyze_usage(
 
 
 def _process_burn_rates(
-    blocks: List[SessionBlock], calculator: BurnRateCalculator
+    blocks: list[SessionBlock], calculator: BurnRateCalculator
 ) -> None:
     """Process burn rate data for active blocks."""
     for block in blocks:
@@ -119,8 +133,10 @@ def _process_burn_rates(
 
 
 def _create_result(
-    blocks: List[SessionBlock], entries: List[UsageEntry], metadata: Dict[str, Any]
-) -> Dict[str, Any]:
+    blocks: list[SessionBlock],
+    entries: list[UsageEntry],
+    metadata: AnalysisMetadata,
+) -> AnalysisResult:
     """Create the final result dictionary."""
     blocks_data = _convert_blocks_to_dict_format(blocks)
 
@@ -137,7 +153,7 @@ def _create_result(
 
 
 def _is_limit_in_block_timerange(
-    limit_info: Dict[str, Any], block: SessionBlock
+    limit_info: LimitDetectionInfo, block: SessionBlock
 ) -> bool:
     """Check if limit timestamp falls within block's time range."""
     limit_timestamp = limit_info["timestamp"]
@@ -145,65 +161,72 @@ def _is_limit_in_block_timerange(
     if limit_timestamp.tzinfo is None:
         limit_timestamp = limit_timestamp.replace(tzinfo=timezone.utc)
 
-    return block.start_time <= limit_timestamp <= block.end_time
+    # Explicit boolean return for type checking
+    result: bool = block.start_time <= limit_timestamp <= block.end_time
+    return result
 
 
-def _format_limit_info(limit_info: Dict[str, Any]) -> Dict[str, Any]:
+def _format_limit_info(limit_info: LimitDetectionInfo) -> FormattedLimitInfo:
     """Format limit info for block assignment."""
+    reset_time = limit_info.get("reset_time")
     return {
         "type": limit_info["type"],
         "timestamp": limit_info["timestamp"].isoformat(),
         "content": limit_info["content"],
-        "reset_time": (
-            limit_info["reset_time"].isoformat()
-            if limit_info.get("reset_time")
-            else None
-        ),
+        "reset_time": reset_time.isoformat() if reset_time else None,
     }
 
 
-def _convert_blocks_to_dict_format(blocks: List[SessionBlock]) -> List[Dict[str, Any]]:
+def _convert_blocks_to_dict_format(
+    blocks: list[SessionBlock],
+) -> list[SerializedBlock]:
     """Convert blocks to dictionary format for JSON output."""
-    blocks_data: List[Dict[str, Any]] = []
+    blocks_data = list[SerializedBlock]()
 
     for block in blocks:
         block_dict = _create_base_block_dict(block)
         _add_optional_block_data(block, block_dict)
-        blocks_data.append(block_dict)
+        # After adding optional data, cast to complete BlockDict
+        complete_block = cast(SerializedBlock, block_dict)
+        blocks_data.append(complete_block)
 
     return blocks_data
 
 
-def _create_base_block_dict(block: SessionBlock) -> Dict[str, Any]:
+def _create_base_block_dict(block: SessionBlock) -> PartialBlock:
     """Create base block dictionary with required fields."""
-    return {
-        "id": block.id,
-        "isActive": block.is_active,
-        "isGap": block.is_gap,
-        "startTime": block.start_time.isoformat(),
-        "endTime": block.end_time.isoformat(),
-        "actualEndTime": (
-            block.actual_end_time.isoformat() if block.actual_end_time else None
-        ),
-        "tokenCounts": {
-            "inputTokens": block.token_counts.input_tokens,
-            "outputTokens": block.token_counts.output_tokens,
-            "cacheCreationInputTokens": block.token_counts.cache_creation_tokens,
-            "cacheReadInputTokens": block.token_counts.cache_read_tokens,
-        },
-        "totalTokens": block.token_counts.input_tokens
-        + block.token_counts.output_tokens,
-        "costUSD": block.cost_usd,
-        "models": block.models,
-        "perModelStats": block.per_model_stats,
-        "sentMessagesCount": block.sent_messages_count,
-        "durationMinutes": block.duration_minutes,
-        "entries": _format_block_entries(block.entries),
-        "entries_count": len(block.entries),
-    }
+    return PartialBlock(
+        {
+            "id": block.id,
+            "isActive": block.is_active,
+            "isGap": block.is_gap,
+            "startTime": block.start_time.isoformat(),
+            "endTime": block.end_time.isoformat(),
+            "actualEndTime": (
+                block.actual_end_time.isoformat() if block.actual_end_time else None
+            ),
+            "tokenCounts": TokenCountsData(
+                {
+                    "inputTokens": block.token_counts.input_tokens,
+                    "outputTokens": block.token_counts.output_tokens,
+                    "cacheCreationInputTokens": block.token_counts.cache_creation_tokens,
+                    "cacheReadInputTokens": block.token_counts.cache_read_tokens,
+                }
+            ),
+            "totalTokens": block.token_counts.input_tokens
+            + block.token_counts.output_tokens,
+            "costUSD": block.cost_usd,
+            "models": block.models,
+            "perModelStats": cast(dict[str, ModelUsageStats], block.per_model_stats),
+            "sentMessagesCount": block.sent_messages_count,
+            "durationMinutes": block.duration_minutes,
+            "entries": _format_block_entries(block.entries),
+            "entries_count": len(block.entries),
+        }
+    )
 
 
-def _format_block_entries(entries: List[UsageEntry]) -> List[Dict[str, Any]]:
+def _format_block_entries(entries: list[UsageEntry]) -> list[BlockEntry]:
     """Format block entries for JSON output."""
     return [
         {
@@ -221,16 +244,18 @@ def _format_block_entries(entries: List[UsageEntry]) -> List[Dict[str, Any]]:
     ]
 
 
-def _add_optional_block_data(block: SessionBlock, block_dict: Dict[str, Any]) -> None:
+def _add_optional_block_data(block: SessionBlock, block_dict: PartialBlock) -> None:
     """Add optional burn rate, projection, and limit data to block dict."""
     if hasattr(block, "burn_rate_snapshot") and block.burn_rate_snapshot:
-        block_dict["burnRate"] = {
-            "tokensPerMinute": block.burn_rate_snapshot.tokens_per_minute,
-            "costPerHour": block.burn_rate_snapshot.cost_per_hour,
-        }
+        block_dict["burnRate"] = BurnRateData(
+            {
+                "tokensPerMinute": block.burn_rate_snapshot.tokens_per_minute,
+                "costPerHour": block.burn_rate_snapshot.cost_per_hour,
+            }
+        )
 
     if hasattr(block, "projection_data") and block.projection_data:
-        block_dict["projection"] = block.projection_data
+        block_dict["projection"] = cast(SessionProjectionJson, block.projection_data)
 
     if hasattr(block, "limit_messages") and block.limit_messages:
         block_dict["limitMessages"] = block.limit_messages

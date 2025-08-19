@@ -2,10 +2,10 @@
 
 import logging
 import time
-from typing import Any, Dict, Optional
 
 from claude_monitor.data.analysis import analyze_usage
 from claude_monitor.error_handling import report_error
+from claude_monitor.types import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class DataManager:
         self,
         cache_ttl: int = 30,
         hours_back: int = 192,
-        data_path: Optional[str] = None,
+        data_path: str | None = None,
     ) -> None:
         """Initialize data manager with cache and fetch settings.
 
@@ -27,15 +27,15 @@ class DataManager:
             data_path: Path to data directory
         """
         self.cache_ttl: int = cache_ttl
-        self._cache: Optional[Dict[str, Any]] = None
-        self._cache_timestamp: Optional[float] = None
+        self._cache: AnalysisResult | None = None
+        self._cache_timestamp: float | None = None
 
         self.hours_back: int = hours_back
-        self.data_path: Optional[str] = data_path
-        self._last_error: Optional[str] = None
-        self._last_successful_fetch: Optional[float] = None
+        self.data_path: str | None = data_path
+        self._last_error: str | None = None
+        self._last_successful_fetch: float | None = None
 
-    def get_data(self, force_refresh: bool = False) -> Optional[Dict[str, Any]]:
+    def get_data(self, force_refresh: bool = False) -> AnalysisResult | None:
         """Get monitoring data with caching and error handling.
 
         Args:
@@ -45,7 +45,9 @@ class DataManager:
             Usage data dictionary or None if fetch fails
         """
         if not force_refresh and self._is_cache_valid():
-            cache_age: float = time.time() - self._cache_timestamp  # type: ignore
+            # _is_cache_valid() ensures _cache_timestamp is not None
+            assert self._cache_timestamp is not None
+            cache_age: float = time.time() - self._cache_timestamp
             logger.debug(f"Using cached data (age: {cache_age:.1f}s)")
             return self._cache
 
@@ -55,27 +57,25 @@ class DataManager:
                 logger.debug(
                     f"Fetching fresh usage data (attempt {attempt + 1}/{max_retries})"
                 )
-                data: Optional[Dict[str, Any]] = analyze_usage(
+                data: AnalysisResult = analyze_usage(
                     hours_back=self.hours_back,
                     quick_start=False,
                     use_cache=False,
                     data_path=self.data_path,
                 )
 
-                if data is not None:
-                    self._set_cache(data)
-                    self._last_successful_fetch = time.time()
-                    self._last_error = None
-                    return data
-
-                logger.warning("No data returned from analyze_usage")
-                break
+                self._set_cache(data)
+                self._last_successful_fetch = time.time()
+                self._last_error = None
+                return data
 
             except (FileNotFoundError, PermissionError, OSError) as e:
                 logger.exception(f"Data access error (attempt {attempt + 1}): {e}")
                 self._last_error = str(e)
                 report_error(
-                    exception=e, component="data_manager", context_name="access_error"
+                    exception=e,
+                    component="data_manager",
+                    context_name="access_error",
                 )
                 if attempt < max_retries - 1:
                     time.sleep(0.1 * (2**attempt))
@@ -85,7 +85,9 @@ class DataManager:
                 logger.exception(f"Data format error: {e}")
                 self._last_error = str(e)
                 report_error(
-                    exception=e, component="data_manager", context_name="format_error"
+                    exception=e,
+                    component="data_manager",
+                    context_name="format_error",
                 )
                 break
 
@@ -123,7 +125,7 @@ class DataManager:
         cache_age = time.time() - self._cache_timestamp
         return cache_age <= self.cache_ttl
 
-    def _set_cache(self, data: Dict[str, Any]) -> None:
+    def _set_cache(self, data: AnalysisResult) -> None:
         """Set cache with current timestamp."""
         self._cache = data
         self._cache_timestamp = time.time()
@@ -136,11 +138,11 @@ class DataManager:
         return time.time() - self._cache_timestamp
 
     @property
-    def last_error(self) -> Optional[str]:
+    def last_error(self) -> str | None:
         """Get last error message."""
         return self._last_error
 
     @property
-    def last_successful_fetch_time(self) -> Optional[float]:
+    def last_successful_fetch_time(self) -> float | None:
         """Get timestamp of last successful fetch."""
         return self._last_successful_fetch
